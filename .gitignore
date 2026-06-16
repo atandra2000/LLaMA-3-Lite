@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Checkpoints and caches
+weights/
+data_cache/
+*.pt
+*.pth
+*.ckpt
+
+# Logs
+wandb/
+*.log

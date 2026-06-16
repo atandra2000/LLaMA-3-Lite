@@ -1,3 +1,5 @@
+<div align="center">
+
 # LLaMA-3-Lite
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -5,7 +7,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GPU: A100 80GB](https://img.shields.io/badge/GPU-A100%2080GB-76b900)](https://www.nvidia.com/en-us/data-center/a100/)
 
-A from-scratch **LLaMA 3-style transformer** implementation in PyTorch, optimized for pretraining on a single **NVIDIA A100 80GB SXM** GPU. This project delivers a complete pretraining pipeline with aggressive memory optimizations that reduce peak GPU memory by **~78%** (92 GB → 20 GB) while doubling effective batch size.
+A from-scratch **LLaMA 3-style transformer** implementation in PyTorch, optimized for pretraining on a single **NVIDIA A100 80GB SXM** GPU.
+<br>This project delivers a complete pretraining pipeline with aggressive memory optimizations that reduce peak GPU memory by **~78%** (92 GB → 20 GB) while doubling effective batch size.
+
+</div>
 
 ```bash
 python train.py  # Start training with one command
