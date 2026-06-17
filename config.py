@@ -130,12 +130,24 @@ def get_weights_file_path(config, step: int):
 
 
 def latest_weights_file_path(config):
+    """Return the path to the highest-numbered checkpoint, or None.
+
+    Sorts by the integer step number embedded in the filename so that
+    ``step_20.pt`` is correctly chosen over ``step_9.pt`` (a plain lexical
+    sort would pick ``step_9.pt`` because '9' > '2' as characters).
+    """
     model_folder = Path(config['model_folder'])
     if not model_folder.exists():
         return None
-    checkpoints = sorted(model_folder.glob(f"{config['model_filename']}_step_*.pt"))
+    checkpoints = list(model_folder.glob(f"{config['model_filename']}_step_*.pt"))
     if not checkpoints:
         return None
+    # Sort by the integer step suffix to avoid the lexical-sort trap
+    # (e.g. "step_10.pt" vs "step_9.pt"). Mirrors cleanup_old_checkpoints.
+    checkpoints.sort(
+        key=lambda x: int(str(x.stem).split('_step_')[-1])
+        if str(x.stem).split('_step_')[-1].isdigit() else -1
+    )
     return str(checkpoints[-1])
 
 

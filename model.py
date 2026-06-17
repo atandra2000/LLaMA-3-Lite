@@ -164,9 +164,19 @@ class Transformer(nn.Module):
         return logits
 
     def get_num_params(self, non_embedding=True):
+        """Return the parameter count.
+
+        With ``non_embedding=True`` both embedding-like matrices are excluded:
+        the input embedding *and* the output projection (which, per the README's
+        "no weight tying" note, is a separate learnable matrix but is still an
+        embedding-shaped parameter). This matches the definition used in
+        ``build_transformer``'s printout and the README's "non-embedding
+        params" figure (~252M for the 515M config).
+        """
         n_params = sum(p.numel() for p in self.parameters())
         if non_embedding:
             n_params -= self.input_embedding.embedding.weight.numel()
+            n_params -= self.output_proj.weight.numel()
         return n_params
 
     def enable_gradient_checkpointing(self):

@@ -244,7 +244,14 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
 def load_checkpoint(model, optimizer, scheduler, config, device):
     model_folder = Path(config['model_folder'])
-    checkpoints = sorted(model_folder.glob(f"{config['model_filename']}_step_*.pt"))
+    # Sort by integer step suffix to avoid the lexical-sort trap where
+    # "step_10.pt" sorts before "step_9.pt". Mirrors the fix in
+    # config.latest_weights_file_path.
+    checkpoints = sorted(
+        model_folder.glob(f"{config['model_filename']}_step_*.pt"),
+        key=lambda x: int(str(x.stem).split('_step_')[-1])
+        if str(x.stem).split('_step_')[-1].isdigit() else -1,
+    )
 
     if not checkpoints:
         return 0, float('inf')
@@ -256,11 +263,24 @@ def load_checkpoint(model, optimizer, scheduler, config, device):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
-    torch.random.set_rng_state(checkpoint['rng_torch'])
+    # The CPU RNG state must be a CPU ByteTensor. torch.load(map_location=...)
+    # moves *all* tensors in the checkpoint to `device`, which corrupts the
+    # RNG state when resuming on a different device (e.g. GPU). Move it back
+    # to CPU explicitly. Same idea for the CUDA RNG state below.
+    rng_torch = checkpoint['rng_torch']
+    if isinstance(rng_torch, torch.Tensor):
+        rng_torch = rng_torch.cpu().to(torch.uint8)
+    torch.random.set_rng_state(rng_torch)
     numpy.random.set_state(checkpoint['rng_numpy'])
     random.setstate(checkpoint['rng_python'])
     if 'rng_cuda' in checkpoint and torch.cuda.is_available():
-        torch.cuda.set_rng_state(checkpoint['rng_cuda'])
+        rng_cuda = checkpoint['rng_cuda']
+        # torch.cuda.set_rng_state expects a CPU ByteTensor (it dispatches the
+        # state to the target device internally). torch.load(map_location=...)
+        # may have moved it to the load device, so force it back to CPU + uint8.
+        if isinstance(rng_cuda, torch.Tensor):
+            rng_cuda = rng_cuda.cpu().to(torch.uint8)
+        torch.cuda.set_rng_state(rng_cuda)
 
     print(f"Resumed from step {checkpoint['step']}")
     return checkpoint['step'], checkpoint.get('best_val_loss', float('inf'))
@@ -295,9 +315,13 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     ).to(device)
 
     num_params = sum(p.numel() for p in model.parameters())
+    non_embed_params = (model.get_num_params(non_embedding=True)
+                         if hasattr(model, "get_num_params") else None)
     model_mem_gb = num_params * 2 / 1e9
     print(f"\n{'='*60}")
     print(f"Model: {num_params/1e6:.1f}M parameters ({model_mem_gb:.2f} GB in BF16)")
+    if non_embed_params is not None:
+        print(f"Non-embedding parameters: {non_embed_params/1e6:.1f}M")
     print(f"Gradient checkpointing: {'ON' if gradient_checkpointing else 'OFF'}")
     bs, seq = config['batch_size'], config['seq_len']
     tokens_per_step = bs * seq
@@ -363,8 +387,9 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             "d_ff": config['d_ff'],
             "vocab_size": config['vocab_size'],
             "seq_len": config['seq_len'],
-            "params_total": 514891808,
-            "params_non_embed": 251684896,
+            "params_total": num_params,
+            "params_non_embed": non_embed_params if non_embed_params is not None
+                                 else 0,
             "batch_size": config['batch_size'],
             "gradient_accumulation": config.get('gradient_accumulation', 1),
             "learning_rate": config['learning_rate'],

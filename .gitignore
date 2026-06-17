@@ -21,3 +21,12 @@ data_cache/
 # Logs
 wandb/
 *.log
+
+# Virtual environments
+LLaMA/
+venv/
+.venv/
+env/
+
+# opencode local tooling
+.opencode/
