@@ -7,8 +7,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GPU: A100 80GB](https://img.shields.io/badge/GPU-A100%2080GB-76b900)](https://www.nvidia.com/en-us/data-center/a100/)
 
-A from-scratch **LLaMA 3-style transformer** implementation in PyTorch, optimized for pretraining on a single **NVIDIA A100 80GB SXM** GPU.
-<br>This project delivers a complete pretraining pipeline with aggressive memory optimizations that reduce peak GPU memory by **~78%** (92 GB → 20 GB) while doubling effective batch size.
+> **Status:** Architecture, data pipeline, and memory-optimization stack are implemented and smoke-tested; the full 8.25B-token pretraining run has not yet started.
+
+A from-scratch **LLaMA 3-style transformer** implementation in PyTorch, designed for pretraining on a single **NVIDIA A100 80GB SXM** GPU.
+<br>Every component — GQA, RoPE, fused SwiGLU, gradient checkpointing, chunked cross-entropy, disk-backed token cache — is in place, with projected peak memory **~78% lower** (92 GB → 20 GB) enabling a 2× batch-size headroom.
 
 </div>
 
