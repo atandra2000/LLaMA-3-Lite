@@ -118,6 +118,88 @@ The training script auto-detects the latest checkpoint and restores full RNG sta
 
 ## Architecture Overview
 
+### End-to-End Forward Pass
+
+```mermaid
+flowchart TD
+    A["Input Token IDs<br/>(B, T=2048)"] --> B["Token Embedding<br/>vocab=128000 → d=1024"]
+    B --> C["× Scaler √d_model"]
+    C --> D["16× Decoder Blocks<br/>(gradient checkpointing)"]
+    D --> E["Final RMSNorm"]
+    E --> F["Output Projection<br/>d=1024 → vocab=128000"]
+    F --> G["Chunked Cross-Entropy<br/>FP32 log_softmax, chunk=256 tokens<br/>logits 50 GB → 0.3 GB"]
+    G --> H["Loss (scalar)"]
+
+    subgraph DEC["16× Decoder Blocks (gradient checkpointing)"]
+        direction TB
+        D1["RMSNorm"] --> D2["GQA<br/>8 Q / 4 KV · head_dim=128<br/>RoPE θ=500K"]
+        D2 --> D3["Residual Add"]
+        D3 --> D4["RMSNorm"]
+        D4 --> D5["Fused SwiGLU<br/>gate ∥ up → down"]
+        D5 --> D6["Residual Add"]
+    end
+
+    classDef matmul fill:#fde68a,stroke:#b45309,color:#000
+    classDef memsave fill:#bbf7d0,stroke:#15803d,color:#000
+    classDef block fill:#dbeafe,stroke:#1d4ed8,color:#000
+    class F matmul
+    class G memsave
+    class D1,D2,D3,D4,D5,D6 block
+```
+
+### Grouped Query Attention — 8 Q-heads share 4 KV-heads
+
+```mermaid
+graph LR
+    subgraph QH["Query heads (8) · head_dim=128"]
+        Q1["Q1"]; Q2["Q2"]; Q3["Q3"]; Q4["Q4"]
+        Q5["Q5"]; Q6["Q6"]; Q7["Q7"]; Q8["Q8"]
+    end
+    subgraph KH["KV heads (4) · head_dim=128"]
+        KV1["KV1"]; KV2["KV2"]; KV3["KV3"]; KV4["KV4"]
+    end
+    Q1 --> KV1
+    Q2 --> KV1
+    Q3 --> KV2
+    Q4 --> KV2
+    Q5 --> KV3
+    Q6 --> KV3
+    Q7 --> KV4
+    Q8 --> KV4
+    KV1 -. "serves 2 Q-heads" .-> Q1
+```
+
+> KV cache is **2&times; smaller** than Multi-Head Attention at the same model quality &mdash; the headline reason this model fits batch 96 on a single A100.
+
+### Memory Stack — How 92&nbsp;GB &rarr; 20&nbsp;GB
+
+```mermaid
+flowchart LR
+    subgraph UNOPT["Without Optimizations  ·  ~92 GB"]
+        direction TB
+        U1["Activations<br/>~70 GB"]:::danger
+        U2["Logits<br/>50 GB"]:::danger
+        U3["Model + Optim<br/>7.2 GB"]:::warn
+        U4["Grad + Overhead<br/>2 GB"]:::warn
+    end
+    subgraph OPT["With Optimizations  ·  ~20 GB"]
+        direction TB
+        O1["Checkpointed Activations<br/>3.2 GB"]:::good
+        O2["Chunked CE Logits<br/>0.3 GB"]:::good
+        O3["Model + Optim<br/>7.2 GB"]:::good
+        O4["Grad + Overhead<br/>5.7 GB"]:::good
+    end
+    UNOPT ==>|"78% peak memory cut"| OPT
+
+    classDef danger fill:#fecaca,stroke:#b91c1c,color:#000
+    classDef warn fill:#fde68a,stroke:#b45309,color:#000
+    classDef good fill:#bbf7d0,stroke:#15803d,color:#000
+```
+
+**Stack (7 techniques):** gradient checkpointing &middot; chunked cross-entropy &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; `channels_last` &middot; fused AdamW.
+
+### Text Alternative (ASCII)
+
 ```
 Input Token IDs
        │
@@ -140,6 +222,7 @@ Input Token IDs
        ▼
   Chunked Cross-Entropy (65K tokens/chunk)
 ```
+
 
 ### Key Design Decisions
 
