@@ -164,15 +164,7 @@ class Transformer(nn.Module):
         return logits
 
     def get_num_params(self, non_embedding=True):
-        """Return the parameter count.
-
-        With ``non_embedding=True`` both embedding-like matrices are excluded:
-        the input embedding *and* the output projection (which, per the README's
-        "no weight tying" note, is a separate learnable matrix but is still an
-        embedding-shaped parameter). This matches the definition used in
-        ``build_transformer``'s printout and the README's "non-embedding
-        params" figure (~252M for the 515M config).
-        """
+        """Return the parameter count (subtracts input embedding and output proj when non_embedding=True)."""
         n_params = sum(p.numel() for p in self.parameters())
         if non_embedding:
             n_params -= self.input_embedding.embedding.weight.numel()
@@ -180,7 +172,6 @@ class Transformer(nn.Module):
         return n_params
 
     def enable_gradient_checkpointing(self):
-        """Enable gradient checkpointing to reduce peak memory ~55%."""
         self.gradient_checkpointing = True
 
     def disable_gradient_checkpointing(self):
@@ -188,17 +179,7 @@ class Transformer(nn.Module):
 
 
 def chunked_cross_entropy(logits, targets, chunk_size=65536, ignore_index=-100):
-    """Memory-efficient cross-entropy processing logits in chunks.
-    
-    Reduces peak logits memory from O(B*S*V) to O(chunk_size*V) (~100x reduction).
-    Numerically identical to unchunked F.cross_entropy with reduction='mean'.
-    
-    Args:
-        logits: (B*S, V) tensor of raw logits
-        targets: (B*S,) tensor of target token IDs
-        chunk_size: number of tokens per chunk
-        ignore_index: target value to ignore in loss
-    """
+    """Memory-efficient cross-entropy processing logits in chunks."""
     total_loss = torch.tensor(0.0, device=logits.device)
     total_count = torch.tensor(0, device=logits.device, dtype=torch.long)
 

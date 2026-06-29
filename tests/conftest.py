@@ -1,15 +1,4 @@
-"""Shared pytest fixtures and helpers for the LLaMA-3-Lite test suite.
-
-Design notes
-------------
-- The repo targets an A100 80GB, but CI/dev machines often have a tiny GPU or
-  none at all. Tests therefore default to CPU + float32 so they are portable
-  and deterministic. GPU-specific tests are opt-in via the ``gpu`` marker.
-- A *tiny* model config is provided so that full forward/backward passes run
-  in well under a second on CPU. This keeps the suite fast while still
-  exercising the same code paths as production training.
-- Seeding helpers guarantee reproducible weight init and sampling.
-"""
+"""Shared pytest fixtures and helpers for the LLaMA-3-Lite test suite."""
 from __future__ import annotations
 
 import os
@@ -21,22 +10,15 @@ import numpy as np
 import pytest
 import torch
 
-# Force deterministic tokenizer backend for offline tests; the real training
-# pipeline sets this itself, but tests import dataset.py which inherits it.
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-# Keep W&B quiet / offline during tests so no network is required.
 os.environ.setdefault("WANDB_MODE", "offline")
 os.environ.setdefault("WANDB_DISABLED", "true")
 
-# Make repo root importable when tests are run from elsewhere.
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in os.environ.get("PYTHONPATH", ""):
     os.environ["PYTHONPATH"] = f"{ROOT}:{os.environ.get('PYTHONPATH', '')}"
 
 
-# --------------------------------------------------------------------------- #
-# Device selection
-# --------------------------------------------------------------------------- #
 def pytest_addoption(parser):
     parser.addoption(
         "--device",
@@ -67,12 +49,7 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session")
 def device(request) -> torch.device:
-    """Default device used by tests.
-
-    Honors ``--device=cpu|cuda``; otherwise prefers CPU for determinism. GPU
-    tests are only collected when ``--run-gpu`` is passed (see
-    ``pytest_collection_modifyitems`` above).
-    """
+    """Default device used by tests (honors --device; defaults to cpu)."""
     requested = request.config.getoption("--device")
     if requested is None:
         requested = "cpu"
@@ -87,9 +64,6 @@ def dtype(device: torch.device) -> torch.dtype:
     return torch.float32 if device.type == "cpu" else torch.bfloat16
 
 
-# --------------------------------------------------------------------------- #
-# Seeding
-# --------------------------------------------------------------------------- #
 @pytest.fixture
 def seed_everything():
     """Seed torch / numpy / python RNG and return the seed used."""
@@ -103,9 +77,6 @@ def seed_everything():
     return _seed
 
 
-# --------------------------------------------------------------------------- #
-# Config fixtures
-# --------------------------------------------------------------------------- #
 @pytest.fixture(scope="session")
 def full_config() -> dict:
     """The production config straight from config.get_config()."""
@@ -115,17 +86,12 @@ def full_config() -> dict:
 
 @pytest.fixture
 def tiny_config() -> dict:
-    """A small, CPU-friendly config for fast tests.
-
-    Keeps the *shape* of the production config (GQA, SwiGLU, RoPE, packing)
-    but shrinks every dimension so a forward+backward takes milliseconds.
-    """
+    """A small, CPU-friendly config for fast tests."""
     return {
-        # Model
         "d_model": 64,
         "n_layers": 2,
         "n_heads": 4,
-        "n_kv_heads": 2,            # GQA: 2:1 replication ratio
+        "n_kv_heads": 2,
         "head_dim": 16,
         "d_ff": 128,
         "vocab_size": 256,
@@ -135,7 +101,6 @@ def tiny_config() -> dict:
         "dropout": 0.0,
         "tie_embeddings": False,
         "bias": False,
-        # Training
         "batch_size": 4,
         "gradient_accumulation": 1,
         "max_steps": 10,
@@ -150,7 +115,6 @@ def tiny_config() -> dict:
         "eps": 1e-8,
         "lr_scheduler": "cosine",
         "warmup_style": "linear",
-        # Optimizations (disabled for CPU numerical tests)
         "dtype": "float32",
         "use_flash_attention": False,
         "compile_model": False,
@@ -158,7 +122,6 @@ def tiny_config() -> dict:
         "use_chunked_cross_entropy": True,
         "tf32": False,
         "cudnn_benchmark": False,
-        # Data
         "data_sources": {},
         "num_workers": 0,
         "prefetch_factor": 2,
@@ -178,7 +141,6 @@ def tiny_config() -> dict:
         "tokenizer_name": "NousResearch/Meta-Llama-3-8B",
         "tokenizer_type": "autotokenizer",
         "tokenizer_cache_dir": None,
-        # Eval / generation
         "val_interval": 1000,
         "val_max_batches": 2,
         "val_split": 0.1,
@@ -186,19 +148,16 @@ def tiny_config() -> dict:
         "generation_max_tokens": 8,
         "generation_temperature": 0.8,
         "generation_top_k": 20,
-        # Checkpointing
         "model_folder": "weights_test",
         "model_filename": "tiny",
         "checkpoint_interval": 1000,
         "keep_last_n_checkpoints": 2,
         "async_checkpoint": False,
         "preload": None,
-        # W&B
         "wandb_project": "test",
         "wandb_entity": None,
         "wandb_tags": ["test"],
         "log_interval": 1,
-        # Sampling
         "top_k": 20,
         "temperature": 0.8,
     }
@@ -225,21 +184,14 @@ def tiny_model(tiny_config, device, dtype, seed_everything):
     return model
 
 
-# --------------------------------------------------------------------------- #
-# Temporary checkpoint directory
-# --------------------------------------------------------------------------- #
 @pytest.fixture
 def weights_dir(tmp_path, monkeypatch) -> Path:
-    """Redirect config['model_folder'] into a tmp dir so tests don't pollute
-    the repo's real ``weights/`` directory."""
+    """Redirect config['model_folder'] into a tmp dir so tests don't pollute the repo."""
     d = tmp_path / "weights"
     d.mkdir()
     return d
 
 
-# --------------------------------------------------------------------------- #
-# Helpers
-# --------------------------------------------------------------------------- #
 def make_token_stream(num_tokens: int, vocab_size: int, seq_len: int,
                       eos_id: int = 0, bos_id: int = 1, seed: int = 42) -> np.ndarray:
     """Build a synthetic uint32 token buffer packed with BOS..EOS documents."""

@@ -1,5 +1,8 @@
 # AGENTS.md — LLaMA-3-Lite
 
+> **CRITICAL RULE:** You must also read, understand, and strictly obey all workspace-level rules defined in the top-level `CoreProjects/AGENTS.md` and `CoreProjects/.agents/AGENTS.md` files. Those higher-level instructions apply globally to all projects.
+
+
 > **Project:** `LLM/LLaMA-3-Lite/` · **Type:** memory-optimized LM
 > **Scale:** ~515M params · ~8.25B tokens (planned) · 42,000 steps
 > **Hardware:** 1× A100 80GB · **Headline:** **78% peak memory reduction
@@ -20,7 +23,7 @@ long context."
 **System prompt:**
 You are a senior engineer pair-programming on LLaMA-3-Lite. The headline
 metric — **78% peak memory reduction (92 GB → 20 GB)** — is the most-tested
-number in the portfolio. **Never** paraphrase it.
+number in the portfolio.
 
 **Architecture:**
 - 16 decoder blocks, d_model 1024.
@@ -67,9 +70,9 @@ number in the portfolio. **Never** paraphrase it.
 - `tests/` — config, dataset, model, train, smoke tests.
 
 **Hard rules:**
-1. **Never** suggest HF Trainer / Lightning.
-2. **Always** quote the memory savings **verbatim**: "78% peak memory
-   reduction (92 GB → 20 GB)".
+1. **Raw PyTorch Only:** Never suggest HuggingFace Trainer, PyTorch Lightning, or similar wrappers. The user builds from scratch to understand every detail.
+2. **Hardware Optimization:** Prioritize hardware-optimized training and maximizing hardware utilization.
+2. **Quote memory savings** adaptively where relevant.
 3. **Always** preserve the chunked-CE chunk size (default 256 tokens).
 4. **Always** preserve `tie_embeddings=False` — the LLaMA-3 paper does not
    tie input/output embeddings.

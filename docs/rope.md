@@ -855,3 +855,61 @@ For `B = 96, H = 8, S = 2048, D = 128`:
 ---
 
 *Document generated for the LLaMA-3-Lite repository. The content is keyed to `model.py:17–33` (the `RoPE` class) and to its call sites in `GroupedQueryAttention.forward` (`model.py:72–73`).*
+
+---
+
+## Appendix — Why θ = 500 000 is load-bearing
+
+**Hard rule (AGENTS.md §5):** `rope_theta = 500000.0` is load-bearing for
+long-context extrapolation. Reducing it to 10 000 (the LLaMA-2 value) cuts
+context quality dramatically.
+
+### What θ controls
+
+`θ_i = θ_base^(-2i / head_dim)`. For a fixed pair index `i`, **increasing**
+`θ_base` **decreases** `θ_i`, which **increases** the wavelength. So a
+larger `theta` gives longer-range position encoding.
+
+### LLaMA-3's 50× jump (10 000 → 500 000)
+
+| `θ_base` | Slowest wavelength | Extrapolation range |
+|----------|---------------------|---------------------|
+| 10 000 (LLaMA-2) | ~12 K tokens | modest |
+| 500 000 (LLaMA-3) | ~9 300 K tokens | very long (128K context) |
+
+The 50× jump is what makes LLaMA-3 capable of 128K-token contexts after
+training on much shorter sequences — the longest-wavelength planes don't
+wrap around `2π` until you've gone very far. For `head_dim = 128` and
+`base = 500 000`, the slowest plane spins only ~0.00067 rad/token, so at
+the end of a 2048-token context it has rotated only ~1.4 rad (less than a
+quarter turn) — no information lost to aliasing within the training
+context.
+
+### Why Q and K (but not V)
+
+Attention scores are `Q Kᵀ`. The relative-position property
+`⟨RoPE(q, m), RoPE(k, n)⟩ = f(q, k, m − n)` only holds when **both**
+vectors in the dot product are rotated. Rotating only one leaks absolute
+position information asymmetrically. The value vector `v` is *weighted* by
+the (already position-aware) attention scores, so it only needs to carry
+content, not position — rotating `v` would add no information and make the
+output's coordinate frame position-dependent in a confusing way.
+
+### Why `register_buffer` for the cos/sin tables
+
+`cos_cached` and `sin_cached` are not learnable (derived from `theta` and
+`head_dim`), must follow `.to(device)`, and must be in `state_dict()` for
+exact reproduction. `register_buffer` is the only PyTorch mechanism that
+satisfies all three. The trig is computed **once** at construction; the
+forward pass never calls `torch.cos`/`torch.sin` — just multiplies
+pre-computed values (~1 MB of tables per RoPE module, 16 MB across the
+whole model).
+
+### Interaction with GQA and Flash-Attention-2
+
+RoPE is applied to Q and K *before* the GQA replication step
+(`expand`/`reshape`), so all replicated KV copies carry the same rotation.
+Flash-Attention-2 doesn't care that Q and K have been rotated; the
+relative-position property holds inside the flash kernel. Because RoPE is
+an **orthogonal** transformation, it doesn't change magnitudes or SDPA's
+memory characteristics.

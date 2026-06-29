@@ -81,7 +81,7 @@ python train.py  # Start training with one command
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/LLaMA-3-Lite.git
+git clone https://github.com/atandra2000/LLaMA-3-Lite.git
 cd LLaMA-3-Lite
 
 # Install PyTorch (CUDA 12.1)
@@ -450,7 +450,7 @@ Contributions are welcome! Please follow these guidelines:
 
 ### Reporting Issues
 
-- Use the [GitHub Issues](https://github.com/yourusername/LLaMA-3-Lite/issues) tracker
+- Use the [GitHub Issues](https://github.com/atandra2000/LLaMA-3-Lite/issues) tracker
 - Include: Python version, PyTorch version, GPU model, CUDA version
 - Provide minimal reproduction steps for bugs
 
@@ -513,9 +513,9 @@ SOFTWARE.
 
 ## Support
 
-- **Documentation**: This README and inline code comments
-- **Issues**: [GitHub Issues](https://github.com/yourusername/LLaMA-3-Lite/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/LLaMA-3-Lite/discussions)
+- **Documentation**: This README and [`docs/README.md`](docs/README.md) (extracted rationale index)
+- **Issues**: [GitHub Issues](https://github.com/atandra2000/LLaMA-3-Lite/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/atandra2000/LLaMA-3-Lite/discussions)
 
 ---
 

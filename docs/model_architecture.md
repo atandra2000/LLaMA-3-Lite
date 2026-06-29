@@ -958,3 +958,73 @@ chunked CE:        scalar
 ---
 
 *Document generated for the LLaMA-3-Lite repository. The content is keyed to `model.py` line numbers and the configuration in `config.py` so the documentation and code stay in lock-step.*
+
+---
+
+## Appendix — Extracted rationale (from inline comments)
+
+For the deep first-principles theory, see [`../architecture.md`](../architecture.md)
+(1,234 lines). This appendix captures the design-rationale notes that
+previously lived as inline comments in `model.py`.
+
+### Architecture summary (LLaMA-3-style, 515M params)
+
+- **16 decoder blocks**, `d_model = 1024`.
+- **GQA**: 8 Q heads / 4 KV heads, `head_dim = 128` → KV cache 2× smaller
+  than MHA. `n_rep = n_heads // n_kv_heads = 2`.
+- **SwiGLU FFN** (`d_ff = 4096`), **fused gate+up projection** — reads the
+  input activation once instead of twice; one bigger GEMM kernel instead of
+  two smaller ones (a few-percent speedup).
+- **RoPE θ = 500 000** (LLaMA-3 base — long-context extrapolation; see
+  [`rope.md`](rope.md)).
+- **RMSNorm pre-norm** (drops mean-centering vs LayerNorm; ~7–10% faster,
+  empirically indistinguishable for transformers). Each sub-layer has its
+  own norm scale so attention and FFN contributions are calibrated
+  independently.
+- **vocab = 128 000** (LLaMA-3 tokenizer; runtime widened to 128 256 via
+  `max(config['vocab_size'], len(tokenizer))`).
+- **seq_len = 2048**.
+- **No weight tying** (`tie_embeddings = False`) — LLaMA-3 does not tie
+  input/output embeddings; the output projection is a separate learnable
+  `[D, V]` matrix.
+- **Gradient checkpointing** — trades ~25% per-step compute for ~78%
+  activation memory reduction (70 GB → 3.2 GB). `use_reentrant=False`
+  selects PyTorch's newer, non-reentrant implementation that is more
+  memory-efficient and plays nicely with `torch.compile`. Only triggers in
+  `.train()` mode; `.eval()` is a no-op.
+- **Weight init**: `N(0, 0.02)` for every `nn.Linear` and `nn.Embedding`
+  (GPT-2 / BERT convention — small variance prevents exploding activations
+  on the first forward pass).
+- **No biases** in any linear (`bias=False` throughout, LLaMA-3 style —
+  negligible quality gain, slightly fewer params/FLOPs).
+
+### `chunked_cross_entropy` rationale
+
+The full logits tensor at batch 96 × seq 2048 × vocab 128 256 is ~50 GB in
+BF16 — alone enough to OOM an A100-80GB. Chunking processes rows in
+`chunk_size = 256` token chunks and accumulates `total_loss / total_count`
+on-device (GPU-tensor accumulators avoid per-iteration CPU↔GPU syncs).
+Because cross-entropy is additive across rows, the chunked result is
+**numerically identical** (within 1e-5) to the unchunked
+`F.cross_entropy`. The edge case where every target is `ignore_index`
+returns a `requires_grad=True` zero tensor so autograd still produces a
+valid (zero-gradient) backward pass.
+
+### `get_num_params(non_embedding=True)` definition
+
+Subtracts **both** the input embedding and the output projection (both are
+`[V, D]`-shaped and conventionally excluded together). Matches the README's
+"non-embedding ≈ 252 M" figure. Note: the README/wandb definition and
+`model.get_num_params` must agree — see `tests/test_model.py::
+TestTransformerParamCount::test_get_num_params_definition_mismatch` for the
+regression that flags drift.
+
+### Param budget (515M config)
+
+| Group | Params | BF16 size |
+|-------|--------|-----------|
+| Input embedding `V·D` | 131 072 000 | 262 MB |
+| 16 × decoder block | 251 690 944 | ~480 MB |
+| Output projection `D·V` (untied) | 131 072 000 | 262 MB |
+| Final RMSNorm `γ` | 1 024 | 2 KB |
+| **Total** | **~515 M** | ~1 GB weights (BF16) |

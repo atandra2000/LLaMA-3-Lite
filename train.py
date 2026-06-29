@@ -244,9 +244,6 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
 def load_checkpoint(model, optimizer, scheduler, config, device):
     model_folder = Path(config['model_folder'])
-    # Sort by integer step suffix to avoid the lexical-sort trap where
-    # "step_10.pt" sorts before "step_9.pt". Mirrors the fix in
-    # config.latest_weights_file_path.
     checkpoints = sorted(
         model_folder.glob(f"{config['model_filename']}_step_*.pt"),
         key=lambda x: int(str(x.stem).split('_step_')[-1])
@@ -263,10 +260,6 @@ def load_checkpoint(model, optimizer, scheduler, config, device):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
-    # The CPU RNG state must be a CPU ByteTensor. torch.load(map_location=...)
-    # moves *all* tensors in the checkpoint to `device`, which corrupts the
-    # RNG state when resuming on a different device (e.g. GPU). Move it back
-    # to CPU explicitly. Same idea for the CUDA RNG state below.
     rng_torch = checkpoint['rng_torch']
     if isinstance(rng_torch, torch.Tensor):
         rng_torch = rng_torch.cpu().to(torch.uint8)
@@ -275,9 +268,6 @@ def load_checkpoint(model, optimizer, scheduler, config, device):
     random.setstate(checkpoint['rng_python'])
     if 'rng_cuda' in checkpoint and torch.cuda.is_available():
         rng_cuda = checkpoint['rng_cuda']
-        # torch.cuda.set_rng_state expects a CPU ByteTensor (it dispatches the
-        # state to the target device internally). torch.load(map_location=...)
-        # may have moved it to the load device, so force it back to CPU + uint8.
         if isinstance(rng_cuda, torch.Tensor):
             rng_cuda = rng_cuda.cpu().to(torch.uint8)
         torch.cuda.set_rng_state(rng_cuda)
@@ -333,7 +323,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"Estimated peak GPU memory: {est_peak:.1f} GB (A100 80GB available)")
     print(f"{'='*60}\n")
 
-    # torch.compile() for kernel fusion and operator optimization on A100
     if config.get('compile_model', True) and hasattr(torch, 'compile'):
         print("Compiling model with torch.compile()...")
         model = torch.compile(model)

@@ -867,3 +867,124 @@ The final checkpoint is saved **synchronously** (`is_final=True` bypasses async 
 ---
 
 *This document covers `train.py` at commit-time. For the model architecture, see [`model_architecture.md`](model_architecture.md). For the data pipeline, see [`data_prep.md`](data_prep.md). For the RoPE implementation, see [`rope.md`](rope.md).*
+
+---
+
+## Appendix — Extracted rationale (from inline comments)
+
+### Optimizer: AdamW with selective weight decay
+
+- **Decoupled weight decay** (AdamW, not Adam) — decay is applied directly
+  to the weights after the adaptive step, making it independent of gradient
+  history. Consistently outperforms Adam for LLMs.
+- **2D+ params only** — weight decay is restricted to weight matrices
+  (`dim() >= 2`); 1D params (RMSNorm scales, biases) are exempt. Decaying
+  RMSNorm scales toward zero would collapse the normalization layer's
+  learned gains and harm training.
+- **`beta1 = 0.9`, `beta2 = 0.95`** — LLaMA-3 uses `0.95` rather than the
+  common `0.999` for `beta2` (a 20-step effective window vs ~1000). A
+  shorter window makes the adaptive scaling more responsive to recent
+  gradient magnitudes — beneficial in the large-batch regime where gradient
+  statistics change rapidly.
+- **`eps = 1e-8`** — denominator guard, rarely matters in practice.
+
+### LR schedule: cosine with linear warmup (3e-4 → 3e-5, 2000 warmup)
+
+- **Linear warmup (steps 0–2000)**: from ~0 to `peak_lr = 3e-4`. At start,
+  weights are random and gradients are large/noisy; a full LR would take
+  massive steps and destabilize the loss. Warmup lets the optimizer find a
+  reasonable direction before committing to large updates.
+- **Cosine decay (steps 2000–42000)**: from `peak_lr` down to `min_lr =
+  3e-5` (exactly 10× below peak). Cosine spends more time near the peak
+  (fast exploration) and more time near the minimum (careful refinement),
+  avoiding the abrupt cliff that linear decay produces.
+- **`min_lr` floor (3e-5)**: never decays to 0. Very small LRs stall
+  progress without improving loss, and zeroing the LR can stagnate Adam's
+  `m`/`v` accumulators.
+- **Hand-rolled scheduler** (`CosineWithWarmup`): a single `_step` counter
+  serializes cleanly into the checkpoint dict, avoiding the
+  resume-from-mid-run fragility of `torch.optim.lr_scheduler`. The
+  scheduler directly mutates `optimizer.param_groups[*]['lr']` so both the
+  `decay` and `no_decay` groups track the same LR (weight decay is the only
+  difference between them).
+
+### Mixed precision: BF16 + GradScaler + TF32 + torch.compile + FA2
+
+- **BF16 autocast** via `torch.autocast(dtype=torch.bfloat16)`: matmuls
+  run in BF16 on A100 tensor cores; reductions (softmax, RMSNorm) stay in
+  FP32 for numerical stability. BF16 is preferred over FP16 because it
+  shares FP32's 8-bit exponent range, so gradient underflow is very rare.
+- **`GradScaler`** kept enabled for correctness on mixed systems; rarely
+  needs to actually scale in BF16 training. Overhead is negligible.
+- **TF32** (`allow_tf32 = True`): ~3× faster FP32 matmuls on Ampere (10
+  mantissa bits). Safe because the model trains in BF16; TF32 only
+  affects residual FP32 matmuls (e.g. optimizer state updates).
+- **`torch.compile()`** (PyTorch 2.0+): TorchDynamo traces the graph and
+  TorchInductor generates fused Triton kernels. Operator fusion merges
+  elementwise ops (e.g. `silu(gate) * up`), eliminating intermediate
+  allocations and kernel-launch overhead. One-time compile penalty on
+  the first 1–3 steps; negligible over 42 000 steps.
+- **Flash-Attention 2**: `F.scaled_dot_product_attention(is_causal=True)`
+  dispatches to the FA2 / memory-efficient kernel on A100 — O(S) memory
+  instead of O(S²), 2–3× speedup.
+
+### Async CPU→GPU transfer (double-buffered CUDA stream)
+
+A separate `data_stream` overlaps CPU→GPU H2D copy with GPU compute on the
+previous batch. `non_blocking=True` issues a DMA transfer from pinned host
+memory (`pin_memory=True` in the DataLoader) without blocking the CPU
+thread; sync happens when the GPU needs the tensor. Worth **5–15%**
+throughput; the `train/data_wait_ms` W&B metric measures residual stall.
+
+### Checkpointing: full RNG-state restore, async I/O
+
+- **Full RNG state** saved in every checkpoint: `rng_torch`, `rng_numpy`,
+  `rng_python`, and `rng_cuda` (when CUDA is available). Restoring all
+  four sources of randomness is the key enabler of **exact reproducibility**
+  — the resumed run is bit-identical to a hypothetical uninterrupted run.
+- **`config` snapshot** saved inside the checkpoint so hyperparameters can
+  be reconstructed weeks later even if `config.py` changes.
+- **Async I/O**: `torch.save` offloaded to a daemon thread so the training
+  loop keeps computing the next batch while I/O happens concurrently.
+  `checkpoint_copy` (shallow copy of the state dict) ensures the background
+  thread works on its own reference; without it, `zero_grad()` could
+  corrupt the saved checkpoint before the thread finishes.
+- **CPU-ByteTensor fix for RNG state**: `torch.load(map_location=device)`
+  moves *all* tensors to the load device — including the RNG state tensor,
+  which `torch.random.set_rng_state()` expects to be a CPU ByteTensor. The
+  explicit `.cpu().to(torch.uint8)` coercion in `load_checkpoint` makes
+  cross-device resume work (regression test: `test_train.py::
+  test_load_restores_rng_state_cross_device`).
+- **Final checkpoint** writes two files: a full-state checkpoint (for
+  exact reproducibility) and a weights-only file (for inference / sharing
+  without 3× optimizer-state overhead).
+- **`cleanup_old_checkpoints`** sorts by the **integer** step suffix (not
+  lexicographically) to avoid the `step_10.pt < step_9.pt` trap; keeps the
+  last `keep_last_n_checkpoints` (default 3).
+
+### Periodic actions
+
+- **Validation every 2 000 steps** (100 batches): `torch.cuda.reset_peak_memory_stats()` is called first so the logged peak reflects only the validation pass. A separate `_best.pt` is saved whenever a new validation-loss minimum is achieved.
+- **Sample generation every 20 000 steps**: 5 prompts × 128 tokens with top-k/top-p sampling. Deliberately infrequent — expensive (no KV cache) and only useful once the model has learned enough to produce readable text.
+- **Checkpointing every 5 000 steps** (keep 3): `active_save_threads` set polled at the end of every step to reap completed threads.
+
+### Sampling: temperature + top-k + top-p
+
+- **Temperature**: `logits / temperature`. `< 1.0` sharpens, `> 1.0`
+  flattens. Default `0.8`.
+- **Top-k**: zero out (to `-inf`) all but the `top_k` highest logits.
+  Eliminates the long tail of negligible-probability tokens.
+- **Top-p (nucleus)**: keep the smallest set whose cumulative probability
+  exceeds `top_p` (default 0.9). Adapts to the distribution shape — few
+  tokens when confident, many when uncertain. The
+  `[..., 1:] = [..., :-1]` shift is critical: cumsum exceeds the threshold
+  *after* adding a token, so we shift the mask one position right to
+  include the token that crossed the threshold.
+
+### Signal handlers
+
+`SIGTERM` / `SIGINT` handlers save an emergency checkpoint via a
+`global_state` closure and `wandb.finish()` before `sys.exit(1)`. Without
+this, preemption (HPC scheduler, Ctrl+C) loses all training since the last
+checkpoint. The step in `global_state['step']` is updated at the top of
+each loop iteration, so at most one step's worth of computation is lost.

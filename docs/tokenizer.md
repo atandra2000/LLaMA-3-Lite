@@ -759,3 +759,56 @@ All tokenizer-related keys from `config.py`:
 ---
 
 *Document generated for the LLaMA-3-Lite repository. The content is keyed to `dataset.py` and `train.py` line numbers so the documentation and code stay in lock-step.*
+
+---
+
+## Appendix — LLaMA-3 tokenizer rationale (from inline comments)
+
+### Tokenizer artifacts
+
+`NousResearch/Meta-Llama-3-8B` (public re-upload of Meta's LLaMA-3
+tokenizer, no gated access). Byte-level BPE with the TikToken-style regex
+pre-tokenizer; Rust backend wrapped by `transformers.AutoTokenizer`.
+
+### Vocabulary properties
+
+| Property | Value |
+|----------|-------|
+| `vocab_size` (`len(tokenizer)`) | **128 256** |
+| Base byte alphabet | 256 (UTF-8 bytes) |
+| Number of merges | 128 000 |
+| Reserved special tokens | 256 (IDs 128 000–128 255) |
+| `<\|begin_of_text\|>` (BOS) | 128 000 |
+| `<\|end_of_text\|>` (EOS) | 128 001 |
+| Native `<pad>` | **none** — LLaMA-3 does not define one |
+
+The vocab is 8× larger than GPT-2's 50 257, dramatically improving
+multilingual and code-token efficiency.
+
+### `pad_token = eos_token` patch
+
+`build_tokenizer` sets `tokenizer.pad_token = tokenizer.eos_token` because
+LLaMA-3 ships without a native pad token. Safe because pad positions get
+`ignore_index = pad_id` in `chunked_cross_entropy` — the model never gets a
+gradient signal to predict an EOS in pad position.
+
+### Runtime vocab widening
+
+`real_vocab_size = max(config['vocab_size'], len(tokenizer))` guards
+against config drift (`config['vocab_size'] = 128000` vs actual tokenizer
+size 128 256) and tokenizer upgrades. The embedding/output-projection
+tensors are constructed to the **larger** of the two numbers.
+
+### uint32 storage
+
+`_TOKEN_DTYPE = np.uint32` — the smallest safe dtype for vocab IDs up to
+~4.3 B. For 128 256 tokens: 4 bytes/token × 4 B tokens target ≈ 16 GB on
+disk. `np.memmap(..., mode='r')` lets the OS page in 4 KB chunks on demand
+— resident memory stays tiny while the file can be many GB.
+
+### Per-document wrapping (not per-cache)
+
+The data pipeline calls the tokenizer with `add_special_tokens=False` and
+wraps each document manually: `[BOS] ids [EOS]`. Letting the tokenizer add
+special tokens would prepend a single BOS to the entire cache, not one per
+document — the only sane interpretation is one BOS/EOS pair per document.

@@ -3,7 +3,6 @@ from pathlib import Path
 
 def get_config():
     return {
-        # Model Architecture — LLaMA 3 (515M parameters)
         'd_model':              1024,
         'n_layers':             16,
         'n_heads':              8,
@@ -18,8 +17,6 @@ def get_config():
         'tie_embeddings':       False,
         'bias':                 False,
 
-        # Training — Optimized for A100 80GB SXM
-        # BS=96 with gradient checkpointing + chunked CE fits ~20GB (vs ~92GB without)
         'batch_size':           96,
         'gradient_accumulation': 1,
         'max_steps':            42000,
@@ -29,29 +26,24 @@ def get_config():
         'weight_decay':         0.1,
         'max_grad_norm':        1.0,
 
-        # Optimizer — AdamW with decoupled weight decay (2D+ params only)
         'optimizer':            'AdamW',
         'beta1':                0.9,
         'beta2':                0.95,
         'eps':                  1e-8,
 
-        # LR Schedule — Cosine with linear warmup
         'lr_scheduler':         'cosine',
         'warmup_style':         'linear',
 
-        # A100 Optimizations
         'dtype':                'bfloat16',
         'use_flash_attention':  True,
         'compile_model':        True,
-        'gradient_checkpointing': True,  # ~55% memory reduction
-        'use_chunked_cross_entropy': True,  # ~100x logits memory reduction
+        'gradient_checkpointing': True,
+        'use_chunked_cross_entropy': True,
 
-        # GPU System Configuration
-        'tf32':                 True,  # ~3x matmul speedup on A100
+        'tf32':                 True,
         'cudnn_benchmark':      True,
         'cuda_alloc_conf':      'expandable_segments:True',
 
-        # Data Sources — Multi-source code + text mix
         'data_sources': {
             'fineweb_edu':           {'weight': 0.5, 'source': 'HuggingFaceFW/fineweb-edu',
                                       'split': 'train'},
@@ -77,7 +69,6 @@ def get_config():
         'document_packing':      True,
         'target_tokens':         4_000_000_000,
 
-        # Data Pipeline — Streaming + Disk-Backed Token Cache
         'data_cache_dir':        'data_cache',
         'data_cache_filename':   'tokens.bin',
         'reuse_data_cache':      True,
@@ -89,12 +80,10 @@ def get_config():
         'max_doc_tokens':        8192,
         'tokenize_batch_size':   1000,
 
-        # Tokenizer — LLaMA 3 (128K vocab)
         'tokenizer_name':       'NousResearch/Meta-Llama-3-8B',
         'tokenizer_type':       'autotokenizer',
         'tokenizer_cache_dir':  None,
 
-        # Validation & Generation
         'val_interval':         2000,
         'val_max_batches':      100,
         'val_split':            0.05,
@@ -103,7 +92,6 @@ def get_config():
         'generation_temperature': 0.8,
         'generation_top_k':     50,
 
-        # Checkpointing
         'model_folder':         'weights',
         'model_filename':      'llama3-515M',
         'checkpoint_interval':  5000,
@@ -111,13 +99,11 @@ def get_config():
         'async_checkpoint':     True,
         'preload':              None,
 
-        # W&B Logging
         'wandb_project':        'langgpt-llama3-pretrain',
         'wandb_entity':         None,
         'wandb_tags':           ['llama3', '515M', 'a100', 'pretrain', 'code'],
         'log_interval':         50,
 
-        # Sampling
         'top_k':                50,
         'temperature':          0.8,
     }
@@ -130,20 +116,13 @@ def get_weights_file_path(config, step: int):
 
 
 def latest_weights_file_path(config):
-    """Return the path to the highest-numbered checkpoint, or None.
-
-    Sorts by the integer step number embedded in the filename so that
-    ``step_20.pt`` is correctly chosen over ``step_9.pt`` (a plain lexical
-    sort would pick ``step_9.pt`` because '9' > '2' as characters).
-    """
+    """Return the path to the highest-numbered checkpoint, or None."""
     model_folder = Path(config['model_folder'])
     if not model_folder.exists():
         return None
     checkpoints = list(model_folder.glob(f"{config['model_filename']}_step_*.pt"))
     if not checkpoints:
         return None
-    # Sort by the integer step suffix to avoid the lexical-sort trap
-    # (e.g. "step_10.pt" vs "step_9.pt"). Mirrors cleanup_old_checkpoints.
     checkpoints.sort(
         key=lambda x: int(str(x.stem).split('_step_')[-1])
         if str(x.stem).split('_step_')[-1].isdigit() else -1

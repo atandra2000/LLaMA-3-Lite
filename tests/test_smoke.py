@@ -1,10 +1,4 @@
-"""End-to-end smoke tests for the training pipeline.
-
-These run a *tiny* number of training steps on synthetic in-memory data
-(no tokenizer download, no W&B) and assert that loss decreases and the model
-state actually changes. They are the cheapest way to catch integration
-regressions (e.g. config keys going missing, dataloader/sampler mismatches).
-"""
+"""End-to-end smoke tests for the training pipeline on synthetic data."""
 from __future__ import annotations
 
 import os
@@ -26,11 +20,9 @@ def tiny_dataloaders(tiny_config):
     seq_len = tiny_config["seq_len"]
     vocab = tiny_config["vocab_size"]
     eos, bos = 0, 1
-    # Enough tokens for several chunks in both splits.
     n_tokens = (seq_len + 1) * 32 + 10
     data = make_token_stream(n_tokens, vocab, seq_len, eos_id=eos, bos_id=bos,
                              seed=0)
-    # Chunk-align the split.
     chunk = seq_len + 1
     split = (int(len(data) * (1.0 - tiny_config["val_split"])) // chunk) * chunk
     train_ds = ds.PackedDataset(data[:split], seq_len, eos)
@@ -59,8 +51,6 @@ class TestEndToEndSmoke:
         logits = tiny_model(ids)
         loss = F.cross_entropy(logits.view(-1, logits.size(-1)), tgt.view(-1))
         loss.backward()
-        # Check grads BEFORE zero_grad (PyTorch defaults to set_to_none=True,
-        # so grads would be None after the step otherwise).
         grad_snapshot = {name: (p.grad is not None,
                                  p.grad.isfinite().all().item() if p.grad is not None else False)
                          for name, p in tiny_model.named_parameters()}
@@ -69,19 +59,13 @@ class TestEndToEndSmoke:
 
         assert torch.isfinite(loss).item()
         assert loss.item() > 0
-        # Every parameter must have received a finite grad from backward.
         for name, (has_grad, is_finite) in grad_snapshot.items():
             assert has_grad, f"no grad for {name}"
             assert is_finite, f"non-finite grad for {name}"
 
     def test_loss_decreases_over_few_steps(self, tiny_config, device,
                                             seed_everything):
-        """Sanity check: a tiny model can overfit a single batch.
-
-        If loss does not go down on a single repeated batch, something is
-        fundamentally broken (init scale, gradient flow, optimizer wiring).
-        This is *not* a generalization claim — it's a wiring smoke test.
-        """
+        """Sanity check: a tiny model can overfit a single batch."""
         from model import build_transformer
         seed_everything(0)
         model = build_transformer(
@@ -141,7 +125,6 @@ class TestEndToEndSmoke:
                                                     monkeypatch):
         """``validate`` calls wandb.log; stub it so the test is offline."""
         train_dl, val_dl = tiny_dataloaders
-        # Stub out wandb.log used inside validate.
         import wandb
         calls = []
         monkeypatch.setattr(wandb, "log", lambda *a, **k: calls.append((a, k)),
@@ -151,5 +134,4 @@ class TestEndToEndSmoke:
                                   step=0, config=tiny_config)
         assert np.isfinite(loss)
         assert loss > 0
-        # validate logs val/loss and val/perplexity.
         assert len(calls) == 1

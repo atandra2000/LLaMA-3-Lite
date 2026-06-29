@@ -1,19 +1,5 @@
 #!/usr/bin/env python
-"""Data pipeline benchmark for LLaMA-3-Lite.
-
-This is the script referenced in the README:
-
-    python benchmark_data.py --steps 50 --batch_size 96 --seq_len 2048
-
-It measures the throughput of the synthetic-token data path (token buffer
--> PackedDataset -> collate -> DataLoader) on the chosen device. It does
-NOT download HuggingFace data, so it can be used to profile dataloader /
-prefetch behavior in isolation on any machine (CPU or GPU).
-
-The benchmark is deliberately separate from the model forward pass so you
-can attribute throughput to the data pipeline alone. Pair with a model
-forward benchmark to find whether you're compute- or data-bound.
-"""
+"""Data pipeline benchmark for LLaMA-3-Lite (no HuggingFace download)."""
 from __future__ import annotations
 
 import argparse
@@ -65,18 +51,15 @@ def benchmark(steps: int, batch_size: int, seq_len: int, vocab_size: int,
         persistent_workers=num_workers > 0,
     )
 
-    # Optional tiny model for an end-to-end (data + forward) benchmark.
     model = None
     if with_model_forward:
         from model import build_transformer
-        # Keep the model small so we measure the data path primarily.
         model = build_transformer(
             vocab_size=vocab_size, d_model=128, n_layers=2, n_heads=4,
             n_kv_heads=2, head_dim=32, d_ff=512, max_seq_len=seq_len,
             rope_theta=500000.0,
         ).to(device).eval()
 
-    # Warmup: prefetch the first batch outside the timed loop.
     it = iter(loader)
     warm = next(it)
     _ = warm["input"].to(device, non_blocking=True)

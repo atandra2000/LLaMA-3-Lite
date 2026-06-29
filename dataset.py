@@ -2,6 +2,7 @@ import hashlib
 import os
 import random
 import struct
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -10,15 +11,81 @@ from datasets import interleave_datasets, load_dataset
 from torch.utils.data import DataLoader, Dataset, Sampler
 from transformers import AutoTokenizer
 
+_LLM_ROOT = Path(__file__).resolve().parents[2]  # .../LLM/
+if str(_LLM_ROOT) not in sys.path:
+    sys.path.insert(0, str(_LLM_ROOT))
+
 _TOKEN_DTYPE = np.uint32
 
 
+class UniversalShardDataset(Dataset):
+    """Dataset over the universal-shard corpus produced by ``shared_data``."""
+
+    def __init__(self, seq_len: int, *, data_root=None):
+        from shared_data.common import set_data_root as _set_root
+        from shared_data.shard_reader import (
+            load_manifest,
+            open_shard_memmaps,
+        )
+
+        if data_root is not None:
+            _set_root(Path(data_root))
+
+        self.seq_len = int(seq_len)
+        self.manifest = load_manifest()
+        self.shards = open_shard_memmaps(self.manifest)
+        if not self.shards:
+            raise FileNotFoundError(
+                f"No shards found under {data_root or 'data/'}. "
+                "Run the universal pipeline first: "
+                "python data/prepare_data.py --stage pretrain"
+            )
+
+        self._cache_idx = -1
+        self._cache_arr = None
+
+        offsets = np.cumsum([0] + [s.n_tokens for s in self.shards])
+        self._shard_offsets = offsets  # len = n_shards + 1
+        total_tokens = int(offsets[-1])
+        self.n_chunks = max(0, total_tokens // (self.seq_len + 1))
+
+    def _get_window(self, chunk_idx: int) -> np.ndarray:
+        """Return the ``(seq_len+1)``-token window for ``chunk_idx``."""
+        import bisect
+        start = chunk_idx * (self.seq_len + 1)
+        end = start + self.seq_len + 1
+        shard_idx = bisect.bisect_right(self._shard_offsets, start) - 1
+        local_start = start - int(self._shard_offsets[shard_idx])
+        if local_start + self.seq_len + 1 <= self.shards[shard_idx].n_tokens:
+            arr = self.shards[shard_idx].mmap
+            return np.array(arr[local_start: local_start + self.seq_len + 1],
+                            copy=True)
+        out = np.empty(self.seq_len + 1, dtype=np.uint32)
+        filled = 0
+        pos = start
+        while filled < self.seq_len + 1:
+            shard_idx = bisect.bisect_right(self._shard_offsets, pos) - 1
+            sh = self.shards[shard_idx]
+            local_pos = pos - int(self._shard_offsets[shard_idx])
+            take = min(self.seq_len + 1 - filled, sh.n_tokens - local_pos)
+            out[filled:filled + take] = sh.mmap[local_pos: local_pos + take]
+            filled += take
+            pos += take
+        return out
+
+    def __len__(self) -> int:
+        return self.n_chunks
+
+    def __getitem__(self, idx: int) -> dict:
+        chunk = self._get_window(int(idx))
+        return {
+            'input': torch.from_numpy(chunk[:-1]).long(),
+            'target': torch.from_numpy(chunk[1:]).long(),
+        }
+
+
 class PackedDataset(Dataset):
-    """Packed dataset backed by memory-mapped uint32 file on disk.
-    
-    File is 4*N bytes for N tokens. Chunks are non-overlapping windows of
-    (seq_len + 1) tokens. __getitem__ returns input/target as torch tensors.
-    """
+    """Packed dataset backed by memory-mapped uint32 file on disk."""
 
     def __init__(self, mmap_array: np.ndarray, seq_len: int, eos_id: int,
                  indices: np.ndarray | None = None):
@@ -107,16 +174,12 @@ def _has_lang_field(example, languages) -> bool:
 
 
 def _build_source_streams(config, sources, probs):
-    """Populate sources and probs from config['data_sources'].
-    
-    Expands multi-source entries, giving each sub-source equal share of parent weight.
-    """
+    """Populate sources and probs from config['data_sources'], expanding multi-source entries."""
     for name, cfg in config['data_sources'].items():
         weight = cfg.get('weight', 0.0)
         if weight <= 0:
             continue
 
-        # Expand multi-source entries. Each sub-source gets an equal share.
         sub_sources = cfg.get('sources', None)
         if sub_sources is None:
             sub_sources = [cfg['source']]
@@ -124,7 +187,6 @@ def _build_source_streams(config, sources, probs):
         sub_weight = weight / len(sub_sources)
 
         for sub in sub_sources:
-            # 'source:split' syntax is allowed in sub_source strings.
             if ':' in sub and not sub.startswith('http'):
                 source_name, split_name = sub.split(':', 1)
             else:
@@ -136,12 +198,10 @@ def _build_source_streams(config, sources, probs):
                 print(f"[data] WARNING: failed to load {source_name} ({split_name}): {exc}")
                 continue
 
-            # Language filter (closure-captured value to avoid late-binding bug).
             if 'languages' in cfg:
                 langs = cfg['languages']
                 ds = ds.filter(lambda x, _langs=langs: _has_lang_field(x, _langs))
 
-            # Text filter (closure-captured value to avoid late-binding bug).
             if 'filter' in cfg:
                 filt = cfg['filter']
                 mode = cfg.get('filter_mode', 'word')
@@ -164,11 +224,7 @@ def _normalize_probs(probs):
 
 
 def _stream_to_disk(config, tokenizer):
-    """Stream, tokenize, dedup, and write uint32 tokens to disk.
-    
-    Returns (train_arr, val_arr, metadata). Split at document boundaries.
-    Reuses cache if available and reuse_data_cache=True.
-    """
+    """Stream, tokenize, dedup, and write uint32 tokens to disk; returns (train_arr, val_arr, metadata)."""
     cache_dir = Path(config.get('data_cache_dir', 'data_cache'))
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / config.get('data_cache_filename', 'tokens.bin')
@@ -268,7 +324,6 @@ def _stream_to_disk(config, tokenizer):
         if not _write_doc(doc):
             break
 
-    # Trim buffer to actual size and persist.
     buf = buf[:write_pos]
     np.array(buf, dtype=_TOKEN_DTYPE).tofile(cache_path)
     with open(meta_path, 'w') as f:
@@ -279,7 +334,6 @@ def _stream_to_disk(config, tokenizer):
           f"Dropped: {dropped_short:,} short, {dropped_dup:,} duplicate.")
     print(f"[data] Cache written to {cache_path} ({cache_path.stat().st_size / 1e9:.2f} GB)")
 
-    # Reload as memmap and split at a document + chunk boundary.
     mmap = np.memmap(cache_path, dtype=_TOKEN_DTYPE, mode='r', shape=(len(buf),))
     val_split = config.get('val_split', 0.05)
     seq_len_plus_1 = config.get('seq_len', 2048) + 1

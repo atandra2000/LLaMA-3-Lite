@@ -1087,3 +1087,113 @@ For 1 B tokens: 4 GB. For 100 M tokens: 400 MB.
 ---
 
 *Document generated for the LLaMA-3-Lite repository. The content is keyed to `dataset.py` line numbers so the documentation and code stay in lock-step.*
+
+---
+
+## Appendix — Extracted rationale (from inline comments)
+
+### Data sources — the mix
+
+| Source | Weight | What it is |
+|--------|--------|------------|
+| `HuggingFaceFW/fineweb-edu` | 0.50 | High-quality educational web crawl |
+| `HuggingFaceFW/fineweb-edu` (code flag) | 0.10 | Same corpus, only docs containing the word "code" (`filter='code'`, `filter_mode='word'`) |
+| `bigcode/the-stack` (Python) | 0.20 | Permissively-licensed Python source |
+| `bigcode/the-stack` (multi-lang) | 0.05 | JS, TS, Rust, Go, C, C++, Java, SQL, Shell |
+| `wikimedia/wikipedia` (20231101.en) | 0.05 | English Wikipedia |
+| `open-phi/StackOverflow-QA` | 0.05 | Curated Q&A pairs |
+
+**Why this mix?** 50% web text for broad natural-language coverage, 30%
+code (code is a first-class training objective), 15% reference material
+(Wikipedia for factual grounding, StackOverflow for problem-solving
+patterns). Weights are **normalized** to sum to 1 in `_normalize_probs`.
+
+### Streaming-first, single-pass, single-file
+
+`dataset.py` turns the multi-source mixture into a single **packed,
+memory-mapped `uint32` token stream** on disk in one pass. Key properties:
+
+- **Streaming** (`load_dataset(streaming=True)`) — never downloads a full
+  corpus; pulls shards on demand.
+- **One pass → one file** — a single `tokens.bin` per
+  `(data_sources, tokenizer, seed)` combination.
+- **Memmap-backed** — 16 GB cache, only ~MB resident at any time (OS pages
+  in 4 KB chunks on demand). No compression (random access must stay O(1)
+  for `PackedDataset.__getitem__`).
+- **Document-packed** — zero padding; every token is a training target.
+
+### Tokenizer: LLaMA-3 BPE (128K vocab)
+
+`NousResearch/Meta-Llama-3-8B` (public re-upload, no gated access). 128 256
+tokens (128 000 base + 256 reserved special tokens). See
+[`tokenizer.md`](tokenizer.md) for details.
+
+### SHA-256 dedup on token IDs
+
+`_doc_hash` hashes the **first 256 tokens** of each document with SHA-256.
+Token-level (not text-level) dedup is **tokenizer-version-independent** —
+re-running with the same tokenizer produces identical hashes, and BPE
+upgrades that don't change early merges keep the prefix hash the same. The
+prefix is enough to disambiguate web-scraped clones. `seen_hashes` is held
+in memory (one 32-byte entry per unique document; <2 GB RAM for 4B tokens).
+`np.ascontiguousarray(...).tobytes()` forces a deterministic byte layout
+for reproducibility across runs and machines.
+
+### Document packing with EOS separators (load-bearing)
+
+Documents are written back-to-back into the uint32 file, separated only by
+their `<EOS>` token:
+
+```
+[BOS] doc₁ tokens [EOS] [BOS] doc₂ tokens [EOS] [BOS] doc₃ tokens [EOS] ...
+```
+
+**Hard rule (AGENTS.md §6):** packing must include EOS separators. Without
+them the model sees run-on concatenated documents and degrades. BOS/EOS
+are added **manually per document** (`add_special_tokens=False` on the
+tokenizer call) so the cache contains one BOS/EOS pair per document, not
+one BOS for the whole cache.
+
+### Short-document and length-truncation rules
+
+- `min_doc_tokens = 16` — docs shorter than this are dropped (more likely
+  navigation menus / footers / boilerplate than useful signal).
+- `max_doc_tokens = 8192` — docs longer are truncated. Protects cache-size
+  predictability; the rare long-tail (Wikipedia articles, log dumps) is
+  what's affected.
+
+### Train/val split alignment
+
+`_align_split_to_docs_and_chunks` finds a split point that is both (1)
+right after an `<EOS>` (so validation doesn't start mid-document) and (2)
+on a chunk boundary (multiple of `seq_len + 1`, so every window is exactly
+`seq_len + 1` tokens). Linear scan forward up to 100K tokens for an EOS;
+falls back to chunk-aligned `target_pos` if none found. **Rounds down** so
+no partial window is lost.
+
+### `PackedDataset` — memmap-backed windows
+
+Non-overlapping `(seq_len + 1)`-token windows; `__getitem__` returns
+`{'input': chunk[:-1], 'target': chunk[1:]}` (classic next-token
+prediction). `np.array(..., copy=True)` forces a contiguous, writable copy
+so callers can mutate without corrupting the read-only memmap.
+
+### `ShuffledRangeSampler` — deterministic, resumable
+
+Builds a full NumPy `default_rng(seed).permutation(n_chunks)` once at
+construction (pure function of `seed` and `n`); iterates from `offset` to
+the end. Deterministic resumability: save `sampler.offset` in the
+checkpoint, resume with `offset=...`, and the model sees the same sequence
+of windows as an uninterrupted run.
+
+### DataLoader knobs (A100)
+
+| Knob | Default | Why |
+|------|---------|-----|
+| `batch_size` | 96 | A100 80GB with checkpointing fits 96 × 2048 |
+| `num_workers` | 6 | 6 CPU workers prefetch into RAM |
+| `prefetch_factor` | 16 | Each worker holds 16 future batches ready |
+| `pin_memory` | True | Page-locked host buffers → async DMA H2D |
+| `persistent_workers` | True | Worker pool survives across epochs (avoids `fork()` per epoch) |
+| `drop_last` | True (train) | Avoid partial-batch shape mismatches |
+| `drop_last` | False (val) | Evaluate on every validation token |

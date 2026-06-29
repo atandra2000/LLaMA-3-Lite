@@ -1,11 +1,4 @@
-"""Tests for ``dataset.py``.
-
-Most tests use synthetic in-memory token buffers so they don't depend on
-HuggingFace network access or a real tokenizer. The tokenizer-dependent
-helpers are tested separately via ``build_synthetic_data`` (which the README
-itself advertises as the offline smoke test) — but only when the tokenizer
-can actually be loaded; otherwise those tests are skipped.
-"""
+"""Tests for ``dataset.py``."""
 from __future__ import annotations
 
 import hashlib
@@ -21,9 +14,6 @@ from conftest import make_token_stream
 import dataset as ds
 
 
-# --------------------------------------------------------------------------- #
-# Helpers / pure functions
-# --------------------------------------------------------------------------- #
 class TestDocHash:
     def test_deterministic(self):
         ids = np.array([1, 2, 3, 4, 5], dtype=np.uint32)
@@ -39,18 +29,15 @@ class TestDocHash:
         assert ds._doc_hash(a, 3) == ds._doc_hash(b, 3)
 
     def test_short_doc_pads_with_available_tokens(self):
-        # No crash when doc is shorter than n_hash_tokens.
         ids = np.array([1, 2], dtype=np.uint32)
         h = ds._doc_hash(ids, n_hash_tokens=16)
         assert isinstance(h, bytes)
-        # And equals hashing the full short array.
         assert h == hashlib.sha256(ids.tobytes()).digest()
 
 
 class TestDocFilter:
     def test_word_mode_whole_word(self):
         assert ds._doc_passes_filter("the code is great", "code", "word")
-        # 'code' as substring of 'codec' must NOT match in word mode.
         assert not ds._doc_passes_filter("a codec file", "code", "word")
 
     def test_word_mode_case_insensitive(self):
@@ -62,7 +49,6 @@ class TestDocFilter:
 
     def test_substring_mode(self):
         assert ds._doc_passes_filter("a codec here", "code", "substring")
-        # Substring mode lowercases both sides.
         assert ds._doc_passes_filter("SomeTHING", "something", "substring")
 
 
@@ -72,7 +58,6 @@ class TestHasLangField:
         assert not ds._has_lang_field({"language": "Python"}, ["Go"])
 
     def test_lang_key(self):
-        # Some datasets use 'lang' instead of 'language'.
         assert ds._has_lang_field({"lang": "Rust"}, ["Rust"])
 
     def test_missing_key(self):
@@ -98,34 +83,28 @@ class TestNormalizeProbs:
             ds._normalize_probs([-1.0, -2.0])
 
 
-# --------------------------------------------------------------------------- #
-# Split alignment (no tokenizer needed)
-# --------------------------------------------------------------------------- #
 class TestAlignSplit:
     def test_returns_chunk_aligned_eos_position(self):
         seq_len = 32
         seq_len_plus_1 = seq_len + 1
-        # Build a buffer where EOS appears at position 60.
         buf = np.zeros(200, dtype=np.uint32)
-        buf[60] = 99      # eos id
-        target_pos = 50   # before the EOS
+        buf[60] = 99
+        target_pos = 50
         split = ds._align_split_to_docs_and_chunks(
             buf, target_pos=target_pos, eos_id=99,
             seq_len_plus_1=seq_len_plus_1, search_window=100,
         )
-        # Should align to (60 // 33) * 33 = 33.
         assert split == (60 // seq_len_plus_1) * seq_len_plus_1
         assert split % seq_len_plus_1 == 0
 
     def test_falls_back_to_chunk_aligned_when_no_eos_in_window(self):
         seq_len = 32
-        buf = np.zeros(500, dtype=np.uint32)  # no EOS at all
+        buf = np.zeros(500, dtype=np.uint32)
         target_pos = 100
         split = ds._align_split_to_docs_and_chunks(
             buf, target_pos=target_pos, eos_id=99,
             seq_len_plus_1=seq_len + 1, search_window=10,
         )
-        # No EOS in the 10-token window -> chunk-align target_pos itself.
         assert split == (target_pos // (seq_len + 1)) * (seq_len + 1)
 
     def test_split_within_buffer_bounds(self):
@@ -139,21 +118,17 @@ class TestAlignSplit:
         assert 0 <= split < len(buf)
 
 
-# --------------------------------------------------------------------------- #
-# PackedDataset (no tokenizer needed — uses raw uint32 arrays)
-# --------------------------------------------------------------------------- #
 class TestPackedDataset:
     def test_n_chunks_correct(self):
         seq_len = 8
-        data = np.arange(50, dtype=np.uint32)   # 50 tokens -> 50 // 9 = 5 chunks
+        data = np.arange(50, dtype=np.uint32)
         ds_ = ds.PackedDataset(data, seq_len=seq_len, eos_id=0)
         assert ds_.n_chunks == 50 // (seq_len + 1)
         assert len(ds_) == ds_.n_chunks
 
     def test_input_target_shifted_by_one(self):
         seq_len = 4
-        # 5 tokens per chunk: [0,1,2,3,4] -> input [0,1,2,3], target [1,2,3,4]
-        data = np.arange(15, dtype=np.uint32)   # 3 chunks
+        data = np.arange(15, dtype=np.uint32)
         ds_ = ds.PackedDataset(data, seq_len=seq_len, eos_id=0)
         item = ds_[0]
         assert torch.equal(item["input"], torch.arange(0, 4, dtype=torch.long))
@@ -161,19 +136,17 @@ class TestPackedDataset:
 
     def test_indices_subset(self):
         seq_len = 4
-        data = np.arange(15, dtype=np.uint32)  # 3 chunks
+        data = np.arange(15, dtype=np.uint32)
         idx = np.array([2, 0, 1], dtype=np.int64)
         ds_ = ds.PackedDataset(data, seq_len=seq_len, eos_id=0, indices=idx)
         assert len(ds_) == 3
-        # __getitem__ uses the supplied indices order.
         out = ds_[0]
-        # chunk_idx = indices[0] = 2 -> tokens [10..14]
         assert out["input"][0].item() == 10
 
     def test_indices_too_long_raises(self):
         seq_len = 4
-        data = np.arange(15, dtype=np.uint32)   # 3 chunks
-        idx = np.arange(5, dtype=np.int64)      # 5 > 3
+        data = np.arange(15, dtype=np.uint32)
+        idx = np.arange(5, dtype=np.int64)
         with pytest.raises(ValueError):
             ds.PackedDataset(data, seq_len=seq_len, eos_id=0, indices=idx)
 
@@ -188,15 +161,12 @@ class TestPackedDataset:
         assert item["target"].shape == (seq_len,)
 
     def test_copies_data_no_view(self):
-        """__getitem__ must copy so callers can mutate without corrupting
-        the mmap (the production code uses mode='r' mmap, so this is moot in
-        practice, but the contract is documented as a copy)."""
+        """__getitem__ must copy so callers can mutate without corrupting the mmap."""
         seq_len = 4
         data = np.arange(10, dtype=np.uint32)
         ds_ = ds.PackedDataset(data, seq_len=seq_len, eos_id=0)
         item = ds_[0]
         item["input"][0] = 999
-        # Next fetch should NOT see the mutation.
         item2 = ds_[0]
         assert item2["input"][0].item() != 999
 
@@ -213,9 +183,6 @@ class TestCollate:
         assert torch.equal(out["input"][1], torch.arange(0, 40, 10))
 
 
-# --------------------------------------------------------------------------- #
-# ShuffledRangeSampler
-# --------------------------------------------------------------------------- #
 class TestShuffledRangeSampler:
     def test_length_and_contents(self):
         sampler = ds.ShuffledRangeSampler(n_chunks=10, seed=7)
@@ -240,10 +207,6 @@ class TestShuffledRangeSampler:
         assert len(sampler) == 7
 
 
-# --------------------------------------------------------------------------- #
-# build_synthetic_data — requires the LLaMA-3 tokenizer (network/disk).
-# Skipped if the tokenizer can't be loaded offline.
-# --------------------------------------------------------------------------- #
 def _tokenizer_available() -> bool:
     try:
         from transformers import AutoTokenizer
@@ -262,13 +225,9 @@ _HAS_TOKENIZER = _tokenizer_available()
 class TestBuildSyntheticData:
     def test_returns_dataloaders_and_tokenizer(self, tiny_config, tmp_path,
                                                 monkeypatch):
-        # Avoid writing into the real repo dir.
         tiny_config = {**tiny_config,
                        "data_cache_dir": str(tmp_path / "dc"),
                        "batch_size": 2}
-        # build_synthetic_data downloads nothing — it generates random token
-        # IDs directly — so this is safe to run offline *if* the tokenizer is
-        # cached. It still needs the tokenizer for vocab size + EOS/BOS IDs.
         train, val, tok = ds.build_synthetic_data(tiny_config)
         assert tok is not None
         assert len(train) > 0

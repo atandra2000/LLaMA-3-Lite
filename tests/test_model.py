@@ -1,16 +1,4 @@
-"""Tests for ``model.py``.
-
-Focus areas (evaluator perspective):
-* RMSNorm matches a reference implementation and is invariant to scale.
-* RoPE applies the correct rotation (orthogonality, relative-position property).
-* GQA respects causality and produces the right output shape.
-* SwiGLU fused path equals the unfused reference.
-* ``chunked_cross_entropy`` is numerically *equal* to ``F.cross_entropy``
-  (the README claims <1e-5 difference; we hold it to a tighter bar).
-* Parameter counts match the documented 515M / 252M figures, and we flag the
-  discrepancy between ``get_num_params`` and the README's definition of
-  "non-embedding" (input vs. input+output).
-"""
+"""Tests for ``model.py``."""
 from __future__ import annotations
 
 import math
@@ -32,9 +20,6 @@ from model import (
 )
 
 
-# --------------------------------------------------------------------------- #
-# RMSNorm
-# --------------------------------------------------------------------------- #
 class TestRMSNorm:
     def test_output_shape(self, device):
         norm = RMSNorm(d_model=16).to(device)
@@ -42,8 +27,6 @@ class TestRMSNorm:
         assert norm(x).shape == x.shape
 
     def test_zero_input_yields_weight(self, device):
-        # RMSNorm(x=0) -> 0 / sqrt(eps) = 0, then * weight. With weight init=1,
-        # output is 0. This guards against divide-by-zero handling.
         norm = RMSNorm(d_model=8).to(device)
         x = torch.zeros(1, 3, 8, device=device)
         out = norm(x)
@@ -53,7 +36,6 @@ class TestRMSNorm:
         torch.manual_seed(0)
         d = 32
         norm = RMSNorm(d_model=d, eps=1e-5).to(device)
-        # Reference: y = w * x / sqrt(mean(x^2) + eps)
         x = torch.randn(4, 7, d, device=device, dtype=torch.float64)
         norm64 = RMSNorm(d_model=d, eps=1e-5).to(device).double()
         out = norm64(x)
@@ -62,10 +44,6 @@ class TestRMSNorm:
         assert torch.allclose(out, ref, atol=1e-10)
 
     def test_scale_invariance(self, device):
-        # RMSNorm output scales with sqrt of the input scale? No — it
-        # normalizes by RMS, so multiplying input by c should multiply the
-        # normalized pre-weight activation by sqrt(c**2)/sqrt(c**2) = 1... but
-        # RMS also scales, so output is *invariant* to positive scaling.
         norm = RMSNorm(d_model=16).to(device).eval()
         x = torch.randn(1, 5, 16, device=device)
         out1 = norm(x)
@@ -75,31 +53,25 @@ class TestRMSNorm:
     def test_weight_is_learnable(self):
         norm = RMSNorm(d_model=8)
         assert isinstance(norm.weight, torch.nn.Parameter)
-        # Init to ones (LLaMA convention).
         assert torch.allclose(norm.weight, torch.ones(8))
 
 
-# --------------------------------------------------------------------------- #
-# RoPE
-# --------------------------------------------------------------------------- #
 class TestRoPE:
     def test_buffer_shapes(self, device):
         rope = RoPE(head_dim=16, max_seq_len=64, theta=10000.0).to(device)
         assert rope.cos_cached.shape == (1, 1, 64, 8)
         assert rope.sin_cached.shape == (1, 1, 64, 8)
-        # inv_freq has head_dim/2 entries.
         assert rope.inv_freq.shape == (8,)
 
     def test_inv_freq_monotonic(self, device):
         rope = RoPE(head_dim=16, max_seq_len=32, theta=10000.0).to(device)
-        # Frequencies must decrease with dimension index.
         assert torch.all(rope.inv_freq[:-1] > rope.inv_freq[1:])
 
     def test_rotation_is_orthogonal(self, device):
         """A RoPE-rotated vector should preserve its norm (it's a rotation)."""
         head_dim = 16
         rope = RoPE(head_dim, max_seq_len=8, theta=10000.0).to(device)
-        x = torch.randn(1, 1, 4, head_dim, device=device)   # (B, H, S, D)
+        x = torch.randn(1, 1, 4, head_dim, device=device)
         out = rope(x, seq_len=4)
         assert out.shape == x.shape
         n_in = x.norm(dim=-1)
@@ -117,19 +89,13 @@ class TestRoPE:
         assert torch.allclose(out, x, atol=1e-6), (out, x)
 
     def test_relative_position_property(self, device):
-        """Inner product q_i . k_j should depend only on (i-j) under RoPE.
-
-        This is the *defining* property that makes RoPE extrapolate. We verify
-        it for a pair of unit vectors aligned with the first 2 dims.
-        """
+        """Inner product q_i . k_j should depend only on (i-j) under RoPE."""
         head_dim = 8
         rope = RoPE(head_dim, max_seq_len=32, theta=10000.0).to(device)
-        # q at pos 0, k at pos 0 vs q at pos 5, k at pos 5: same relative offset.
         q = torch.zeros(1, 1, 1, head_dim, device=device)
         q[..., 0] = 1.0
         k = torch.zeros(1, 1, 1, head_dim, device=device)
         k[..., 1] = 1.0
-        # Build sequences of length 6 with the unit vector at positions 0 and 5.
         q_seq = torch.zeros(1, 1, 6, head_dim, device=device)
         k_seq = torch.zeros(1, 1, 6, head_dim, device=device)
         q_seq[..., 0, :] = q
@@ -145,9 +111,6 @@ class TestRoPE:
         )
 
 
-# --------------------------------------------------------------------------- #
-# GQA
-# --------------------------------------------------------------------------- #
 class TestGroupedQueryAttention:
     def test_output_shape(self, device, dtype):
         attn = GroupedQueryAttention(
@@ -167,7 +130,6 @@ class TestGroupedQueryAttention:
         ).to(device).eval()
         x = torch.randn(1, 6, 32, device=device)
         out1 = attn(x)
-        # Perturb the last token; the first half of the output must not change.
         x2 = x.clone()
         x2[:, -1, :] += torch.randn_like(x[:, -1, :]) * 10.0
         out2 = attn(x2)
@@ -176,7 +138,6 @@ class TestGroupedQueryAttention:
         )
 
     def test_n_rep_consistency(self, device):
-        # n_heads must be a multiple of n_kv_heads.
         for n_heads, n_kv in [(4, 2), (8, 4), (4, 4), (2, 1)]:
             attn = GroupedQueryAttention(
                 d_model=32, n_heads=n_heads, n_kv_heads=n_kv, head_dim=8,
@@ -187,26 +148,16 @@ class TestGroupedQueryAttention:
             assert attn(x).shape == (1, 8, 32)
 
     def test_invalid_n_kv_heads_raises(self, device):
-        # 3 KV heads for 8 query heads -> n_rep = 2 but leaves 2 query heads
-        # unpaired; the expand().reshape() would silently mis-share. We don't
-        # require the constructor to reject this, but we document the
-        # invariant here so future contributors notice.
         attn = GroupedQueryAttention(
             d_model=32, n_heads=8, n_kv_heads=3, head_dim=8,
             max_seq_len=16, rope_theta=10000.0,
         ).to(device)
-        # n_rep = 8 // 3 == 2; that leaves 8 - 3*2 = 2 query heads without KV.
         assert attn.n_rep == 2
-        # Running it would raise in the expand/reshape because shapes don't
-        # line up; assert that it fails rather than silently producing junk.
         x = torch.randn(1, 8, 32, device=device)
         with pytest.raises(RuntimeError):
             attn(x)
 
 
-# --------------------------------------------------------------------------- #
-# SwiGLU
-# --------------------------------------------------------------------------- #
 class TestSwiGLUFFN:
     def test_output_shape(self, device):
         ffn = SwiGLUFFN(d_model=64, d_ff=128).to(device)
@@ -218,17 +169,14 @@ class TestSwiGLUFFN:
         torch.manual_seed(0)
         d_model, d_ff = 32, 64
         ffn = SwiGLUFFN(d_model, d_ff).to(device)
-        # Replicate the math with the *same* weights, split from gate_up.
-        gate_up_w = ffn.gate_up_proj.weight.data   # (2*d_ff, d_model)
+        gate_up_w = ffn.gate_up_proj.weight.data
         gate_w, up_w = torch.split(gate_up_w, d_ff, dim=0)
-        down_w = ffn.down_proj.weight.data          # (d_model, d_ff)
+        down_w = ffn.down_proj.weight.data
 
         x = torch.randn(3, 5, d_model, device=device)
-        # Reference
         gate = F.linear(x, gate_w)
         up = F.linear(x, up_w)
         ref = F.linear(F.silu(gate) * up, down_w)
-        # Fused
         out = ffn(x)
         assert torch.allclose(out, ref, atol=1e-6), (out - ref)
 
@@ -238,15 +186,10 @@ class TestSwiGLUFFN:
         assert ffn.down_proj.weight.shape == (16, 32)
 
 
-# --------------------------------------------------------------------------- #
-# chunked_cross_entropy — the headline numerical claim
-# --------------------------------------------------------------------------- #
 class TestChunkedCrossEntropy:
     @pytest.mark.numeric
     def test_equals_pytorch_cross_entropy(self, device):
-        """The README claims the chunked CE is 'numerically identical' to
-        ``F.cross_entropy``. Hold it to <=1e-5 (README) and report the actual
-        max abs diff so regressions are caught early."""
+        """Chunked CE must match F.cross_entropy to <1e-5."""
         torch.manual_seed(0)
         B, S, V = 4, 32, 100
         logits = torch.randn(B * S, V, device=device, requires_grad=True)
@@ -257,7 +200,6 @@ class TestChunkedCrossEntropy:
                                     targets, chunk_size=8192)
         diff = (ref - chk).abs().item()
         assert diff < 1e-5, f"chunked CE differs from reference by {diff}"
-        # Loss should be ~ log(V) for random logits (~log(100)=4.6).
         assert 3.0 < chk.item() < 6.0
 
     @pytest.mark.numeric
@@ -280,7 +222,6 @@ class TestChunkedCrossEntropy:
         N, V = 20, 10
         logits = torch.randn(N, V, device=device)
         targets = torch.randint(0, V, (N,), device=device)
-        # Mark half as ignored.
         targets[:10] = -100
 
         ref = F.cross_entropy(logits, targets, ignore_index=-100,
@@ -295,13 +236,11 @@ class TestChunkedCrossEntropy:
         logits = torch.randn(N, V, device=device, requires_grad=True)
         targets = torch.full((N,), -100, device=device, dtype=torch.long)
         loss = chunked_cross_entropy(logits, targets, ignore_index=-100)
-        # Per the implementation: returns 0.0 (no grad) when nothing counts.
         assert loss.item() == 0.0
 
     @pytest.mark.numeric
     def test_gradients_flow(self, device):
-        """The chunked loss must produce gradients (regression: early
-        versions returned a no-grad 0.0 in the empty-mask path)."""
+        """The chunked loss must produce gradients."""
         torch.manual_seed(3)
         logits = torch.randn(64, 20, device=device, requires_grad=True)
         targets = torch.randint(0, 20, (64,), device=device)
@@ -309,18 +248,12 @@ class TestChunkedCrossEntropy:
         loss.backward()
         assert logits.grad is not None
         assert torch.isfinite(logits.grad).all()
-        # Gradients should be non-zero almost everywhere for random targets.
         assert logits.grad.abs().sum().item() > 0
 
 
-# --------------------------------------------------------------------------- #
-# Whole-model param counts (documents the README/wandb discrepancy)
-# --------------------------------------------------------------------------- #
 class TestTransformerParamCount:
     def test_full_model_total_params(self, full_config):
-        """The README advertises ~515M total params. We build with the
-        production config and assert the count is within 1% of the figure
-        that is hard-coded into train.py's wandb.config block."""
+        """README advertises ~515M total params; assert within 1%."""
         model = build_transformer(
             vocab_size=full_config["vocab_size"],
             d_model=full_config["d_model"],
@@ -335,23 +268,13 @@ class TestTransformerParamCount:
             gradient_checkpointing=False,
         )
         total = sum(p.numel() for p in model.parameters())
-        # Hard-coded in train.py (wandb.config["params_total"]).
         advertised = 514_891_808
         assert abs(total - advertised) / advertised < 0.01, (
             f"total={total:,} vs advertised={advertised:,}"
         )
 
     def test_get_num_params_definition_mismatch(self, full_config):
-        """Flag a metric-definitions drift.
-
-        ``Transformer.get_num_params(non_embedding=True)`` subtracts only the
-        *input* embedding. But the README/wandb define "non-embedding params"
-        as 251,684,896 (i.e. subtracting **both** input embedding and output
-        projection). The two definitions disagree by ~132M (the output
-        projection size). This test fails until the definitions are
-        reconciled — that's intentional: it makes the inconsistency
-        observable instead of silently misleading.
-        """
+        """Flag a metric-definitions drift between get_num_params and README."""
         model = build_transformer(
             vocab_size=full_config["vocab_size"],
             d_model=full_config["d_model"],
@@ -367,18 +290,13 @@ class TestTransformerParamCount:
         total = sum(p.numel() for p in model.parameters())
         in_emb = model.input_embedding.embedding.weight.numel()
         out_emb = model.output_proj.weight.numel()
-        # README / wandb definition:
         readme_non_embed = total - in_emb - out_emb
-        # model.py definition:
         model_non_embed = model.get_num_params(non_embedding=True)
         advertised = 251_684_896
 
         assert abs(readme_non_embed - advertised) / advertised < 0.01, (
             f"README non-embed={readme_non_embed:,} vs advertised={advertised:,}"
         )
-        # This assertion *will* fail today: model.get_num_params() subtracts
-        # only the input embedding, so it overstates non-embedding params by
-        # the output projection size.
         assert abs(model_non_embed - advertised) / advertised < 0.01, (
             f"model.get_num_params(non_embedding=True)={model_non_embed:,} "
             f"does not match the README's non-embedding definition "
@@ -386,9 +304,6 @@ class TestTransformerParamCount:
         )
 
 
-# --------------------------------------------------------------------------- #
-# Whole-model forward / backward smoke (tiny)
-# --------------------------------------------------------------------------- #
 class TestTransformerForward:
     def test_forward_output_shape(self, tiny_model, tiny_config, device):
         B, S = 2, tiny_config["seq_len"]
@@ -413,8 +328,7 @@ class TestTransformerForward:
 
     def test_gradient_checkpointing_matches_normal(self, tiny_config, device,
                                                     seed_everything):
-        """With gradient checkpointing the forward output must be identical
-        to the non-checkpointed path (it only changes memory, not math)."""
+        """With gradient checkpointing the forward output must be identical to the non-checkpointed path."""
         seed_everything(42)
         model_a = build_transformer(
             vocab_size=tiny_config["vocab_size"],
@@ -430,7 +344,6 @@ class TestTransformerForward:
             gradient_checkpointing=False,
         ).to(device)
 
-        # Same init weights, then flip on checkpointing.
         model_b = build_transformer(
             vocab_size=tiny_config["vocab_size"],
             d_model=tiny_config["d_model"],
@@ -453,5 +366,4 @@ class TestTransformerForward:
         with torch.no_grad():
             out_a = model_a(ids)
             out_b = model_b(ids)
-        # In eval mode checkpointing is a no-op (only triggers in .train()).
         assert torch.allclose(out_a, out_b, atol=1e-6), (out_a - out_b).abs().max()

@@ -1,18 +1,5 @@
 #!/usr/bin/env python
-"""Standalone CPU smoke test for the LLaMA-3-Lite pipeline.
-
-This is the script referenced in the README:
-
-    python test_pipeline.py   # Quick smoke test (no data download, CPU-only)
-
-It runs a tiny end-to-end pipeline on synthetic data — no HuggingFace
-download, no W&B, no GPU required — and prints PASS/FAIL for each check so
-it can be used as a pre-merge sanity gate on any machine.
-
-Run with -v for per-check verbosity (prints tracebacks on failure):
-
-    python test_pipeline.py -v
-"""
+"""Standalone CPU smoke test for the LLaMA-3-Lite pipeline (no HF download)."""
 from __future__ import annotations
 
 import argparse
@@ -23,7 +10,6 @@ import tempfile
 import traceback
 from pathlib import Path
 
-# Make the repo root importable when run as `python test_pipeline.py`.
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
@@ -41,9 +27,6 @@ from model import build_transformer, chunked_cross_entropy
 import train as train_mod
 
 
-# --------------------------------------------------------------------------- #
-# Tiny test harness — no pytest dependency, so this file runs anywhere.
-# --------------------------------------------------------------------------- #
 class CheckResult:
     """Aggregate pass/fail counters shared across checks."""
     passed = 0
@@ -51,12 +34,7 @@ class CheckResult:
 
 
 class Check:
-    """Context manager that runs a named check and counts pass/fail.
-
-    A check passes if the body completes without raising. Use plain
-    ``assert`` or ``raise AssertionError(...)`` inside the body to signal
-    failure; the context manager catches it so the run continues.
-    """
+    """Context manager that runs a named check and counts pass/fail."""
     verbose = False
 
     def __init__(self, name: str):
@@ -78,7 +56,6 @@ class Check:
             if self.verbose and tb is not None:
                 traceback.print_exception(exc_type, exc, tb)
             CheckResult.failed += 1
-        # Suppress the exception so the run continues through all checks.
         return True
 
 
@@ -86,12 +63,7 @@ def check(name: str) -> Check:
     return Check(name)
 
 
-# --------------------------------------------------------------------------- #
-# Tiny synthetic config (mirrors tests/conftest.tiny_config)
-# --------------------------------------------------------------------------- #
 def tiny_config():
-    # Start from the production config so we inherit any new keys, then
-    # override with tiny values. This keeps the smoke test representative.
     base = get_config()
     base.update({
         "d_model": 64, "n_layers": 2, "n_heads": 4, "n_kv_heads": 2,
@@ -148,9 +120,6 @@ def synthetic_dataloaders(cfg, device):
     return train_dl, val_dl
 
 
-# --------------------------------------------------------------------------- #
-# The checks
-# --------------------------------------------------------------------------- #
 def main():
     parser = argparse.ArgumentParser(description="LLaMA-3-Lite CPU smoke test")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -164,7 +133,6 @@ def main():
     cfg = tiny_config()
     torch.manual_seed(0); np.random.seed(0)
 
-    # 1. Build model.
     model = None
     with check("build_transformer"):
         model = build_transformer(
@@ -180,14 +148,12 @@ def main():
         print("\nCannot continue: model build failed.")
         sys.exit(1)
 
-    # 2. Forward shape.
     with check("forward_output_shape"):
         ids = torch.randint(0, cfg["vocab_size"], (cfg["batch_size"], cfg["seq_len"]),
                             device=device, dtype=torch.long)
         logits = model(ids)
         assert logits.shape == (cfg["batch_size"], cfg["seq_len"], cfg["vocab_size"])
 
-    # 3. Chunked CE == full CE.
     with check("chunked_cross_entropy_matches_full"):
         tgt = torch.randint(0, cfg["vocab_size"], (cfg["batch_size"], cfg["seq_len"]),
                             device=device, dtype=torch.long)
@@ -197,20 +163,17 @@ def main():
                                     tgt.view(-1), chunk_size=7)
         assert torch.allclose(full, chk, atol=1e-5), (full.item(), chk.item())
 
-    # 4. Backward + optimizer step.
     with check("backward_and_optimizer_step"):
         opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
         model.train()
         loss = chunked_cross_entropy(logits.view(-1, logits.size(-1)),
                                      tgt.view(-1), chunk_size=7)
         loss.backward()
-        # Check grads BEFORE opt.step/zero_grad (zero_grad sets grads to None).
         for name, p in model.named_parameters():
             assert p.grad is not None, f"no grad for {name}"
             assert torch.isfinite(p.grad).all(), f"non-finite grad for {name}"
         opt.step()
 
-    # 5. Loss decreases on a fixed batch (overfit wiring check).
     with check("loss_decreases_on_fixed_batch"):
         torch.manual_seed(1)
         ids2 = torch.randint(0, cfg["vocab_size"], (4, cfg["seq_len"]),
@@ -228,19 +191,16 @@ def main():
             last = l.item()
         assert last < first, (first, last)
 
-    # 6. LR scheduler shape.
     with check("cosine_lr_schedule"):
         sched = train_mod.CosineWithWarmup(opt2, warmup_steps=2, max_steps=10,
                                            min_lr=1e-5, peak_lr=3e-4)
         lrs = []
         for _ in range(10):
             sched.step(); lrs.append(sched.get_lr())
-        # Warmup linear (first 2), then cosine decay (next 8 strictly <= peak).
         assert lrs[0] < lrs[1], lrs
         assert all(lrs[i] >= lrs[i + 1] - 1e-12 for i in range(1, 9)), lrs
         assert lrs[-1] >= 1e-5 - 1e-12, lrs[-1]
 
-    # 7. Top-k/top-p sampling returns valid token.
     with check("top_k_top_p_sampling"):
         torch.manual_seed(0)
         sl = torch.randn(2, cfg["vocab_size"], device=device)
@@ -249,13 +209,11 @@ def main():
         assert tok.shape == (2, 1)
         assert (0 <= tok).all() and (tok < cfg["vocab_size"]).all()
 
-    # 8. Checkpoint save/load round-trip.
     with check("checkpoint_round_trip"):
         with tempfile.TemporaryDirectory() as tmp:
             ckpt_cfg = {**cfg, "model_folder": tmp, "async_checkpoint": False}
             opt3 = torch.optim.AdamW(model.parameters(), lr=3e-4)
             sched3 = train_mod.CosineWithWarmup(opt3, 2, 10, 1e-5, 3e-4)
-            # Take a step so optimizer state is non-empty.
             loss = chunked_cross_entropy(model(ids2).view(-1, cfg["vocab_size"]),
                                           tgt2.view(-1), chunk_size=7)
             opt3.zero_grad(); loss.backward(); opt3.step(); sched3.step()
@@ -279,7 +237,6 @@ def main():
             assert best == 1.0, best
             assert torch.allclose(a, b, atol=1e-4), (a - b).abs().max()
 
-    # 9. Synthetic dataloaders yield correct shapes.
     with check("synthetic_dataloaders"):
         train_dl, val_dl = synthetic_dataloaders(cfg, device)
         batch = next(iter(train_dl))
@@ -287,7 +244,6 @@ def main():
         assert batch["target"].shape == batch["input"].shape
         assert batch["input"].dtype == torch.long
 
-    # 10. Full mini-training loop with synthetic data.
     with check("mini_training_loop"):
         train_dl, val_dl = synthetic_dataloaders(cfg, device)
         opt4 = torch.optim.AdamW(model.parameters(), lr=3e-4)
@@ -308,7 +264,6 @@ def main():
         assert len(losses) == 5
         assert all(np.isfinite(x) for x in losses), losses
 
-    # Summary.
     print("\n" + "=" * 40)
     total = CheckResult.passed + CheckResult.failed
     print(f"Summary: {CheckResult.passed}/{total} checks passed, "
