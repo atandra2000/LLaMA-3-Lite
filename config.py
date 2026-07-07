@@ -14,8 +14,6 @@ def get_config():
         'rope_theta':           500000.0,
         'rms_norm_eps':         1e-5,
         'dropout':              0.0,
-        'tie_embeddings':       False,
-        'bias':                 False,
 
         'batch_size':           96,
         'gradient_accumulation': 1,
@@ -30,9 +28,6 @@ def get_config():
         'beta1':                0.9,
         'beta2':                0.95,
         'eps':                  1e-8,
-
-        'lr_scheduler':         'cosine',
-        'warmup_style':         'linear',
 
         'dtype':                'bfloat16',
         'use_flash_attention':  True,
@@ -66,7 +61,6 @@ def get_config():
         'num_workers':          6,
         'prefetch_factor':       16,
         'pin_memory':            True,
-        'document_packing':      True,
         'target_tokens':         4_000_000_000,
 
         'data_cache_dir':        'data_cache',
@@ -78,10 +72,8 @@ def get_config():
         'dedup_hash_bytes':      256,
         'min_doc_tokens':        16,
         'max_doc_tokens':        8192,
-        'tokenize_batch_size':   1000,
 
         'tokenizer_name':       'NousResearch/Meta-Llama-3-8B',
-        'tokenizer_type':       'autotokenizer',
         'tokenizer_cache_dir':  None,
 
         'val_interval':         2000,
@@ -103,31 +95,7 @@ def get_config():
         'wandb_entity':         None,
         'wandb_tags':           ['llama3', '515M', 'a100', 'pretrain', 'code'],
         'log_interval':         50,
-
-        'top_k':                50,
-        'temperature':          0.8,
     }
-
-
-def get_weights_file_path(config, step: int):
-    model_folder = config['model_folder']
-    model_filename = f"{config['model_filename']}_step_{step}.pt"
-    return str(Path('.') / model_folder / model_filename)
-
-
-def latest_weights_file_path(config):
-    """Return the path to the highest-numbered checkpoint, or None."""
-    model_folder = Path(config['model_folder'])
-    if not model_folder.exists():
-        return None
-    checkpoints = list(model_folder.glob(f"{config['model_filename']}_step_*.pt"))
-    if not checkpoints:
-        return None
-    checkpoints.sort(
-        key=lambda x: int(str(x.stem).split('_step_')[-1])
-        if str(x.stem).split('_step_')[-1].isdigit() else -1
-    )
-    return str(checkpoints[-1])
 
 
 def cleanup_old_checkpoints(config, current_step):

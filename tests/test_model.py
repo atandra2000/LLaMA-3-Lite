@@ -10,7 +10,6 @@ import torch.nn.functional as F
 
 from model import (
     GroupedQueryAttention,
-    InputEmbedding,
     RMSNorm,
     RoPE,
     SwiGLUFFN,
@@ -288,7 +287,7 @@ class TestTransformerParamCount:
             rms_norm_eps=full_config["rms_norm_eps"],
         )
         total = sum(p.numel() for p in model.parameters())
-        in_emb = model.input_embedding.embedding.weight.numel()
+        in_emb = model.input_embedding.weight.numel()
         out_emb = model.output_proj.weight.numel()
         readme_non_embed = total - in_emb - out_emb
         model_non_embed = model.get_num_params(non_embedding=True)

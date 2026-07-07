@@ -5,9 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import time
 import tempfile
-import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -25,42 +23,7 @@ import dataset as ds
 from config import get_config
 from model import build_transformer, chunked_cross_entropy
 import train as train_mod
-
-
-class CheckResult:
-    """Aggregate pass/fail counters shared across checks."""
-    passed = 0
-    failed = 0
-
-
-class Check:
-    """Context manager that runs a named check and counts pass/fail."""
-    verbose = False
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def __enter__(self):
-        if self.verbose:
-            print(f"  ... {self.name}", flush=True)
-        self.t0 = time.time()
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        dt = (time.time() - self.t0) * 1000
-        if exc is None:
-            print(f"  [PASS] {self.name}  ({dt:.1f} ms)", flush=True)
-            CheckResult.passed += 1
-        else:
-            print(f"  [FAIL] {self.name}  ({dt:.1f} ms)", flush=True)
-            if self.verbose and tb is not None:
-                traceback.print_exception(exc_type, exc, tb)
-            CheckResult.failed += 1
-        return True
-
-
-def check(name: str) -> Check:
-    return Check(name)
+from test_harness import CheckResult, Check, check
 
 
 def tiny_config():
@@ -69,7 +32,6 @@ def tiny_config():
         "d_model": 64, "n_layers": 2, "n_heads": 4, "n_kv_heads": 2,
         "head_dim": 16, "d_ff": 128, "vocab_size": 256, "seq_len": 32,
         "rope_theta": 500000.0, "rms_norm_eps": 1e-5, "dropout": 0.0,
-        "tie_embeddings": False, "bias": False,
         "batch_size": 4, "gradient_accumulation": 1, "max_steps": 10,
         "learning_rate": 3e-4, "min_lr": 3e-5, "warmup_steps": 2,
         "weight_decay": 0.1, "max_grad_norm": 1.0, "beta1": 0.9, "beta2": 0.95,
@@ -77,18 +39,17 @@ def tiny_config():
         "compile_model": False, "gradient_checkpointing": False,
         "use_chunked_cross_entropy": True, "tf32": False,
         "cudnn_benchmark": False, "num_workers": 0, "prefetch_factor": 2,
-        "pin_memory": False, "document_packing": True, "target_tokens": 4096,
+        "pin_memory": False, "target_tokens": 4096,
         "data_cache_dir": "data_cache_smoke", "data_cache_filename": "t.bin",
         "reuse_data_cache": False, "shuffle_documents": True, "shuffle_seed": 42,
         "dedup": True, "dedup_hash_bytes": 16, "min_doc_tokens": 4,
-        "max_doc_tokens": 64, "tokenize_batch_size": 10,
+        "max_doc_tokens": 64,
         "val_interval": 1000, "val_max_batches": 2, "val_split": 0.1,
         "generation_interval": 1000, "generation_max_tokens": 8,
         "generation_temperature": 0.8, "generation_top_k": 20,
         "model_folder": "weights_smoke", "model_filename": "tiny",
         "checkpoint_interval": 1000, "keep_last_n_checkpoints": 2,
         "async_checkpoint": False, "preload": None, "log_interval": 1,
-        "top_k": 20, "temperature": 0.8,
     })
     return base
 

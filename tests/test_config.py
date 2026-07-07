@@ -1,22 +1,17 @@
 """Tests for ``config.py``."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from config import (
     cleanup_old_checkpoints,
     get_config,
-    get_weights_file_path,
-    latest_weights_file_path,
 )
 
 
 REQUIRED_KEYS = {
     "d_model", "n_layers", "n_heads", "n_kv_heads", "head_dim", "d_ff",
     "vocab_size", "seq_len", "rope_theta", "rms_norm_eps", "dropout",
-    "tie_embeddings", "bias",
     "batch_size", "gradient_accumulation", "max_steps", "learning_rate",
     "min_lr", "warmup_steps", "weight_decay", "max_grad_norm",
     "beta1", "beta2", "eps",
@@ -24,19 +19,17 @@ REQUIRED_KEYS = {
     "gradient_checkpointing", "use_chunked_cross_entropy",
     "tf32", "cudnn_benchmark", "cuda_alloc_conf",
     "data_sources", "num_workers", "prefetch_factor", "pin_memory",
-    "document_packing", "target_tokens", "data_cache_dir",
+    "target_tokens", "data_cache_dir",
     "data_cache_filename", "reuse_data_cache", "shuffle_documents",
     "shuffle_seed", "dedup", "dedup_hash_bytes", "min_doc_tokens",
-    "max_doc_tokens", "tokenize_batch_size", "tokenizer_name",
-    "tokenizer_type", "tokenizer_cache_dir",
+    "max_doc_tokens", "tokenizer_name", "tokenizer_cache_dir",
     "val_interval", "val_max_batches", "val_split",
     "generation_interval", "generation_max_tokens",
     "generation_temperature", "generation_top_k",
     "model_folder", "model_filename", "checkpoint_interval",
     "keep_last_n_checkpoints", "async_checkpoint", "preload",
     "wandb_project", "wandb_entity", "wandb_tags", "log_interval",
-    "top_k", "temperature",
-    "optimizer", "lr_scheduler", "warmup_style",
+    "optimizer",
 }
 
 
@@ -79,49 +72,6 @@ class TestGetConfig:
         assert 0 < full_config["warmup_steps"] < full_config["max_steps"]
         assert full_config["weight_decay"] >= 0
         assert full_config["max_grad_norm"] > 0
-
-
-class TestGetWeightsFilePath:
-    def test_constructs_expected_path(self, full_config):
-        path = get_weights_file_path(full_config, step=5000)
-        assert path.endswith(f"{full_config['model_filename']}_step_5000.pt")
-        assert path.startswith(full_config["model_folder"])
-
-    def test_step_zero(self, full_config):
-        path = get_weights_file_path(full_config, step=0)
-        assert path.endswith("_step_0.pt")
-
-
-class TestLatestWeightsFilePath:
-    def test_returns_none_when_folder_missing(self, full_config, tmp_path):
-        full_config = {**full_config, "model_folder": str(tmp_path / "nope")}
-        assert latest_weights_file_path(full_config) is None
-
-    def test_returns_none_when_empty(self, full_config, tmp_path):
-        full_config = {**full_config, "model_folder": str(tmp_path)}
-        assert latest_weights_file_path(full_config) is None
-
-    def test_picks_single_checkpoint(self, full_config, tmp_path):
-        (tmp_path / "llama3-515M_step_100.pt").touch()
-        full_config = {**full_config, "model_folder": str(tmp_path),
-                       "model_filename": "llama3-515M"}
-        result = latest_weights_file_path(full_config)
-        assert result is not None
-        assert result.endswith("llama3-515M_step_100.pt")
-
-    def test_picks_highest_step_not_lexical_max(self, full_config, tmp_path):
-        """Regression: lexical sort would pick step_9.pt over step_10.pt."""
-        steps = [1, 2, 9, 10, 11, 20]
-        for s in steps:
-            (tmp_path / f"llama3-515M_step_{s}.pt").touch()
-        full_config = {**full_config, "model_folder": str(tmp_path),
-                       "model_filename": "llama3-515M"}
-        result = latest_weights_file_path(full_config)
-        assert result is not None
-        assert result.endswith("llama3-515M_step_20.pt"), (
-            f"latest_weights_file_path appears to use lexical sort; "
-            f"got {Path(result).name}"
-        )
 
 
 class TestCleanupOldCheckpoints:

@@ -6,8 +6,6 @@ import argparse
 import os
 import sys
 import tempfile
-import time
-import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -25,42 +23,7 @@ import dataset as ds
 from config import get_config
 from model import build_transformer, chunked_cross_entropy
 import train as train_mod
-
-
-class CheckResult:
-    passed = 0
-    failed = 0
-    stage_times: dict[str, float] = {}
-
-
-class Check:
-    verbose = False
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def __enter__(self):
-        if self.verbose:
-            print(f"  ... {self.name}", flush=True)
-        self.t0 = time.time()
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        dt = (time.time() - self.t0) * 1000
-        CheckResult.stage_times[self.name] = dt
-        if exc is None:
-            print(f"  [PASS] {self.name}  ({dt:.1f} ms)", flush=True)
-            CheckResult.passed += 1
-        else:
-            print(f"  [FAIL] {self.name}  ({dt:.1f} ms)", flush=True)
-            if self.verbose and tb is not None:
-                traceback.print_exception(exc_type, exc, tb)
-            CheckResult.failed += 1
-        return True  # suppress so we keep going
-
-
-def check(name: str) -> Check:
-    return Check(name)
+from test_harness import CheckResult, Check, check
 
 
 def gpu_config(tmp_dir: str) -> dict:
@@ -70,7 +33,6 @@ def gpu_config(tmp_dir: str) -> dict:
         "d_model": 128, "n_layers": 2, "n_heads": 4, "n_kv_heads": 2,
         "head_dim": 32, "d_ff": 512, "vocab_size": 1000, "seq_len": 64,
         "rope_theta": 500000.0, "rms_norm_eps": 1e-5, "dropout": 0.0,
-        "tie_embeddings": False, "bias": False,
         "batch_size": 8, "gradient_accumulation": 1, "max_steps": 30,
         "learning_rate": 3e-4, "min_lr": 3e-5, "warmup_steps": 5,
         "weight_decay": 0.1, "max_grad_norm": 1.0,
@@ -83,12 +45,12 @@ def gpu_config(tmp_dir: str) -> dict:
         "tf32": True, "cudnn_benchmark": True,
         "cuda_alloc_conf": "expandable_segments:True",
         "num_workers": 0, "prefetch_factor": 2, "pin_memory": True,
-        "document_packing": True, "target_tokens": 4096,
+        "target_tokens": 4096,
         "data_cache_dir": str(Path(tmp_dir) / "data_cache"),
         "data_cache_filename": "tokens_gpu.bin",
         "reuse_data_cache": False, "shuffle_documents": True,
         "shuffle_seed": 42, "dedup": True, "dedup_hash_bytes": 16,
-        "min_doc_tokens": 4, "max_doc_tokens": 64, "tokenize_batch_size": 10,
+        "min_doc_tokens": 4, "max_doc_tokens": 64,
         "val_interval": 10, "val_max_batches": 3, "val_split": 0.1,
         "generation_interval": 20, "generation_max_tokens": 16,
         "generation_temperature": 0.8, "generation_top_k": 20,
@@ -98,7 +60,6 @@ def gpu_config(tmp_dir: str) -> dict:
         "async_checkpoint": True, "preload": None,
         "wandb_project": "test", "wandb_entity": None,
         "wandb_tags": ["test"], "log_interval": 5,
-        "top_k": 20, "temperature": 0.8,
     })
     return cfg
 

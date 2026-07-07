@@ -4,14 +4,8 @@ import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
 
-class InputEmbedding(nn.Module):
-    def __init__(self, d_model: int, vocab_size: int):
-        super().__init__()
-        self.d_model = d_model
-        self.embedding = nn.Embedding(vocab_size, d_model)
-
-    def forward(self, x):
-        return self.embedding(x)
+# ponytail: InputEmbedding wrapper inlined — it only forwarded to nn.Embedding
+# and stored d_model, which was never read.
 
 
 class RoPE(nn.Module):
@@ -130,7 +124,7 @@ class Transformer(nn.Module):
                  max_seq_len: int, rope_theta: float = 500000.0,
                  rms_norm_eps: float = 1e-5, gradient_checkpointing: bool = False):
         super().__init__()
-        self.input_embedding = InputEmbedding(d_model, vocab_size)
+        self.input_embedding = nn.Embedding(vocab_size, d_model)
 
         decoder_layers = nn.ModuleList([
             DecoderBlock(d_model, n_heads, n_kv_heads, head_dim,
@@ -167,15 +161,12 @@ class Transformer(nn.Module):
         """Return the parameter count (subtracts input embedding and output proj when non_embedding=True)."""
         n_params = sum(p.numel() for p in self.parameters())
         if non_embedding:
-            n_params -= self.input_embedding.embedding.weight.numel()
+            n_params -= self.input_embedding.weight.numel()
             n_params -= self.output_proj.weight.numel()
         return n_params
 
-    def enable_gradient_checkpointing(self):
-        self.gradient_checkpointing = True
-
-    def disable_gradient_checkpointing(self):
-        self.gradient_checkpointing = False
+    # ponytail: enable/disable_gradient_checkpointing setters removed —
+    # the flag is set only in __init__ and never toggled at runtime.
 
 
 def chunked_cross_entropy(logits, targets, chunk_size=65536, ignore_index=-100):
@@ -219,7 +210,7 @@ def build_transformer(
         gradient_checkpointing=gradient_checkpointing,
     )
     num_params = sum(p.numel() for p in model.parameters())
-    non_embed = num_params - model.input_embedding.embedding.weight.numel() - model.output_proj.weight.numel()
+    non_embed = model.get_num_params(non_embedding=True)
     print(f"Total params: {num_params:,} ({num_params/1e6:.1f}M)")
     print(f"Non-embedding params: {non_embed:,} ({non_embed/1e6:.1f}M)")
     if gradient_checkpointing:

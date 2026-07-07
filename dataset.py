@@ -1,7 +1,6 @@
 import hashlib
 import os
 import random
-import struct
 import sys
 from pathlib import Path
 
@@ -16,72 +15,6 @@ if str(_LLM_ROOT) not in sys.path:
     sys.path.insert(0, str(_LLM_ROOT))
 
 _TOKEN_DTYPE = np.uint32
-
-
-class UniversalShardDataset(Dataset):
-    """Dataset over the universal-shard corpus produced by ``shared_data``."""
-
-    def __init__(self, seq_len: int, *, data_root=None):
-        from shared_data.common import set_data_root as _set_root
-        from shared_data.shard_reader import (
-            load_manifest,
-            open_shard_memmaps,
-        )
-
-        if data_root is not None:
-            _set_root(Path(data_root))
-
-        self.seq_len = int(seq_len)
-        self.manifest = load_manifest()
-        self.shards = open_shard_memmaps(self.manifest)
-        if not self.shards:
-            raise FileNotFoundError(
-                f"No shards found under {data_root or 'data/'}. "
-                "Run the universal pipeline first: "
-                "python data/prepare_data.py --stage pretrain"
-            )
-
-        self._cache_idx = -1
-        self._cache_arr = None
-
-        offsets = np.cumsum([0] + [s.n_tokens for s in self.shards])
-        self._shard_offsets = offsets  # len = n_shards + 1
-        total_tokens = int(offsets[-1])
-        self.n_chunks = max(0, total_tokens // (self.seq_len + 1))
-
-    def _get_window(self, chunk_idx: int) -> np.ndarray:
-        """Return the ``(seq_len+1)``-token window for ``chunk_idx``."""
-        import bisect
-        start = chunk_idx * (self.seq_len + 1)
-        end = start + self.seq_len + 1
-        shard_idx = bisect.bisect_right(self._shard_offsets, start) - 1
-        local_start = start - int(self._shard_offsets[shard_idx])
-        if local_start + self.seq_len + 1 <= self.shards[shard_idx].n_tokens:
-            arr = self.shards[shard_idx].mmap
-            return np.array(arr[local_start: local_start + self.seq_len + 1],
-                            copy=True)
-        out = np.empty(self.seq_len + 1, dtype=np.uint32)
-        filled = 0
-        pos = start
-        while filled < self.seq_len + 1:
-            shard_idx = bisect.bisect_right(self._shard_offsets, pos) - 1
-            sh = self.shards[shard_idx]
-            local_pos = pos - int(self._shard_offsets[shard_idx])
-            take = min(self.seq_len + 1 - filled, sh.n_tokens - local_pos)
-            out[filled:filled + take] = sh.mmap[local_pos: local_pos + take]
-            filled += take
-            pos += take
-        return out
-
-    def __len__(self) -> int:
-        return self.n_chunks
-
-    def __getitem__(self, idx: int) -> dict:
-        chunk = self._get_window(int(idx))
-        return {
-            'input': torch.from_numpy(chunk[:-1]).long(),
-            'target': torch.from_numpy(chunk[1:]).long(),
-        }
 
 
 class PackedDataset(Dataset):

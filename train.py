@@ -305,8 +305,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     ).to(device)
 
     num_params = sum(p.numel() for p in model.parameters())
-    non_embed_params = (model.get_num_params(non_embedding=True)
-                         if hasattr(model, "get_num_params") else None)
+    # ponytail: model is always built by build_transformer (Transformer has get_num_params).
+    non_embed_params = model.get_num_params(non_embedding=True)
     model_mem_gb = num_params * 2 / 1e9
     print(f"\n{'='*60}")
     print(f"Model: {num_params/1e6:.1f}M parameters ({model_mem_gb:.2f} GB in BF16)")
