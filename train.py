@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torch.amp import GradScaler
 from pathlib import Path
+from contextlib import contextmanager
 from tqdm import tqdm
 import warnings
 import os
@@ -18,7 +18,7 @@ import numpy
 import wandb
 
 from dataset import build_training_data
-from model import build_transformer, chunked_cross_entropy
+from model import build_transformer, chunked_cross_entropy, chunked_cross_entropy_with_z
 from config import get_config, cleanup_old_checkpoints
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -44,6 +44,57 @@ def setup_gpu_optimizations(config):
         if hasattr(torch.cuda, 'get_device_capability'):
             cap = torch.cuda.get_device_capability(0)
             print(f"CUDA Compute Capability: {cap[0]}.{cap[1]}")
+
+
+class EMA:
+    """Exponential moving average of model parameters. Used for eval + generation
+    only — the live (training) weights are saved to checkpoints.
+
+    Memory cost: 1× model in FP32 ≈ 2 GB for 515M. Negligible relative to the
+    20 GB peak on a single A100. Non-trainable buffers (e.g. RoPE cos/sin) are
+    NOT shadowed because they never update.
+    """
+    def __init__(self, model: nn.Module, decay: float = 0.999):
+        self.decay = decay
+        self.shadow = {
+            n: p.detach().clone().float()
+            for n, p in model.named_parameters() if p.requires_grad
+        }
+
+    @torch.no_grad()
+    def update(self, model: nn.Module):
+        for n, p in model.named_parameters():
+            if not p.requires_grad or n not in self.shadow:
+                continue
+            self.shadow[n].mul_(self.decay).add_(p.detach().float(), alpha=1 - self.decay)
+
+    @contextmanager
+    def averaged_parameters(self, model: nn.Module):
+        """Swap model params to EMA values for the duration of the block, then restore.
+
+        Backups are taken on the original device in the original dtype so the
+        restore is lossless regardless of autocast state.
+        """
+        backup = {n: p.detach().clone()
+                  for n, p in model.named_parameters() if n in self.shadow}
+        with torch.no_grad():
+            for n, p in model.named_parameters():
+                if n in self.shadow:
+                    p.copy_(self.shadow[n].to(p.dtype))
+        try:
+            yield
+        finally:
+            with torch.no_grad():
+                for n, p in model.named_parameters():
+                    if n in backup:
+                        p.copy_(backup[n])
+
+    def state_dict(self) -> dict:
+        return {'decay': self.decay, 'shadow': self.shadow}
+
+    def load_state_dict(self, sd: dict):
+        self.decay = sd['decay']
+        self.shadow = {k: v for k, v in sd['shadow'].items()}
 
 
 class CosineWithWarmup:
@@ -147,6 +198,9 @@ def validate(model, val_dataloader, pad_id, device, step, config):
 
     val_max_batches = config.get('val_max_batches', 200)
     use_chunked_ce = config.get('use_chunked_cross_entropy', True)
+    use_z_loss = config.get('use_z_loss', True)
+    z_loss_weight = config.get('z_loss_weight', 1e-4)
+    use_z = use_z_loss and z_loss_weight > 0 and use_chunked_ce
 
     with torch.autocast(device_type='cuda', dtype=torch.bfloat16, enabled=device.type == 'cuda'):
         for batch in val_dataloader:
@@ -157,7 +211,15 @@ def validate(model, val_dataloader, pad_id, device, step, config):
 
             logits = model(input_ids)
 
-            if use_chunked_ce:
+            if use_z:
+                loss = chunked_cross_entropy_with_z(
+                    logits.view(-1, logits.size(-1)),
+                    target_ids.view(-1),
+                    chunk_size=65536,
+                    ignore_index=pad_id,
+                    z_loss_weight=z_loss_weight,
+                )
+            elif use_chunked_ce:
                 loss = chunked_cross_entropy(
                     logits.view(-1, logits.size(-1)),
                     target_ids.view(-1),
@@ -196,7 +258,7 @@ def _save_checkpoint_to_disk(checkpoint, path):
 
 
 def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=None,
-                    is_final=False, async_save=True):
+                    is_final=False, async_save=True, ema=None):
     """Save checkpoint with optional async I/O to minimize training pause."""
     model_folder = Path(config['model_folder'])
     model_folder.mkdir(parents=True, exist_ok=True)
@@ -212,6 +274,9 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
         'rng_numpy': numpy.random.get_state(),
         'rng_python': random.getstate(),
         'config': config,
+        # EMA shadow: optional. None when use_ema is False. Resumable because
+        # it's an FP32 dict keyed by param name.
+        'ema_state_dict': ema.state_dict() if ema is not None else None,
     }
     if torch.cuda.is_available():
         checkpoint['rng_cuda'] = torch.cuda.get_rng_state()
@@ -232,6 +297,12 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
         for key in ('model_state_dict', 'optimizer_state_dict', 'scheduler_state_dict'):
             if isinstance(checkpoint_copy[key], dict):
                 checkpoint_copy[key] = checkpoint_copy[key].copy()
+        # ema_state_dict is itself a dict containing a dict ('shadow'); copy both levels.
+        if isinstance(checkpoint_copy.get('ema_state_dict'), dict):
+            checkpoint_copy['ema_state_dict'] = checkpoint_copy['ema_state_dict'].copy()
+            if 'shadow' in checkpoint_copy['ema_state_dict']:
+                checkpoint_copy['ema_state_dict']['shadow'] = dict(
+                    checkpoint_copy['ema_state_dict']['shadow'])
         thread = threading.Thread(target=_save_checkpoint_to_disk, args=(checkpoint_copy, path), daemon=True)
         thread.start()
         print(f"Checkpoint offloaded to background thread: {path}")
@@ -242,7 +313,14 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
         return None
 
 
-def load_checkpoint(model, optimizer, scheduler, config, device):
+def load_checkpoint(model, optimizer, scheduler, config, device, ema=None):
+    """Restore model + optim + scheduler + RNG (+ EMA if present).
+
+    The `ema` argument is keyword-only with a default of None — it may be
+    omitted by callers that don't use EMA. When provided, the EMA shadow is
+    loaded from the checkpoint (if present). Old checkpoints (predating the
+    EMA addition) load cleanly because we gate on `get('ema_state_dict')`.
+    """
     model_folder = Path(config['model_folder'])
     checkpoints = sorted(
         model_folder.glob(f"{config['model_filename']}_step_*.pt"),
@@ -272,6 +350,9 @@ def load_checkpoint(model, optimizer, scheduler, config, device):
             rng_cuda = rng_cuda.cpu().to(torch.uint8)
         torch.cuda.set_rng_state(rng_cuda)
 
+    if ema is not None and checkpoint.get('ema_state_dict') is not None:
+        ema.load_state_dict(checkpoint['ema_state_dict'])
+
     print(f"Resumed from step {checkpoint['step']}")
     return checkpoint['step'], checkpoint.get('best_val_loss', float('inf'))
 
@@ -290,6 +371,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     gradient_checkpointing = config.get('gradient_checkpointing', True)
     real_vocab_size = max(config['vocab_size'], len(tokenizer))
+    qknorm = config.get('qknorm', True)
     model = build_transformer(
         vocab_size=real_vocab_size,
         d_model=config['d_model'],
@@ -302,6 +384,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         rope_theta=config['rope_theta'],
         rms_norm_eps=config['rms_norm_eps'],
         gradient_checkpointing=gradient_checkpointing,
+        qknorm=qknorm,
     ).to(device)
 
     num_params = sum(p.numel() for p in model.parameters())
@@ -315,17 +398,58 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"Gradient checkpointing: {'ON' if gradient_checkpointing else 'OFF'}")
     bs, seq = config['batch_size'], config['seq_len']
     tokens_per_step = bs * seq
+    use_ema = config.get('use_ema', True)
+    # Memory budget: model (BF16) + FP32 master + AdamW (m+v) = 7.2× params
+    # + 1× params if EMA enabled (FP32 shadow).
+    # + chunked-CE chunk allocates chunk_size × vocab × 2 bytes (tiny for chunk=65K).
+    # + ~3 GB activations + workspace.
+    ema_overhead = 1.0 if use_ema else 0.0
     if gradient_checkpointing:
-        est_peak = model_mem_gb * 7.2 + tokens_per_step * config['vocab_size'] * 2 / 1e9 + 3
+        est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * config['vocab_size'] * 2 / 1e9 + 3
     else:
-        est_peak = model_mem_gb * 7.2 + tokens_per_step * 2 * 16 * config['d_model'] * 2 / 1e9 + 3
+        est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * 2 * 16 * config['d_model'] * 2 / 1e9 + 3
     print(f"Batch size: {bs} | Seq len: {seq} | Tokens/step: {tokens_per_step:,}")
     print(f"Estimated peak GPU memory: {est_peak:.1f} GB (A100 80GB available)")
+    print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
+    # Pre-fetch one batch BEFORE torch.compile so the pre-warmup pass uses the
+    # exact training shapes (CUDA graphs recompile on shape change — using the
+    # wrong shape here would waste the warmup).
+    step_iterator = iter(train_dataloader)
+    try:
+        _warmup_batch = next(step_iterator)
+    except StopIteration:
+        step_iterator = iter(train_dataloader)
+        _warmup_batch = next(step_iterator)
+    _warmup_input = _warmup_batch['input'].to(device, non_blocking=True)
+    _warmup_target = _warmup_batch['target'].to(device, non_blocking=True)
+
     if config.get('compile_model', True) and hasattr(torch, 'compile'):
-        print("Compiling model with torch.compile()...")
-        model = torch.compile(model)
+        compile_mode = config.get('compile_mode', 'reduce-overhead')
+        print(f"Compiling model with torch.compile(mode={compile_mode!r})...")
+        # 'reduce-overhead' uses CUDA graphs. CUDA graphs own the stream, so the
+        # manual torch.cuda.Stream() prefetch pattern was dropped — non_blocking
+        # H2D copy with pin_memory=True gives the same async behaviour without
+        # touching the stream.
+        model = torch.compile(model, mode=compile_mode)
+        # Pre-warmup: one forward+backward with the *real* first-batch shapes.
+        # Without this, the first training step stalls 30s–2min for autotune.
+        warmup_zw = z_loss_weight if use_z_loss else 0.0
+        with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
+                            enabled=(device.type == 'cuda')):
+            _logits = model(_warmup_input)
+            _warmup_loss = chunked_cross_entropy_with_z(
+                _logits.view(-1, _logits.size(-1)),
+                _warmup_target.view(-1),
+                chunk_size=65536,
+                ignore_index=pad_id,
+                z_loss_weight=warmup_zw,
+            )
+        _warmup_loss.backward()
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        print("Pre-warmup complete (CUDA graphs captured).")
 
     decay_params = []
     no_decay_params = []
@@ -357,11 +481,16 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         peak_lr=config['learning_rate'],
     )
 
-    scaler = GradScaler(enabled=(device.type == 'cuda'))
+    # EMA is built before the optional load_checkpoint so a resumed run inherits
+    # the EMA shadow from the prior checkpoint. When use_ema is False, this is
+    # just a None and load_checkpoint / save_checkpoint / val+gen treat it as
+    # a no-op.
+    use_ema = config.get('use_ema', True)
+    ema = EMA(model, decay=config.get('ema_decay', 0.999)) if use_ema else None
 
     initial_step, best_val_loss = 0, float('inf')
     if config.get('preload') is not None:
-        initial_step, best_val_loss = load_checkpoint(model, optimizer, scheduler, config, device)
+        initial_step, best_val_loss = load_checkpoint(model, optimizer, scheduler, config, device, ema=ema)
 
     wandb.init(
         project=config['wandb_project'],
@@ -398,13 +527,15 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     )
 
     global_state = {'step': initial_step, 'model': model, 'optimizer': optimizer,
-                    'scheduler': scheduler, 'config': config, 'best_val_loss': best_val_loss}
+                    'scheduler': scheduler, 'config': config, 'best_val_loss': best_val_loss,
+                    'ema': ema}
 
     def emergency_save_handler(signum, frame):
         print(f"\nSignal {signum} received. Saving emergency checkpoint...")
         save_checkpoint(
             global_state['model'], global_state['optimizer'], global_state['scheduler'],
-            global_state['step'], global_state['config'], global_state['best_val_loss']
+            global_state['step'], global_state['config'], global_state['best_val_loss'],
+            ema=global_state['ema'],
         )
         wandb.finish()
         sys.exit(1)
@@ -417,18 +548,28 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"\nStarting training for {config['max_steps']} steps...")
     model.train()
 
-    if device.type == 'cuda':
-        data_stream = torch.cuda.Stream()
+    # NOTE: torch.compile(mode="reduce-overhead") uses CUDA graphs, which own
+    # the stream. The previous manual torch.cuda.Stream() prefetch pattern is
+    # incompatible with that — non_blocking=True + pin_memory=True gives the
+    # same async-H2D behaviour without touching the stream.
 
     grad_accum_steps = config.get('gradient_accumulation', 1)
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
     use_chunked_ce = config.get('use_chunked_cross_entropy', True)
+    use_z_loss = config.get('use_z_loss', True)
+    z_loss_weight = config.get('z_loss_weight', 1e-4)
+    use_z = use_z_loss and z_loss_weight > 0 and use_chunked_ce
+    # `ema` was constructed earlier (before load_checkpoint) so the resume path
+    # can populate its shadow. We just log the final state here.
+    if ema is not None and not config.get('preload'):
+        # When resuming, EMA shadow is already loaded — don't re-print.
+        print(f"EMA: enabled (decay={ema.decay}, {len(ema.shadow)} parameter shadows)")
 
     if device.type == 'cuda':
-        start_event = torch.cuda.Event(enable_timing=True)
         end_event = torch.cuda.Event(enable_timing=True)
 
-    step_iterator = iter(train_dataloader)
+    # Pre-warmup (before torch.compile) already pulled a batch. Continue from
+    # there — the next next() call in the loop gets the second batch.
     training_start_time = time.time()
     step_start_time = time.time()
     data_wait_time = 0.0
@@ -436,6 +577,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     pbar = tqdm(range(initial_step, config['max_steps']), desc="Training", unit="step")
 
+    # Pull the first real batch the loop will use (the warmup consumed batch 0).
     data_start = time.time()
     try:
         next_batch = next(step_iterator)
@@ -444,14 +586,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         next_batch = next(step_iterator)
     data_wait_time += time.time() - data_start
 
-    if device.type == 'cuda':
-        with torch.cuda.stream(data_stream):
-            next_input = next_batch['input'].to(device, non_blocking=True)
-            next_target = next_batch['target'].to(device, non_blocking=True)
-        torch.cuda.current_stream().wait_stream(data_stream)
-    else:
-        next_input = next_batch['input'].to(device)
-        next_target = next_batch['target'].to(device)
+    next_input = next_batch['input'].to(device, non_blocking=True)
+    next_target = next_batch['target'].to(device, non_blocking=True)
 
     for step in pbar:
         input_ids = next_input
@@ -466,15 +602,25 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         fetch_time = time.time() - data_start
         data_wait_time += fetch_time
 
-        if device.type == 'cuda':
-            with torch.cuda.stream(data_stream):
-                next_input = batch['input'].to(device, non_blocking=True)
-                next_target = batch['target'].to(device, non_blocking=True)
+        # non_blocking=True + pin_memory=True (set on the DataLoader) gives
+        # async H2D copy without an explicit stream. CUDA graphs in
+        # torch.compile(mode="reduce-overhead") own the stream, so we can't
+        # touch it manually here.
+        next_input = batch['input'].to(device, non_blocking=True)
+        next_target = batch['target'].to(device, non_blocking=True)
 
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             logits = model(input_ids)
-            if use_chunked_ce:
+            if use_z:
+                loss = chunked_cross_entropy_with_z(
+                    logits.view(-1, logits.size(-1)),
+                    target_ids.view(-1),
+                    chunk_size=65536,
+                    ignore_index=pad_id,
+                    z_loss_weight=z_loss_weight,
+                )
+            elif use_chunked_ce:
                 loss = chunked_cross_entropy(
                     logits.view(-1, logits.size(-1)),
                     target_ids.view(-1),
@@ -489,18 +635,19 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 )
             loss = loss / grad_accum_steps
 
-        scaler.scale(loss).backward()
+        # BF16 has the FP32 exponent range — no GradScaler needed. The previous
+        # `scaler.scale/unscale_/step/update` block silently dropped updates
+        # when the unscale introduced an inf in the FP32 grad buffer. With BF16
+        # the grads are clean and the scaler is pure overhead.
+        loss.backward()
 
         if (step + 1) % grad_accum_steps == 0:
-            scaler.unscale_(optimizer)
             grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=config['max_grad_norm'])
-            scaler.step(optimizer)
-            scaler.update()
+            optimizer.step()
+            if ema is not None:
+                ema.update(model)
             optimizer.zero_grad(set_to_none=True)
             scheduler.step()
-
-        if device.type == 'cuda':
-            torch.cuda.current_stream().wait_stream(data_stream)
 
         if device.type == 'cuda':
             end_event.record()
@@ -549,22 +696,36 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         if step > 0 and step % config['val_interval'] == 0:
             if device.type == 'cuda':
                 torch.cuda.reset_peak_memory_stats()
-            val_loss = validate(model, val_dataloader, pad_id, device, step, config)
+            # Use EMA weights for validation — the shadow is a noise-free center
+            # of the recent optimization trajectory, typically giving val loss
+            # 0.05–0.1 lower than the live weights.
+            if ema is not None:
+                with ema.averaged_parameters(model):
+                    val_loss = validate(model, val_dataloader, pad_id, device, step, config)
+            else:
+                val_loss = validate(model, val_dataloader, pad_id, device, step, config)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 global_state['best_val_loss'] = best_val_loss
                 best_model_path = Path(config['model_folder']) / f"{config['model_filename']}_best.pt"
                 Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
+                # Best-model save uses the live weights (the trained artifact is
+                # what you want for downstream use). Set to torch.save(ema.shadow)
+                # if you prefer to ship the EMA-averaged model.
                 torch.save(model.state_dict(), best_model_path)
                 print(f"New best model saved (val_loss: {val_loss:.4f})")
             model.train()
 
         if step > 0 and step % config['generation_interval'] == 0:
-            generate_samples(model, tokenizer, device, step, config)
+            if ema is not None:
+                with ema.averaged_parameters(model):
+                    generate_samples(model, tokenizer, device, step, config)
+            else:
+                generate_samples(model, tokenizer, device, step, config)
 
         if step > 0 and step % config['checkpoint_interval'] == 0:
             save_thread = save_checkpoint(model, optimizer, scheduler, step, config,
-                                          best_val_loss, async_save=True)
+                                          best_val_loss, async_save=True, ema=ema)
             if save_thread is not None:
                 active_save_threads.add(save_thread)
             if config.get('keep_last_n_checkpoints', 0) > 0:
@@ -578,7 +739,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"\nTraining completed in {total_time/3600:.2f} hours!")
     print(f"Average throughput: {config['max_steps'] * tokens_per_step / total_time / 1e6:.2f}M tokens/sec")
 
-    save_checkpoint(model, optimizer, scheduler, config['max_steps'], config, best_val_loss, is_final=True)
+    save_checkpoint(model, optimizer, scheduler, config['max_steps'], config, best_val_loss, is_final=True, ema=ema)
 
     wandb.finish()
 

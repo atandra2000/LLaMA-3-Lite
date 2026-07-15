@@ -40,28 +40,47 @@ class RMSNorm(nn.Module):
 
 
 class GroupedQueryAttention(nn.Module):
-    """Grouped-Query Attention with RoPE and Flash Attention 2."""
+    """Grouped-Query Attention with RoPE, optional QK-norm, and Flash Attention 2."""
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
-                 head_dim: int, max_seq_len: int, rope_theta: float):
+                 head_dim: int, max_seq_len: int, rope_theta: float,
+                 qknorm: bool = True):
         super().__init__()
         self.n_heads = n_heads
         self.n_kv_heads = n_kv_heads
         self.head_dim = head_dim
         self.n_rep = n_heads // n_kv_heads
+        self.qknorm = qknorm
 
         self.q_proj = nn.Linear(d_model, n_heads * head_dim, bias=False)
         self.k_proj = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.v_proj = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.out_proj = nn.Linear(n_heads * head_dim, d_model, bias=False)
 
+        # QK-norm: applied per-head, after projection, before RoPE (Qwen2 / Gemma2 placement).
+        # Bounding attention logit growth prevents the late-training "attention collapse" failure
+        # mode. Negligible param cost: 2 * head_dim per layer.
+        if qknorm:
+            self.q_norm = RMSNorm(head_dim, eps=1e-5)
+            self.k_norm = RMSNorm(head_dim, eps=1e-5)
+        else:
+            self.q_norm = nn.Identity()
+            self.k_norm = nn.Identity()
+
         self.rope = RoPE(head_dim, max_seq_len, rope_theta)
 
     def forward(self, x, mask=None):
         B, S, _ = x.shape
 
-        q = self.q_proj(x).view(B, S, self.n_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(B, S, self.n_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, S, self.n_kv_heads, self.head_dim).transpose(1, 2)
+        # view -> (B, S, H, D). Normalize over last axis (D) BEFORE transpose so RMSNorm
+        # sees head_dim as the reduction axis.
+        q = self.q_proj(x).view(B, S, self.n_heads, self.head_dim)
+        k = self.k_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
+        v = self.v_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
+        q = self.q_norm(q)
+        k = self.k_norm(k)
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
 
         q = self.rope(q, S)
         k = self.rope(k, S)
@@ -92,10 +111,12 @@ class SwiGLUFFN(nn.Module):
 
 class DecoderBlock(nn.Module):
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
-                 head_dim: int, d_ff: int, max_seq_len: int, rope_theta: float):
+                 head_dim: int, d_ff: int, max_seq_len: int, rope_theta: float,
+                 qknorm: bool = True):
         super().__init__()
         self.attention = GroupedQueryAttention(
-            d_model, n_heads, n_kv_heads, head_dim, max_seq_len, rope_theta)
+            d_model, n_heads, n_kv_heads, head_dim, max_seq_len, rope_theta,
+            qknorm=qknorm)
         self.ffn = SwiGLUFFN(d_model, d_ff)
         self.attention_norm = RMSNorm(d_model, eps=1e-5)
         self.ffn_norm = RMSNorm(d_model, eps=1e-5)
@@ -122,13 +143,14 @@ class Transformer(nn.Module):
     def __init__(self, vocab_size: int, d_model: int, n_layers: int,
                  n_heads: int, n_kv_heads: int, head_dim: int, d_ff: int,
                  max_seq_len: int, rope_theta: float = 500000.0,
-                 rms_norm_eps: float = 1e-5, gradient_checkpointing: bool = False):
+                 rms_norm_eps: float = 1e-5, gradient_checkpointing: bool = False,
+                 qknorm: bool = True):
         super().__init__()
         self.input_embedding = nn.Embedding(vocab_size, d_model)
 
         decoder_layers = nn.ModuleList([
             DecoderBlock(d_model, n_heads, n_kv_heads, head_dim,
-                         d_ff, max_seq_len, rope_theta)
+                         d_ff, max_seq_len, rope_theta, qknorm=qknorm)
             for _ in range(n_layers)
         ])
         self.decoder = Decoder(decoder_layers, d_model, eps=rms_norm_eps)
@@ -188,6 +210,43 @@ def chunked_cross_entropy(logits, targets, chunk_size=65536, ignore_index=-100):
     return torch.tensor(0.0, device=logits.device, requires_grad=True)
 
 
+def chunked_cross_entropy_with_z(
+    logits, targets, chunk_size=65536, ignore_index=-100, z_loss_weight=1e-4,
+):
+    """CE + z-loss (PaLM / Gemma2). Penalises log-partition growth so output
+    logits can't drift unbounded late in training. Z-loss is computed in FP32
+    per chunk: torch.logsumexp over a 128K-vocab BF16 buffer accumulates
+    rounding error in the exponent, and z-loss is precisely measuring that
+    exponent — precision matters.
+
+    The returned loss is `ce + z_loss_weight * mean(logsumexp(logits.float())**2)`.
+    """
+    total_ce = torch.tensor(0.0, device=logits.device)
+    total_count = torch.tensor(0, device=logits.device, dtype=torch.long)
+    z_accum = torch.tensor(0.0, device=logits.device)
+    n_z = 0
+
+    for start in range(0, logits.shape[0], chunk_size):
+        end = min(start + chunk_size, logits.shape[0])
+        # Upcast chunk to FP32 once for both logsumexp and CE — keeps z-loss precise
+        # and matches the reference's numerics within 1e-5.
+        cl = logits[start:end].float()
+        ct = targets[start:end]
+
+        log_z = torch.logsumexp(cl, dim=-1)
+        z_accum = z_accum + log_z.pow(2).sum()
+        n_z += log_z.numel()
+
+        ce = F.cross_entropy(cl, ct, ignore_index=ignore_index, reduction='none')
+        mask = ct != ignore_index
+        total_ce = total_ce + ce[mask].sum()
+        total_count = total_count + mask.sum()
+
+    ce_loss = (total_ce / total_count.float()) if total_count > 0 else torch.tensor(0.0, device=logits.device)
+    z_loss = z_accum / max(n_z, 1)
+    return ce_loss + z_loss_weight * z_loss
+
+
 def build_transformer(
     vocab_size: int = 128256,
     d_model: int = 1024,
@@ -200,6 +259,7 @@ def build_transformer(
     rope_theta: float = 500000.0,
     rms_norm_eps: float = 1e-5,
     gradient_checkpointing: bool = False,
+    qknorm: bool = True,
 ) -> Transformer:
     """Build LLaMA 3 model with specified architecture."""
     model = Transformer(
@@ -208,6 +268,7 @@ def build_transformer(
         d_ff=d_ff, max_seq_len=max_seq_len, rope_theta=rope_theta,
         rms_norm_eps=rms_norm_eps,
         gradient_checkpointing=gradient_checkpointing,
+        qknorm=qknorm,
     )
     num_params = sum(p.numel() for p in model.parameters())
     non_embed = model.get_num_params(non_embedding=True)
@@ -215,4 +276,8 @@ def build_transformer(
     print(f"Non-embedding params: {non_embed:,} ({non_embed/1e6:.1f}M)")
     if gradient_checkpointing:
         print(f"Gradient checkpointing: ENABLED")
+    if qknorm:
+        # QK-norm adds 2 * head_dim per layer = 4,096 scalars for the default config.
+        # Don't add this to the headline param count — it's noise.
+        pass
     return model

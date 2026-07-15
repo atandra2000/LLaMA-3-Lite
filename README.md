@@ -42,14 +42,17 @@ python train.py  # Start training with one command
 | **Grouped-Query Attention (GQA)** | ✅ | Reduces KV cache size by 50% |
 | **Rotary Position Embeddings (RoPE)** | ✅ | Enables length extrapolation (θ = 500K) |
 | **Fused SwiGLU FFN** | ✅ | Cuts GEMM kernels from 3→2 per layer |
+| **QK-Norm** | ✅ | Bounds attention logit growth, prevents late-run collapse |
+| **Z-Loss (CE + log-partition penalty)** | ✅ | Bounds output logit growth, prevents late-run collapse |
 | **Gradient Checkpointing** | ✅ | Reduces activation memory by ~70 GB |
 | **Chunked Cross-Entropy** | ✅ | Reduces logits memory from 50 GB → 0.3 GB |
 | **Flash Attention 2** | ✅ | O(N) memory, kernel-fused softmax+matmul |
 | **BFloat16 Mixed Precision** | ✅ | Native A100 tensor cores, stable training |
+| **Exponential Moving Average (EMA)** | ✅ | Smoother val loss, better generation samples |
 | **Disk-Backed Token Cache** | ✅ | Reduces RAM from 112 GB → ~1 MB |
 | **Document Deduplication** | ✅ | SHA-256 exact dedup, better data quality |
 | **Async CPU→GPU Transfer** | ✅ | Hides data loading behind compute |
-| **torch.compile()** | ✅ | Kernel fusion + operator optimization |
+| **torch.compile(mode="reduce-overhead")** | ✅ | CUDA-graph capture, ~10–20% throughput |
 | **W&B Integration** | ✅ | Full experiment tracking |
 
 ### Model Specifications
@@ -196,7 +199,7 @@ flowchart LR
     classDef good fill:#bbf7d0,stroke:#15803d,color:#000
 ```
 
-**Stack (7 techniques):** gradient checkpointing &middot; chunked cross-entropy &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; `channels_last` &middot; fused AdamW.
+**Stack (7 memory techniques):** gradient checkpointing &middot; chunked cross-entropy &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; fused AdamW &middot; torch.compile CUDA graphs. `channels_last` is not used — LLMs are 2D matmul-bound, layout tricks don't help. **Plus 3 stability techniques:** QK-norm &middot; z-loss &middot; EMA.
 
 ### Text Alternative (ASCII)
 

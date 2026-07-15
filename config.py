@@ -32,8 +32,16 @@ def get_config():
         'dtype':                'bfloat16',
         'use_flash_attention':  True,
         'compile_model':        True,
+        'compile_mode':         'reduce-overhead',
         'gradient_checkpointing': True,
         'use_chunked_cross_entropy': True,
+
+        # Stability / quality (added 2026-07-15)
+        'use_z_loss':           True,
+        'z_loss_weight':        1e-4,
+        'qknorm':               True,
+        'use_ema':              True,
+        'ema_decay':            0.999,
 
         'tf32':                 True,
         'cudnn_benchmark':      True,

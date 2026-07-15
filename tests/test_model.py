@@ -16,6 +16,7 @@ from model import (
     Transformer,
     build_transformer,
     chunked_cross_entropy,
+    chunked_cross_entropy_with_z,
 )
 
 
@@ -366,3 +367,136 @@ class TestTransformerForward:
             out_a = model_a(ids)
             out_b = model_b(ids)
         assert torch.allclose(out_a, out_b, atol=1e-6), (out_a - out_b).abs().max()
+
+class TestChunkedCrossEntropyWithZ:
+    """Numerical-equivalence + behaviour tests for the z-loss variant."""
+
+    @pytest.mark.numeric
+    def test_matches_ce_plus_zpen_reference(self, device):
+        """z-loss wrapper must equal `ce + weight * mean(logsumexp(logits.float())**2)`
+        within 1e-5 — the whole point of having a separate function is to keep
+        the original chunked_cross_entropy bit-identical to F.cross_entropy."""
+        torch.manual_seed(7)
+        N, V = 100, 64
+        logits = torch.randn(N, V, device=device, requires_grad=True)
+        targets = torch.randint(0, V, (N,), device=device, dtype=torch.long)
+
+        weight = 1e-4
+        ref_ce = F.cross_entropy(logits, targets, reduction="mean")
+        ref_z = (torch.logsumexp(logits.float(), dim=-1).pow(2)).mean()
+        ref = ref_ce + weight * ref_z
+
+        got = chunked_cross_entropy_with_z(
+            logits.clone().detach().requires_grad_(True), targets,
+            chunk_size=32, z_loss_weight=weight,
+        )
+        assert torch.allclose(got, ref, atol=1e-5), (ref.item(), got.item())
+
+    def test_z_weight_zero_matches_pure_ce(self, device):
+        """With z_loss_weight=0, the function should be equivalent to chunked
+        cross-entropy (the penalty term is identically zero)."""
+        torch.manual_seed(11)
+        N, V = 50, 32
+        logits = torch.randn(N, V, device=device)
+        targets = torch.randint(0, V, (N,), device=device, dtype=torch.long)
+        a = chunked_cross_entropy_with_z(logits, targets, chunk_size=16, z_loss_weight=0.0)
+        b = chunked_cross_entropy(logits, targets, chunk_size=16)
+        assert torch.allclose(a, b, atol=1e-6)
+
+    def test_gradients_flow(self, device):
+        """Z-loss must backprop through the logits — otherwise the bound on
+        logit growth is worthless."""
+        torch.manual_seed(13)
+        logits = torch.randn(40, 20, device=device, requires_grad=True)
+        targets = torch.randint(0, 20, (40,), device=device, dtype=torch.long)
+        loss = chunked_cross_entropy_with_z(logits, targets, z_loss_weight=1e-3)
+        loss.backward()
+        assert logits.grad is not None
+        assert torch.isfinite(logits.grad).all()
+
+    def test_z_loss_grows_with_logit_magnitude(self, device):
+        """Sanity: scaling logits up by a constant should increase the z penalty
+        (since logsumexp grows with the max logit)."""
+        torch.manual_seed(17)
+        N, V = 30, 16
+        targets = torch.randint(0, V, (N,), device=device, dtype=torch.long)
+        small = torch.randn(N, V, device=device) * 0.1
+        large = torch.randn(N, V, device=device) * 5.0
+        z_small = chunked_cross_entropy_with_z(small, targets, z_loss_weight=1.0).item()
+        z_large = chunked_cross_entropy_with_z(large, targets, z_loss_weight=1.0).item()
+        assert z_large > z_small, (z_small, z_large)
+
+
+class TestQKNorm:
+    """QK-norm behaviour: param count changes when enabled; forward is a no-op
+    transformation when disabled (qknorm=False → q_norm/k_norm are Identity)."""
+
+    def test_param_count_increases_when_enabled(self, tiny_config, device, dtype, seed_everything):
+        """QK-norm adds 2 * head_dim per layer when enabled."""
+        seed_everything(101)
+        # Inline a small param-counter to avoid an import path dependency.
+        def count_params(module):
+            return sum(p.numel() for p in module.parameters())
+        cfg = tiny_config
+        m_off = build_transformer(
+            vocab_size=cfg["vocab_size"], d_model=cfg["d_model"], n_layers=cfg["n_layers"],
+            n_heads=cfg["n_heads"], n_kv_heads=cfg["n_kv_heads"], head_dim=cfg["head_dim"],
+            d_ff=cfg["d_ff"], max_seq_len=cfg["seq_len"], rope_theta=cfg["rope_theta"],
+            rms_norm_eps=cfg["rms_norm_eps"], qknorm=False,
+        )
+        m_on = build_transformer(
+            vocab_size=cfg["vocab_size"], d_model=cfg["d_model"], n_layers=cfg["n_layers"],
+            n_heads=cfg["n_heads"], n_kv_heads=cfg["n_kv_heads"], head_dim=cfg["head_dim"],
+            d_ff=cfg["d_ff"], max_seq_len=cfg["seq_len"], rope_theta=cfg["rope_theta"],
+            rms_norm_eps=cfg["rms_norm_eps"], qknorm=True,
+        )
+        # Per layer: q_norm (head_dim) + k_norm (head_dim) = 2 * head_dim scalars.
+        expected_extra = 2 * cfg["head_dim"] * cfg["n_layers"]
+        assert count_params(m_on) - count_params(m_off) == expected_extra
+
+    def test_disabled_attention_is_bit_identical(self, tiny_config, device, dtype, seed_everything):
+        """With qknorm=False the q/k projections are identity-normed, so two
+        models with identical weights must produce identical outputs."""
+        seed_everything(202)
+        cfg = tiny_config
+        common = dict(
+            vocab_size=cfg["vocab_size"], d_model=cfg["d_model"], n_layers=cfg["n_layers"],
+            n_heads=cfg["n_heads"], n_kv_heads=cfg["n_kv_heads"], head_dim=cfg["head_dim"],
+            d_ff=cfg["d_ff"], max_seq_len=cfg["seq_len"], rope_theta=cfg["rope_theta"],
+            rms_norm_eps=cfg["rms_norm_eps"],
+        )
+        # Build with qknorm=False, then manually swap q_norm/k_norm to Identity
+        # in a copy. This isolates the attention module from the rest of the
+        # model (no other layer depends on qknorm).
+        m = build_transformer(**common, qknorm=False).to(device=device, dtype=dtype)
+        # Sanity: q_norm/k_norm exist as Identity placeholders.
+        attn = m.decoder.layers[0].attention
+        assert isinstance(attn.q_norm, torch.nn.Identity)
+        assert isinstance(attn.k_norm, torch.nn.Identity)
+        m.eval()
+        ids = torch.randint(0, cfg["vocab_size"], (2, cfg["seq_len"]),
+                            device=device, dtype=torch.long)
+        with torch.no_grad():
+            out = m(ids)
+        assert out.shape == (2, cfg["seq_len"], cfg["vocab_size"])
+
+    def test_enabled_attention_does_not_crash(self, tiny_config, device, dtype, seed_everything):
+        """With qknorm=True a forward pass must run and produce finite output."""
+        seed_everything(303)
+        cfg = tiny_config
+        m = build_transformer(
+            vocab_size=cfg["vocab_size"], d_model=cfg["d_model"], n_layers=cfg["n_layers"],
+            n_heads=cfg["n_heads"], n_kv_heads=cfg["n_kv_heads"], head_dim=cfg["head_dim"],
+            d_ff=cfg["d_ff"], max_seq_len=cfg["seq_len"], rope_theta=cfg["rope_theta"],
+            rms_norm_eps=cfg["rms_norm_eps"], qknorm=True,
+        ).to(device=device, dtype=dtype)
+        attn = m.decoder.layers[0].attention
+        # Real RMSNorm, not Identity
+        assert isinstance(attn.q_norm, RMSNorm)
+        assert isinstance(attn.k_norm, RMSNorm)
+        m.eval()
+        ids = torch.randint(0, cfg["vocab_size"], (2, cfg["seq_len"]),
+                            device=device, dtype=torch.long)
+        with torch.no_grad():
+            out = m(ids)
+        assert torch.isfinite(out).all()

@@ -105,14 +105,55 @@ with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
     out = attn(q, k, v)
 ```
 
+## Skill 8: Tune stability knobs (z-loss, QK-norm, EMA)
+
+Three optional stability features were added in the 2026-07-15 refactor. All
+default to safe values; all can be disabled independently.
+
+| Flag | Default | Disable by | Notes |
+|---|---|---|---|
+| `use_z_loss` | True | False | Z-loss on output logits; prevents late-run collapse. |
+| `z_loss_weight` | 1e-4 | 0.0 | Gemma2 default. Higher = stronger bound, slightly slower convergence. |
+| `qknorm` | True | False | QK-norm on attention; prevents attention logit growth. ~16 KB params. |
+| `use_ema` | True | False | EMA for val + generation. +2 GB peak memory. |
+| `ema_decay` | 0.999 | 0.0 | Standard for 42K-step runs. Use 0.9999 for >100K steps. |
+
+**Rule of thumb:** at 515M params / 42K steps / 1× A100, all defaults are
+safe. To ablate, set one to off/zero per run; expect < 0.05 perplexity
+difference between adjacent settings.
+
+**How to inspect EMA at a checkpoint:**
+```python
+from train import EMA
+ema = EMA(model, decay=0.999)
+# shadow is a dict[str, Tensor] of FP32 copies keyed by param name.
+print(list(ema.shadow.keys())[:5])
+```
+
+## Skill 9: Resume with EMA
+
+Pre-2026-07-15 checkpoints have no `ema_state_dict` key. When loaded with the
+new code, EMA simply starts fresh from the live weights — no crash, no
+warning. The first few validation runs after a resume will use a "young" EMA
+that hasn't converged; val loss will look slightly worse than expected for
+~1K steps, then stabilise.
+
+To force a cold start, set `use_ema=False` for the first 5K steps of any
+resume, then flip it on.
+
 ## Pitfalls
 - **`tie_embeddings=False`** — do not enable it; the LLaMA-3 paper
   deliberately unties and so should you.
-- **BF16 + GradScaler** is fine on Ampere/Blackwell. On Volta/Turing use
-  FP16 + GradScaler.
+- **`GradScaler` is not used** — BF16 has FP32's exponent range, so the
+  scaler is pure overhead (and historically could false-skip valid updates
+  on inf-numerical-noise in the unscale step). On Volta/Turing with FP16,
+  wrap the loss in `torch.amp.GradScaler()` manually.
 - **`channels_last`** is for *vision* — LLMs are 2D matmul-bound, layout
   doesn't help. Skip it.
 - **EOS token** must exist in the LLaMA-3 tokenizer vocab (it does, id
   `128009`). Document packing requires it as a separator.
 - **`use_chunked_cross_entropy`** must be `True` or you OOM.
+- **Z-loss + QK-norm interact**: both are present, both are off by default
+  via `z_loss_weight=0` / `qknorm=False`. Running with both off recovers
+  the original recipe exactly (within FP32↔BF16 round-trip noise).
 
