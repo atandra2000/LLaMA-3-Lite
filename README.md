@@ -404,7 +404,7 @@ Training uses **BFloat16** mixed precision via `torch.autocast` and `torch.amp.G
 LLaMA-3-Lite/
 ├── config.py           # Central configuration & hyperparameters
 ├── model.py            # Transformer architecture (RoPE, GQA, SwiGLU, RMSNorm)
-├── dataset.py          # Data pipeline (tokenizer, streaming, cache, dedup)
+├── dataset.py          # Thin shim re-exporting the universal training loader (shared_data.loader)
 ├── train.py            # Training loop (validation, generation, checkpointing)
 ├── test_pipeline.py    # Smoke test (synthetic data, CPU-only)
 ├── benchmark_data.py   # Data pipeline benchmark (GPU)
@@ -418,7 +418,7 @@ LLaMA-3-Lite/
 |--------|---------------|-------------|
 | `config.py` | `get_config()`, `get_weights_file_path()`, `latest_weights_file_path()`, `cleanup_old_checkpoints()` | Central configuration with A100-optimized defaults |
 | `model.py` | `build_transformer()`, `chunked_cross_entropy()` | Pure PyTorch model with gradient checkpointing support |
-| `dataset.py` | `build_tokenizer()`, `build_training_data()`, `build_synthetic_data()`, `PackedDataset` | Streaming multi-source data with disk-backed cache |
+| `dataset.py` | `build_training_data()`, `build_synthetic_data()`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn` | Re-exports the universal training loader from `shared_data.loader` (single source of truth) |
 | `train.py` | `train_model()`, `validate()`, `generate_samples()`, `save_checkpoint()`, `load_checkpoint()` | Full training orchestration with W&B logging |
 
 ---
@@ -528,7 +528,7 @@ SOFTWARE.
 1. **A100 80GB SXM GPU**: Default configuration targets this hardware. Other GPUs require adjusting `batch_size` (see GPU sizing table).
 2. **HuggingFace access**: Tokenizer uses `NousResearch/Meta-Llama-3-8B` (public, no gated access). No login required.
 3. **W&B account**: Training initializes a W&B run. Set `WANDB_API_KEY` or run `wandb login`. Set `wandb_entity` in config if needed.
-4. **Data streaming + caching**: First run streams from HuggingFace and writes disk cache (~16 GB). Subsequent runs reuse cache if `reuse_data_cache=True`.
+4. **Data preparation**: Run `python data/prepare_data.py` (delegates to the universal `shared_data` pipeline — download, clean, tokenise, pack, dedup) to produce `data/shards/manifest.json` + `shard_*.bin`. `build_training_data()` then reads those shards. With no prepared corpus it falls back to synthetic data for smoke tests.
 5. **No weight tying**: Output projection is learned independently from input embedding (`tie_embeddings: False`).
 6. **Document packing**: Multiple documents packed per sequence with EOS separators. Cross-document attention is not masked.
 7. **Gradient checkpointing required**: Without it, batch_size=96 requires ~92 GB (OOM on A100 80GB).
