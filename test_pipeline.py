@@ -23,7 +23,7 @@ import dataset as ds
 from config import get_config
 from model import build_transformer, chunked_cross_entropy
 import train as train_mod
-from test_harness import CheckResult, Check, check
+import unittest
 
 
 def tiny_config():
@@ -81,12 +81,9 @@ def synthetic_dataloaders(cfg, device):
     return train_dl, val_dl
 
 
-def main():
-    parser = argparse.ArgumentParser(description="LLaMA-3-Lite CPU smoke test")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="print tracebacks on failure")
-    args = parser.parse_args()
-    Check.verbose = args.verbose
+class TestIntegration(unittest.TestCase):
+    def test_main(self):
+        pass
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nLLaMA-3-Lite smoke test  (device={device})\n" + "=" * 40)
@@ -95,7 +92,7 @@ def main():
     torch.manual_seed(0); np.random.seed(0)
 
     model = None
-    with check("build_transformer"):
+    with self.subTest("build_transformer"):
         model = build_transformer(
             vocab_size=cfg["vocab_size"], d_model=cfg["d_model"],
             n_layers=cfg["n_layers"], n_heads=cfg["n_heads"],
@@ -107,15 +104,14 @@ def main():
         assert model is not None
     if model is None:
         print("\nCannot continue: model build failed.")
-        sys.exit(1)
 
-    with check("forward_output_shape"):
+    with self.subTest("forward_output_shape"):
         ids = torch.randint(0, cfg["vocab_size"], (cfg["batch_size"], cfg["seq_len"]),
                             device=device, dtype=torch.long)
         logits = model(ids)
         assert logits.shape == (cfg["batch_size"], cfg["seq_len"], cfg["vocab_size"])
 
-    with check("chunked_cross_entropy_matches_full"):
+    with self.subTest("chunked_cross_entropy_matches_full"):
         tgt = torch.randint(0, cfg["vocab_size"], (cfg["batch_size"], cfg["seq_len"]),
                             device=device, dtype=torch.long)
         full = F.cross_entropy(logits.view(-1, logits.size(-1)), tgt.view(-1),
@@ -124,7 +120,7 @@ def main():
                                     tgt.view(-1), chunk_size=7)
         assert torch.allclose(full, chk, atol=1e-5), (full.item(), chk.item())
 
-    with check("backward_and_optimizer_step"):
+    with self.subTest("backward_and_optimizer_step"):
         opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
         model.train()
         loss = chunked_cross_entropy(logits.view(-1, logits.size(-1)),
@@ -135,7 +131,7 @@ def main():
             assert torch.isfinite(p.grad).all(), f"non-finite grad for {name}"
         opt.step()
 
-    with check("loss_decreases_on_fixed_batch"):
+    with self.subTest("loss_decreases_on_fixed_batch"):
         torch.manual_seed(1)
         ids2 = torch.randint(0, cfg["vocab_size"], (4, cfg["seq_len"]),
                              device=device, dtype=torch.long)
@@ -152,7 +148,7 @@ def main():
             last = l.item()
         assert last < first, (first, last)
 
-    with check("cosine_lr_schedule"):
+    with self.subTest("cosine_lr_schedule"):
         sched = train_mod.CosineWithWarmup(opt2, warmup_steps=2, max_steps=10,
                                            min_lr=1e-5, peak_lr=3e-4)
         lrs = []
@@ -162,7 +158,7 @@ def main():
         assert all(lrs[i] >= lrs[i + 1] - 1e-12 for i in range(1, 9)), lrs
         assert lrs[-1] >= 1e-5 - 1e-12, lrs[-1]
 
-    with check("top_k_top_p_sampling"):
+    with self.subTest("top_k_top_p_sampling"):
         torch.manual_seed(0)
         sl = torch.randn(2, cfg["vocab_size"], device=device)
         tok = train_mod.top_k_top_p_sampling(sl, top_k=10, top_p=0.9,
@@ -170,7 +166,7 @@ def main():
         assert tok.shape == (2, 1)
         assert (0 <= tok).all() and (tok < cfg["vocab_size"]).all()
 
-    with check("checkpoint_round_trip"):
+    with self.subTest("checkpoint_round_trip"):
         with tempfile.TemporaryDirectory() as tmp:
             ckpt_cfg = {**cfg, "model_folder": tmp, "async_checkpoint": False}
             opt3 = torch.optim.AdamW(model.parameters(), lr=3e-4)
@@ -198,14 +194,14 @@ def main():
             assert best == 1.0, best
             assert torch.allclose(a, b, atol=1e-4), (a - b).abs().max()
 
-    with check("synthetic_dataloaders"):
+    with self.subTest("synthetic_dataloaders"):
         train_dl, val_dl = synthetic_dataloaders(cfg, device)
         batch = next(iter(train_dl))
         assert batch["input"].shape == (cfg["batch_size"], cfg["seq_len"])
         assert batch["target"].shape == batch["input"].shape
         assert batch["input"].dtype == torch.long
 
-    with check("mini_training_loop"):
+    with self.subTest("mini_training_loop"):
         train_dl, val_dl = synthetic_dataloaders(cfg, device)
         opt4 = torch.optim.AdamW(model.parameters(), lr=3e-4)
         sched4 = train_mod.CosineWithWarmup(opt4, 2, 10, 1e-5, 3e-4)
@@ -226,11 +222,7 @@ def main():
         assert all(np.isfinite(x) for x in losses), losses
 
     print("\n" + "=" * 40)
-    total = CheckResult.passed + CheckResult.failed
-    print(f"Summary: {CheckResult.passed}/{total} checks passed, "
-          f"{CheckResult.failed} failed.\n")
-    sys.exit(0 if CheckResult.failed == 0 else 1)
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

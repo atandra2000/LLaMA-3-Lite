@@ -11,11 +11,11 @@ import sys
 import time
 import math
 import random
-import signal
-import threading
 import numpy
 
 import wandb
+from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 from dataset import build_training_data
 from model import build_transformer, chunked_cross_entropy, chunked_cross_entropy_with_z
@@ -46,86 +46,10 @@ def setup_gpu_optimizations(config):
             print(f"CUDA Compute Capability: {cap[0]}.{cap[1]}")
 
 
-class EMA:
-    """Exponential moving average of model parameters. Used for eval + generation
-    only — the live (training) weights are saved to checkpoints.
-
-    Memory cost: 1× model in FP32 ≈ 2 GB for 515M. Negligible relative to the
-    20 GB peak on a single A100. Non-trainable buffers (e.g. RoPE cos/sin) are
-    NOT shadowed because they never update.
-    """
-    def __init__(self, model: nn.Module, decay: float = 0.999):
-        self.decay = decay
-        self.shadow = {
-            n: p.detach().clone().float()
-            for n, p in model.named_parameters() if p.requires_grad
-        }
-
-    @torch.no_grad()
-    def update(self, model: nn.Module):
-        for n, p in model.named_parameters():
-            if not p.requires_grad or n not in self.shadow:
-                continue
-            self.shadow[n].mul_(self.decay).add_(p.detach().float(), alpha=1 - self.decay)
-
-    @contextmanager
-    def averaged_parameters(self, model: nn.Module):
-        """Swap model params to EMA values for the duration of the block, then restore.
-
-        Backups are taken on the original device in the original dtype so the
-        restore is lossless regardless of autocast state.
-        """
-        backup = {n: p.detach().clone()
-                  for n, p in model.named_parameters() if n in self.shadow}
-        with torch.no_grad():
-            for n, p in model.named_parameters():
-                if n in self.shadow:
-                    p.copy_(self.shadow[n].to(p.dtype))
-        try:
-            yield
-        finally:
-            with torch.no_grad():
-                for n, p in model.named_parameters():
-                    if n in backup:
-                        p.copy_(backup[n])
-
-    def state_dict(self) -> dict:
-        return {'decay': self.decay, 'shadow': self.shadow}
-
-    def load_state_dict(self, sd: dict):
-        self.decay = sd['decay']
-        self.shadow = {k: v for k, v in sd['shadow'].items()}
 
 
-class CosineWithWarmup:
-    def __init__(self, optimizer, warmup_steps: int, max_steps: int,
-                 min_lr: float, peak_lr: float):
-        self.optimizer = optimizer
-        self.warmup_steps = warmup_steps
-        self.max_steps = max_steps
-        self.min_lr = min_lr
-        self.peak_lr = peak_lr
-        self._step = 0
 
-    def step(self):
-        self._step += 1
-        lr = self.get_lr()
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = lr
 
-    def get_lr(self):
-        if self._step < self.warmup_steps:
-            return self.peak_lr * self._step / self.warmup_steps
-        else:
-            progress = (self._step - self.warmup_steps) / (self.max_steps - self.warmup_steps)
-            cosine = 0.5 * (1 + math.cos(math.pi * progress))
-            return self.min_lr + (self.peak_lr - self.min_lr) * cosine
-
-    def state_dict(self):
-        return {'step': self._step}
-
-    def load_state_dict(self, state_dict):
-        self._step = state_dict['step']
 
 
 def top_k_top_p_sampling(logits, top_k, top_p, temperature):
@@ -248,18 +172,9 @@ def validate(model, val_dataloader, pad_id, device, step, config):
     return avg_loss
 
 
-def _save_checkpoint_to_disk(checkpoint, path):
-    """Background worker for async checkpoint I/O."""
-    try:
-        torch.save(checkpoint, path)
-        print(f"Checkpoint saved: {path}")
-    except Exception as exc:
-        print(f"[checkpoint] ERROR saving {path}: {exc}")
-
-
 def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=None,
                     is_final=False, async_save=True, ema=None):
-    """Save checkpoint with optional async I/O to minimize training pause."""
+    """Save checkpoint without async I/O."""
     model_folder = Path(config['model_folder'])
     model_folder.mkdir(parents=True, exist_ok=True)
 
@@ -292,25 +207,9 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
     path = model_folder / f"{config['model_filename']}_step_{step}.pt"
 
-    if async_save and config.get('async_checkpoint', True):
-        checkpoint_copy = {k: v.copy() if hasattr(v, 'copy') else v for k, v in checkpoint.items()}
-        for key in ('model_state_dict', 'optimizer_state_dict', 'scheduler_state_dict'):
-            if isinstance(checkpoint_copy[key], dict):
-                checkpoint_copy[key] = checkpoint_copy[key].copy()
-        # ema_state_dict is itself a dict containing a dict ('shadow'); copy both levels.
-        if isinstance(checkpoint_copy.get('ema_state_dict'), dict):
-            checkpoint_copy['ema_state_dict'] = checkpoint_copy['ema_state_dict'].copy()
-            if 'shadow' in checkpoint_copy['ema_state_dict']:
-                checkpoint_copy['ema_state_dict']['shadow'] = dict(
-                    checkpoint_copy['ema_state_dict']['shadow'])
-        thread = threading.Thread(target=_save_checkpoint_to_disk, args=(checkpoint_copy, path), daemon=True)
-        thread.start()
-        print(f"Checkpoint offloaded to background thread: {path}")
-        return thread
-    else:
-        torch.save(checkpoint, path)
-        print(f"Checkpoint saved: {path}")
-        return None
+    torch.save(checkpoint, path)
+    print(f"Checkpoint saved: {path}")
+    return None
 
 
 def load_checkpoint(model, optimizer, scheduler, config, device, ema=None):
@@ -473,20 +372,19 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"  Decay params: {n_decay:,} ({n_decay/1e6:.1f}M)")
     print(f"  No-decay params: {n_no_decay:,} ({n_no_decay/1e6:.1f}M)")
 
-    scheduler = CosineWithWarmup(
-        optimizer,
-        warmup_steps=config['warmup_steps'],
-        max_steps=config['max_steps'],
-        min_lr=config['min_lr'],
-        peak_lr=config['learning_rate'],
-    )
+    warmup_steps = config['warmup_steps']
+    max_steps = config['max_steps']
+    start_factor = max(config['min_lr'] / config['learning_rate'], 1e-4) if config['learning_rate'] > 0 else 1e-4
+    warmup_scheduler = LinearLR(optimizer, start_factor=start_factor, total_iters=warmup_steps)
+    cosine_scheduler = CosineAnnealingLR(optimizer, T_max=max_steps - warmup_steps, eta_min=config['min_lr'])
+    scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_steps])
 
     # EMA is built before the optional load_checkpoint so a resumed run inherits
     # the EMA shadow from the prior checkpoint. When use_ema is False, this is
     # just a None and load_checkpoint / save_checkpoint / val+gen treat it as
     # a no-op.
     use_ema = config.get('use_ema', True)
-    ema = EMA(model, decay=config.get('ema_decay', 0.999)) if use_ema else None
+    ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get('ema_decay', 0.999))) if use_ema else None
 
     initial_step, best_val_loss = 0, float('inf')
     if config.get('preload') is not None:
@@ -529,21 +427,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     global_state = {'step': initial_step, 'model': model, 'optimizer': optimizer,
                     'scheduler': scheduler, 'config': config, 'best_val_loss': best_val_loss,
                     'ema': ema}
-
-    def emergency_save_handler(signum, frame):
-        print(f"\nSignal {signum} received. Saving emergency checkpoint...")
-        save_checkpoint(
-            global_state['model'], global_state['optimizer'], global_state['scheduler'],
-            global_state['step'], global_state['config'], global_state['best_val_loss'],
-            ema=global_state['ema'],
-        )
-        wandb.finish()
-        sys.exit(1)
-
-    signal.signal(signal.SIGTERM, emergency_save_handler)
-    signal.signal(signal.SIGINT, emergency_save_handler)
-
-    active_save_threads = set()
 
     print(f"\nStarting training for {config['max_steps']} steps...")
     model.train()
@@ -645,7 +528,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=config['max_grad_norm'])
             optimizer.step()
             if ema is not None:
-                ema.update(model)
+                ema.update_parameters(model)
             optimizer.zero_grad(set_to_none=True)
             scheduler.step()
 
@@ -659,7 +542,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             if device.type == 'cuda':
                 torch.cuda.synchronize()
 
-            current_lr = scheduler.get_lr()
+            current_lr = scheduler.get_last_lr()[0]
             tokens_seen = step * tokens_per_step
             tokens_per_sec = tokens_per_step / step_time if step_time > 0 else 0
             effective_batch = config['batch_size'] * grad_accum_steps
@@ -700,8 +583,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             # of the recent optimization trajectory, typically giving val loss
             # 0.05–0.1 lower than the live weights.
             if ema is not None:
-                with ema.averaged_parameters(model):
-                    val_loss = validate(model, val_dataloader, pad_id, device, step, config)
+                val_loss = validate(ema, val_dataloader, pad_id, device, step, config)
             else:
                 val_loss = validate(model, val_dataloader, pad_id, device, step, config)
             if val_loss < best_val_loss:
@@ -718,22 +600,15 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
         if step > 0 and step % config['generation_interval'] == 0:
             if ema is not None:
-                with ema.averaged_parameters(model):
-                    generate_samples(model, tokenizer, device, step, config)
+                generate_samples(ema, tokenizer, device, step, config)
             else:
                 generate_samples(model, tokenizer, device, step, config)
 
         if step > 0 and step % config['checkpoint_interval'] == 0:
-            save_thread = save_checkpoint(model, optimizer, scheduler, step, config,
-                                          best_val_loss, async_save=True, ema=ema)
-            if save_thread is not None:
-                active_save_threads.add(save_thread)
+            save_checkpoint(model, optimizer, scheduler, step, config,
+                            best_val_loss, async_save=False, ema=ema)
             if config.get('keep_last_n_checkpoints', 0) > 0:
                 cleanup_old_checkpoints(config, step)
-
-        for t in list(active_save_threads):
-            if not t.is_alive():
-                active_save_threads.discard(t)
 
     total_time = time.time() - training_start_time
     print(f"\nTraining completed in {total_time/3600:.2f} hours!")

@@ -27,18 +27,6 @@ class RoPE(nn.Module):
         return rotated.flatten(-2)
 
 
-class RMSNorm(nn.Module):
-    """Root Mean Square Layer Normalization."""
-    def __init__(self, d_model: int, eps: float = 1e-5):
-        super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(d_model))
-
-    def forward(self, x):
-        norm_x = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
-        return self.weight * norm_x
-
-
 class GroupedQueryAttention(nn.Module):
     """Grouped-Query Attention with RoPE, optional QK-norm, and Flash Attention 2."""
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
@@ -60,8 +48,8 @@ class GroupedQueryAttention(nn.Module):
         # Bounding attention logit growth prevents the late-training "attention collapse" failure
         # mode. Negligible param cost: 2 * head_dim per layer.
         if qknorm:
-            self.q_norm = RMSNorm(head_dim, eps=1e-5)
-            self.k_norm = RMSNorm(head_dim, eps=1e-5)
+            self.q_norm = nn.RMSNorm(head_dim, eps=1e-5)
+            self.k_norm = nn.RMSNorm(head_dim, eps=1e-5)
         else:
             self.q_norm = nn.Identity()
             self.k_norm = nn.Identity()
@@ -118,8 +106,8 @@ class DecoderBlock(nn.Module):
             d_model, n_heads, n_kv_heads, head_dim, max_seq_len, rope_theta,
             qknorm=qknorm)
         self.ffn = SwiGLUFFN(d_model, d_ff)
-        self.attention_norm = RMSNorm(d_model, eps=1e-5)
-        self.ffn_norm = RMSNorm(d_model, eps=1e-5)
+        self.attention_norm = nn.RMSNorm(d_model, eps=1e-5)
+        self.ffn_norm = nn.RMSNorm(d_model, eps=1e-5)
 
     def forward(self, x):
         x = x + self.attention(self.attention_norm(x))
@@ -131,7 +119,7 @@ class Decoder(nn.Module):
     def __init__(self, layers: nn.ModuleList, d_model: int, eps: float = 1e-5):
         super().__init__()
         self.layers = layers
-        self.norm = RMSNorm(d_model, eps=eps)
+        self.norm = nn.RMSNorm(d_model, eps=eps)
 
     def forward(self, x):
         for layer in self.layers:

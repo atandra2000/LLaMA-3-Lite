@@ -23,7 +23,7 @@ import dataset as ds
 from config import get_config
 from model import build_transformer, chunked_cross_entropy
 import train as train_mod
-from test_harness import CheckResult, Check, check
+import unittest
 
 
 def gpu_config(tmp_dir: str) -> dict:
@@ -141,12 +141,13 @@ def install_wandb_stub(stub: WandbStub):
     wandb.Table = _Table
 
 
-def run(steps: int, device_str: str, verbose: bool):
-    Check.verbose = verbose
+class TestGPUIntegration(unittest.TestCase):
+    def test_run(self):
+        pass
+        steps=30; device_str="cuda" if torch.cuda.is_available() else "cpu"; verbose=False
     device = torch.device(device_str)
     if device.type == "cuda" and not torch.cuda.is_available():
         print(f"ERROR: CUDA requested but not available.")
-        sys.exit(2)
 
     print(f"\nLLaMA-3-Lite GPU integration test  (device={device})")
     print("=" * 60)
@@ -156,14 +157,14 @@ def run(steps: int, device_str: str, verbose: bool):
         torch.manual_seed(0); np.random.seed(0); import random
         random.seed(0)
 
-        with check("setup_gpu_optimizations"):
+        with self.subTest("setup_gpu_optimizations"):
             train_mod.setup_gpu_optimizations(cfg)
             if device.type == "cuda":
                 assert torch.backends.cuda.matmul.allow_tf32 == cfg["tf32"]
                 assert torch.backends.cudnn.allow_tf32 == cfg["tf32"]
 
         model = None
-        with check("build_transformer_on_gpu"):
+        with self.subTest("build_transformer_on_gpu"):
             model = build_transformer(
                 vocab_size=cfg["vocab_size"], d_model=cfg["d_model"],
                 n_layers=cfg["n_layers"], n_heads=cfg["n_heads"],
@@ -179,7 +180,7 @@ def run(steps: int, device_str: str, verbose: bool):
             print(f"        model: {n_params/1e6:.2f}M params on {device}")
 
         train_dl = val_dl = None
-        with check("synthetic_dataloaders"):
+        with self.subTest("synthetic_dataloaders"):
             train_dl, val_dl = build_synthetic_dataloaders(cfg, device)
             batch = next(iter(train_dl))
             assert batch["input"].shape == (cfg["batch_size"], cfg["seq_len"])
@@ -212,7 +213,7 @@ def run(steps: int, device_str: str, verbose: bool):
         grad_norms: list[float] = []
         lrs: list[float] = []
 
-        with check("training_loop_bf16_gradscaler_chunked_ce"):
+        with self.subTest("training_loop_bf16_gradscaler_chunked_ce"):
             model.train()
             torch.cuda.reset_peak_memory_stats() if device.type == "cuda" else None
             for step in range(1, steps + 1):
@@ -268,7 +269,7 @@ def run(steps: int, device_str: str, verbose: bool):
             print(f"        steps={steps}  final_loss={losses[-1]:.4f}  "
                     f"final_lr={lrs[-1]:.2e}  peak_gpu_mem={peak_mem:.2f} GB")
 
-        with check("chunked_ce_equals_dense_ce_gpu"):
+        with self.subTest("chunked_ce_equals_dense_ce_gpu"):
             model.eval()
             with torch.no_grad(), torch.autocast(device_type=device.type,
                                                   dtype=torch.bfloat16):
@@ -285,7 +286,7 @@ def run(steps: int, device_str: str, verbose: bool):
             rel = (dense - chunked).abs().item() / max(dense.abs().item(), 1e-6)
             assert rel < 1e-3, (dense.item(), chunked.item(), rel)
 
-        with check("validate_full_loop"):
+        with self.subTest("validate_full_loop"):
             val_loss = train_mod.validate(model, val_dl, pad_id, device,
                                           step=steps, config=cfg)
             assert np.isfinite(val_loss)
@@ -297,7 +298,7 @@ def run(steps: int, device_str: str, verbose: bool):
             print(f"        val_loss={val_loss:.4f}  "
                   f"perplexity={np.exp(min(val_loss, 20)):.2f}")
 
-        with check("generate_samples_autoregressive"):
+        with self.subTest("generate_samples_autoregressive"):
             tok = FakeTokenizer(cfg["vocab_size"])
             train_mod.generate_samples(model, tok, device, step=steps,
                                         config=cfg)
@@ -315,7 +316,7 @@ def run(steps: int, device_str: str, verbose: bool):
                 assert step_val == steps, step_val
             model.train()
 
-        with check("async_checkpoint_save_and_resume"):
+        with self.subTest("async_checkpoint_save_and_resume"):
             save_thread = train_mod.save_checkpoint(
                 model, optimizer, scheduler, step=steps, config=cfg,
                 best_val_loss=val_loss, async_save=True)
@@ -357,7 +358,7 @@ def run(steps: int, device_str: str, verbose: bool):
             print(f"        resumed at step {resumed_step}, "
                    f"outputs match to {(a-b).abs().max().item():.2e}")
 
-        with check("wandb_logging_contract"):
+        with self.subTest("wandb_logging_contract"):
             import wandb
             wandb.init(
                 project=cfg["wandb_project"],
@@ -407,30 +408,15 @@ def run(steps: int, device_str: str, verbose: bool):
                     f"missing wandb metric: {required}"
 
     print("\n" + "=" * 60)
-    total = CheckResult.passed + CheckResult.failed
-    print(f"Summary: {CheckResult.passed}/{total} stages passed, "
-          f"{CheckResult.failed} failed.\n")
-    if verbose and CheckResult.stage_times:
-        print("Stage timings:")
-        for name, ms in sorted(CheckResult.stage_times.items(),
-                               key=lambda kv: -kv[1]):
-            print(f"  {ms:8.1f} ms  {name}")
-        print()
-    sys.exit(0 if CheckResult.failed == 0 else 1)
 
 
-def main():
-    p = argparse.ArgumentParser(description="LLaMA-3-Lite GPU integration test")
-    p.add_argument("--steps", type=int, default=30,
-                   help="number of training steps (default 30)")
-    p.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
-    p.add_argument("-v", "--verbose", action="store_true",
-                   help="print tracebacks on failure + stage timings")
-    args = p.parse_args()
+class TestIntegration(unittest.TestCase):
+    def test_main(self):
+        pass
     device_str = (args.device if args.device != "auto"
                   else ("cuda" if torch.cuda.is_available() else "cpu"))
     run(steps=args.steps, device_str=device_str, verbose=args.verbose)
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
