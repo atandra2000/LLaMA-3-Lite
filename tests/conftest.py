@@ -1,8 +1,11 @@
 """Shared pytest fixtures and helpers for the LLaMA-3-Lite test suite."""
 from __future__ import annotations
 
+import importlib
 import os
 import random
+import sys
+import types
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +16,45 @@ import torch
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("WANDB_MODE", "offline")
 os.environ.setdefault("WANDB_DISABLED", "true")
+
+# Inject a minimal `wandb` stub into sys.modules when the real package is
+# not installed, so that `train.py`'s module-level `import wandb` succeeds
+# on a CPU/Mac dev box and the test `monkeypatch.setattr(wandb, "log", ...)`
+# has a real attribute to patch. The stub records calls in-memory; tests
+# assert against `wandb._calls["log"]` if needed (the live test uses
+# monkeypatch.setattr on top, which still works).
+if "wandb" not in sys.modules:
+    try:
+        importlib.import_module("wandb")
+    except ImportError:
+        _wandb_stub = types.ModuleType("wandb")
+        _calls: dict[str, list] = {"log": [], "init": [], "finish": []}
+
+        def _log(*args, **kwargs):
+            _calls["log"].append((args, kwargs))
+
+        def _init(*args, **kwargs):
+            _calls["init"].append((args, kwargs))
+            return None
+
+        def _finish():
+            _calls["finish"].append(True)
+
+        class _Table:
+            def __init__(self, columns=None):
+                self.columns = columns or []
+                self.rows: list = []
+
+            def add_data(self, *values):
+                self.rows.append(values)
+
+        _wandb_stub.log = _log
+        _wandb_stub.init = _init
+        _wandb_stub.finish = _finish
+        _wandb_stub.Table = _Table
+        _wandb_stub._calls = _calls
+        sys.modules["wandb"] = _wandb_stub
+
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in os.environ.get("PYTHONPATH", ""):
@@ -98,7 +140,6 @@ def tiny_config() -> dict:
         "seq_len": 32,
         "rope_theta": 500000.0,
         "rms_norm_eps": 1e-5,
-        "dropout": 0.0,
         "batch_size": 4,
         "gradient_accumulation": 1,
         "max_steps": 10,
@@ -111,8 +152,6 @@ def tiny_config() -> dict:
         "beta1": 0.9,
         "beta2": 0.95,
         "eps": 1e-8,
-        "dtype": "float32",
-        "use_flash_attention": False,
         "compile_model": False,
         "gradient_checkpointing": False,
         "use_chunked_cross_entropy": True,
@@ -120,7 +159,6 @@ def tiny_config() -> dict:
         "cudnn_benchmark": False,
         "data_sources": {},
         "num_workers": 0,
-        "prefetch_factor": 2,
         "pin_memory": False,
         "target_tokens": 4096,
         "data_cache_dir": "data_cache_test",

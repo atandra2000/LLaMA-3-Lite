@@ -3,8 +3,8 @@
 All data *preparation* (download, clean, tokenise, pack, dedup) and the
 training *loader* now live in ``shared_data`` (the single source of truth
 for the whole portfolio). This module only re-exports the canonical
-symbols so existing call sites (``train.py``, ``test_pipeline.py``,
-``benchmark_data.py``) keep working unchanged.
+symbols so existing call sites (``train.py``, ``benchmark_data.py``)
+keep working unchanged.
 
 To prepare a real corpus, run the shim first::
 

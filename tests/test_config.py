@@ -3,19 +3,16 @@ from __future__ import annotations
 
 import pytest
 
-from config import (
-    cleanup_old_checkpoints,
-    get_config,
-)
+from config import get_config
 
 
 REQUIRED_KEYS = {
     "d_model", "n_layers", "n_heads", "n_kv_heads", "head_dim", "d_ff",
-    "vocab_size", "seq_len", "rope_theta", "rms_norm_eps", "dropout",
+    "vocab_size", "seq_len", "rope_theta", "rms_norm_eps",
     "batch_size", "gradient_accumulation", "max_steps", "learning_rate",
     "min_lr", "warmup_steps", "weight_decay", "max_grad_norm",
     "beta1", "beta2", "eps",
-    "dtype", "use_flash_attention", "compile_model", "compile_mode",
+    "compile_model", "compile_mode",
     "gradient_checkpointing", "use_chunked_cross_entropy",
     "use_z_loss", "z_loss_weight", "qknorm", "use_ema", "ema_decay",
     "tf32", "cudnn_benchmark", "cuda_alloc_conf",
@@ -31,6 +28,9 @@ REQUIRED_KEYS = {
     "keep_last_n_checkpoints", "async_checkpoint", "preload",
     "wandb_project", "wandb_entity", "wandb_tags", "log_interval",
     "optimizer",
+    # Triton dispatch keys (opt-in; force-back by default — see
+    # documentation/triton_kernels.md and AGENTS.md §Hard rules).
+    "cross_entropy_impl", "rmsnorm_impl", "swiglu_impl",
 }
 
 
@@ -73,29 +73,3 @@ class TestGetConfig:
         assert 0 < full_config["warmup_steps"] < full_config["max_steps"]
         assert full_config["weight_decay"] >= 0
         assert full_config["max_grad_norm"] > 0
-
-
-class TestCleanupOldCheckpoints:
-    def test_noop_when_folder_missing(self, full_config, tmp_path):
-        full_config = {**full_config, "model_folder": str(tmp_path / "nope")}
-        cleanup_old_checkpoints(full_config, current_step=1000)
-
-    def test_keeps_last_n_and_removes_rest(self, full_config, tmp_path):
-        for s in [100, 200, 300, 400, 500]:
-            (tmp_path / f"llama3-515M_step_{s}.pt").write_bytes(b"x")
-        full_config = {**full_config, "model_folder": str(tmp_path),
-                       "model_filename": "llama3-515M",
-                       "keep_last_n_checkpoints": 2}
-        cleanup_old_checkpoints(full_config, current_step=500)
-        remaining = sorted(tmp_path.glob("*.pt"))
-        remaining_steps = [int(p.stem.split("_step_")[-1]) for p in remaining]
-        assert remaining_steps == [400, 500]
-
-    def test_keeps_all_when_fewer_than_n(self, full_config, tmp_path):
-        for s in [100, 200]:
-            (tmp_path / f"llama3-515M_step_{s}.pt").write_bytes(b"x")
-        full_config = {**full_config, "model_folder": str(tmp_path),
-                       "model_filename": "llama3-515M",
-                       "keep_last_n_checkpoints": 5}
-        cleanup_old_checkpoints(full_config, current_step=200)
-        assert len(list(tmp_path.glob("*.pt"))) == 2

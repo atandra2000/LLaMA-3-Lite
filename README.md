@@ -101,7 +101,7 @@ pip install transformers datasets wandb
 python train.py
 
 # Quick smoke test (no data download, CPU-only)
-python test_pipeline.py
+python -m pytest tests/ -m smoke
 
 # Benchmark data pipeline on GPU
 python benchmark_data.py --steps 50 --batch_size 96 --seq_len 2048
@@ -406,7 +406,7 @@ LLaMA-3-Lite/
 ├── model.py            # Transformer architecture (RoPE, GQA, SwiGLU, RMSNorm)
 ├── dataset.py          # Thin shim re-exporting the universal training loader (shared_data.loader)
 ├── train.py            # Training loop (validation, generation, checkpointing)
-├── test_pipeline.py    # Smoke test (synthetic data, CPU-only)
+├── tests/              # pytest suite (smoke + numeric + GPU)
 ├── benchmark_data.py   # Data pipeline benchmark (GPU)
 ├── weights/            # Checkpoints (created at runtime)
 └── data_cache/         # Token cache (created at runtime, ~16 GB)

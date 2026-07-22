@@ -1,4 +1,4 @@
-from pathlib import Path
+"""LLaMA-3-Lite config: one source of truth for all hyperparameters and runtime toggles."""
 
 
 def get_config():
@@ -13,7 +13,6 @@ def get_config():
         'seq_len':              2048,
         'rope_theta':           500000.0,
         'rms_norm_eps':         1e-5,
-        'dropout':              0.0,
 
         'batch_size':           96,
         'gradient_accumulation': 1,
@@ -29,14 +28,15 @@ def get_config():
         'beta2':                0.95,
         'eps':                  1e-8,
 
-        'dtype':                'bfloat16',
-        'use_flash_attention':  True,
         'compile_model':        True,
         'compile_mode':         'reduce-overhead',
         'gradient_checkpointing': True,
         'use_chunked_cross_entropy': True,
 
-        # Stability / quality (added 2026-07-15)
+        'rmsnorm_impl':         'pytorch',
+        'swiglu_impl':          'pytorch',
+        'cross_entropy_impl':   'pytorch',
+
         'use_z_loss':           True,
         'z_loss_weight':        1e-4,
         'qknorm':               True,
@@ -104,20 +104,3 @@ def get_config():
         'wandb_tags':           ['llama3', '515M', 'a100', 'pretrain', 'code'],
         'log_interval':         50,
     }
-
-
-def cleanup_old_checkpoints(config, current_step):
-    model_folder = Path(config['model_folder'])
-    if not model_folder.exists():
-        return
-
-    keep_n = config.get('keep_last_n_checkpoints', 3)
-    checkpoint_files = sorted(
-        model_folder.glob(f"{config['model_filename']}_step_*.pt"),
-        key=lambda x: int(str(x.stem).split('_step_')[-1])
-    )
-
-    if len(checkpoint_files) > keep_n:
-        for old_file in checkpoint_files[:-keep_n]:
-            old_file.unlink()
-            print(f"Removed old checkpoint: {old_file}")

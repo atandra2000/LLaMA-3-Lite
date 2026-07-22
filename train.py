@@ -1,25 +1,30 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
 from pathlib import Path
-from contextlib import contextmanager
 from tqdm import tqdm
 import warnings
 import os
-import sys
 import time
 import math
 import random
+import threading
 import numpy
 
-import wandb
+# Optional experiment tracker; keep training loop runnable without it.
+try:
+    import wandb as _wandb
+    wandb = _wandb
+    HAS_WANDB = True
+except ImportError:
+    wandb = None  # type: ignore[assignment]
+    HAS_WANDB = False
+
 from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 from dataset import build_training_data
-from model import build_transformer, chunked_cross_entropy, chunked_cross_entropy_with_z
-from config import get_config, cleanup_old_checkpoints
+from model import build_transformer, chunked_cross_entropy_with_z
+from config import get_config
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -115,16 +120,14 @@ def generate_samples(model, tokenizer, device, step, config):
 
 @torch.no_grad()
 def validate(model, val_dataloader, pad_id, device, step, config):
-    """Validation loop with chunked cross-entropy for memory efficiency."""
+    """Validation loop with chunked cross-entropy + z-loss for memory efficiency."""
     model.eval()
     total_loss = 0
     num_batches = 0
 
     val_max_batches = config.get('val_max_batches', 200)
-    use_chunked_ce = config.get('use_chunked_cross_entropy', True)
-    use_z_loss = config.get('use_z_loss', True)
     z_loss_weight = config.get('z_loss_weight', 1e-4)
-    use_z = use_z_loss and z_loss_weight > 0 and use_chunked_ce
+    cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
 
     with torch.autocast(device_type='cuda', dtype=torch.bfloat16, enabled=device.type == 'cuda'):
         for batch in val_dataloader:
@@ -135,27 +138,14 @@ def validate(model, val_dataloader, pad_id, device, step, config):
 
             logits = model(input_ids)
 
-            if use_z:
-                loss = chunked_cross_entropy_with_z(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    chunk_size=65536,
-                    ignore_index=pad_id,
-                    z_loss_weight=z_loss_weight,
-                )
-            elif use_chunked_ce:
-                loss = chunked_cross_entropy(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    chunk_size=65536,
-                    ignore_index=pad_id,
-                )
-            else:
-                loss = F.cross_entropy(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    ignore_index=pad_id
-                )
+            loss = chunked_cross_entropy_with_z(
+                logits.view(-1, logits.size(-1)),
+                target_ids.view(-1),
+                chunk_size=65536,
+                ignore_index=pad_id,
+                z_loss_weight=z_loss_weight,
+                cross_entropy_impl=cross_entropy_impl,
+            )
 
             total_loss += loss.item() if isinstance(loss, torch.Tensor) else loss
             num_batches += 1
@@ -174,7 +164,7 @@ def validate(model, val_dataloader, pad_id, device, step, config):
 
 def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=None,
                     is_final=False, async_save=True, ema=None):
-    """Save checkpoint without async I/O."""
+    """Returns the `Thread` when `async_save=True` (caller must `t.join()`), else None."""
     model_folder = Path(config['model_folder'])
     model_folder.mkdir(parents=True, exist_ok=True)
 
@@ -189,8 +179,6 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
         'rng_numpy': numpy.random.get_state(),
         'rng_python': random.getstate(),
         'config': config,
-        # EMA shadow: optional. None when use_ema is False. Resumable because
-        # it's an FP32 dict keyed by param name.
         'ema_state_dict': ema.state_dict() if ema is not None else None,
     }
     if torch.cuda.is_available():
@@ -206,20 +194,20 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
         return None
 
     path = model_folder / f"{config['model_filename']}_step_{step}.pt"
-
+    if async_save:
+        # torch.save releases the GIL; caller must `t.join()` before exit.
+        t = threading.Thread(target=torch.save, args=(checkpoint, path),
+                              daemon=True, name=f"ckpt-save-{step}")
+        t.start()
+        print(f"Checkpoint queued (async): {path}")
+        return t
     torch.save(checkpoint, path)
     print(f"Checkpoint saved: {path}")
     return None
 
 
 def load_checkpoint(model, optimizer, scheduler, config, device, ema=None):
-    """Restore model + optim + scheduler + RNG (+ EMA if present).
-
-    The `ema` argument is keyword-only with a default of None — it may be
-    omitted by callers that don't use EMA. When provided, the EMA shadow is
-    loaded from the checkpoint (if present). Old checkpoints (predating the
-    EMA addition) load cleanly because we gate on `get('ema_state_dict')`.
-    """
+    """Restore model + optim + scheduler + RNG; loads EMA shadow when `ema` is given and the checkpoint has it."""
     model_folder = Path(config['model_folder'])
     checkpoints = sorted(
         model_folder.glob(f"{config['model_filename']}_step_*.pt"),
@@ -271,6 +259,26 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     gradient_checkpointing = config.get('gradient_checkpointing', True)
     real_vocab_size = max(config['vocab_size'], len(tokenizer))
     qknorm = config.get('qknorm', True)
+    z_loss_weight = config.get('z_loss_weight', 1e-4)
+    cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
+    # Two-layered opt-in for Triton kernels: per-kernel config keys are honoured
+    # only when ENABLE_TRITON_KERNELS=1; otherwise they're forced to 'pytorch'
+    # so a default-config run never silently switches to a fused path.
+    triton_enabled = os.environ.get("ENABLE_TRITON_KERNELS", "0") == "1"
+    rmsnorm_impl = config.get('rmsnorm_impl', 'pytorch')
+    swiglu_impl = config.get('swiglu_impl', 'pytorch')
+    if not triton_enabled and any(
+        v == "triton" for v in (rmsnorm_impl, swiglu_impl, cross_entropy_impl)
+    ):
+        print(
+            "WARN: rmsnorm_impl/swiglu_impl/cross_entropy_impl set to 'triton' "
+            "but ENABLE_TRITON_KERNELS != '1'; forcing all to 'pytorch'. "
+            "Set ENABLE_TRITON_KERNELS=1 to enable the fused Triton paths."
+        )
+        rmsnorm_impl = "pytorch"
+        swiglu_impl = "pytorch"
+        cross_entropy_impl = "pytorch"
+
     model = build_transformer(
         vocab_size=real_vocab_size,
         d_model=config['d_model'],
@@ -284,10 +292,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         rms_norm_eps=config['rms_norm_eps'],
         gradient_checkpointing=gradient_checkpointing,
         qknorm=qknorm,
+        rmsnorm_impl=rmsnorm_impl,
+        swiglu_impl=swiglu_impl,
     ).to(device)
 
     num_params = sum(p.numel() for p in model.parameters())
-    # ponytail: model is always built by build_transformer (Transformer has get_num_params).
     non_embed_params = model.get_num_params(non_embedding=True)
     model_mem_gb = num_params * 2 / 1e9
     print(f"\n{'='*60}")
@@ -298,10 +307,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     bs, seq = config['batch_size'], config['seq_len']
     tokens_per_step = bs * seq
     use_ema = config.get('use_ema', True)
-    # Memory budget: model (BF16) + FP32 master + AdamW (m+v) = 7.2× params
-    # + 1× params if EMA enabled (FP32 shadow).
-    # + chunked-CE chunk allocates chunk_size × vocab × 2 bytes (tiny for chunk=65K).
-    # + ~3 GB activations + workspace.
+    # Memory budget (GB): model BF16 + FP32 master + AdamW (m+v) ≈ 7.2× params,
+    # plus 1× if EMA, plus chunked-CE (negligible for chunk=65K) and ~3 GB workspace.
     ema_overhead = 1.0 if use_ema else 0.0
     if gradient_checkpointing:
         est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * config['vocab_size'] * 2 / 1e9 + 3
@@ -312,9 +319,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
-    # Pre-fetch one batch BEFORE torch.compile so the pre-warmup pass uses the
-    # exact training shapes (CUDA graphs recompile on shape change — using the
-    # wrong shape here would waste the warmup).
+    # Pre-fetch one batch BEFORE torch.compile: CUDA graphs recompile on shape
+    # change, so the warmup must use the exact training shapes.
     step_iterator = iter(train_dataloader)
     try:
         _warmup_batch = next(step_iterator)
@@ -327,14 +333,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     if config.get('compile_model', True) and hasattr(torch, 'compile'):
         compile_mode = config.get('compile_mode', 'reduce-overhead')
         print(f"Compiling model with torch.compile(mode={compile_mode!r})...")
-        # 'reduce-overhead' uses CUDA graphs. CUDA graphs own the stream, so the
-        # manual torch.cuda.Stream() prefetch pattern was dropped — non_blocking
-        # H2D copy with pin_memory=True gives the same async behaviour without
-        # touching the stream.
+        # 'reduce-overhead' uses CUDA graphs, which own the stream — manual
+        # torch.cuda.Stream() prefetch is incompatible, so we rely on
+        # non_blocking=True + pin_memory=True for async H2D.
         model = torch.compile(model, mode=compile_mode)
-        # Pre-warmup: one forward+backward with the *real* first-batch shapes.
-        # Without this, the first training step stalls 30s–2min for autotune.
-        warmup_zw = z_loss_weight if use_z_loss else 0.0
+        # Pre-warmup: first step would otherwise stall 30s–2min on autotune.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             _logits = model(_warmup_input)
@@ -343,7 +346,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 _warmup_target.view(-1),
                 chunk_size=65536,
                 ignore_index=pad_id,
-                z_loss_weight=warmup_zw,
+                z_loss_weight=z_loss_weight,
+                cross_entropy_impl=cross_entropy_impl,
             )
         _warmup_loss.backward()
         if device.type == 'cuda':
@@ -379,10 +383,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     cosine_scheduler = CosineAnnealingLR(optimizer, T_max=max_steps - warmup_steps, eta_min=config['min_lr'])
     scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_steps])
 
-    # EMA is built before the optional load_checkpoint so a resumed run inherits
-    # the EMA shadow from the prior checkpoint. When use_ema is False, this is
-    # just a None and load_checkpoint / save_checkpoint / val+gen treat it as
-    # a no-op.
+    # EMA is built before load_checkpoint so a resumed run inherits the shadow.
     use_ema = config.get('use_ema', True)
     ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get('ema_decay', 0.999))) if use_ema else None
 
@@ -431,28 +432,16 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"\nStarting training for {config['max_steps']} steps...")
     model.train()
 
-    # NOTE: torch.compile(mode="reduce-overhead") uses CUDA graphs, which own
-    # the stream. The previous manual torch.cuda.Stream() prefetch pattern is
-    # incompatible with that — non_blocking=True + pin_memory=True gives the
-    # same async-H2D behaviour without touching the stream.
-
     grad_accum_steps = config.get('gradient_accumulation', 1)
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
-    use_chunked_ce = config.get('use_chunked_cross_entropy', True)
-    use_z_loss = config.get('use_z_loss', True)
-    z_loss_weight = config.get('z_loss_weight', 1e-4)
-    use_z = use_z_loss and z_loss_weight > 0 and use_chunked_ce
-    # `ema` was constructed earlier (before load_checkpoint) so the resume path
-    # can populate its shadow. We just log the final state here.
     if ema is not None and not config.get('preload'):
-        # When resuming, EMA shadow is already loaded — don't re-print.
+        # Skip the EMA banner on resume — the shadow is already loaded.
         print(f"EMA: enabled (decay={ema.decay}, {len(ema.shadow)} parameter shadows)")
 
     if device.type == 'cuda':
         end_event = torch.cuda.Event(enable_timing=True)
 
-    # Pre-warmup (before torch.compile) already pulled a batch. Continue from
-    # there — the next next() call in the loop gets the second batch.
+    # Warmup pass consumed batch 0; the next() below pulls batch 1.
     training_start_time = time.time()
     step_start_time = time.time()
     data_wait_time = 0.0
@@ -460,7 +449,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     pbar = tqdm(range(initial_step, config['max_steps']), desc="Training", unit="step")
 
-    # Pull the first real batch the loop will use (the warmup consumed batch 0).
     data_start = time.time()
     try:
         next_batch = next(step_iterator)
@@ -492,36 +480,21 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         next_input = batch['input'].to(device, non_blocking=True)
         next_target = batch['target'].to(device, non_blocking=True)
 
+        # CUDA graphs own the stream, so async H2D here is non_blocking + pin_memory only.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             logits = model(input_ids)
-            if use_z:
-                loss = chunked_cross_entropy_with_z(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    chunk_size=65536,
-                    ignore_index=pad_id,
-                    z_loss_weight=z_loss_weight,
-                )
-            elif use_chunked_ce:
-                loss = chunked_cross_entropy(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    chunk_size=65536,
-                    ignore_index=pad_id,
-                )
-            else:
-                loss = F.cross_entropy(
-                    logits.view(-1, logits.size(-1)),
-                    target_ids.view(-1),
-                    ignore_index=pad_id
-                )
+            loss = chunked_cross_entropy_with_z(
+                logits.view(-1, logits.size(-1)),
+                target_ids.view(-1),
+                chunk_size=65536,
+                ignore_index=pad_id,
+                z_loss_weight=z_loss_weight,
+                cross_entropy_impl=cross_entropy_impl,
+            )
             loss = loss / grad_accum_steps
 
-        # BF16 has the FP32 exponent range — no GradScaler needed. The previous
-        # `scaler.scale/unscale_/step/update` block silently dropped updates
-        # when the unscale introduced an inf in the FP32 grad buffer. With BF16
-        # the grads are clean and the scaler is pure overhead.
+        # BF16 has the FP32 exponent range; no GradScaler needed.
         loss.backward()
 
         if (step + 1) % grad_accum_steps == 0:
@@ -579,9 +552,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         if step > 0 and step % config['val_interval'] == 0:
             if device.type == 'cuda':
                 torch.cuda.reset_peak_memory_stats()
-            # Use EMA weights for validation — the shadow is a noise-free center
-            # of the recent optimization trajectory, typically giving val loss
-            # 0.05–0.1 lower than the live weights.
+            # Validate with EMA weights when available; shadow is a noise-free
+            # centre of the recent optimization trajectory.
             if ema is not None:
                 val_loss = validate(ema, val_dataloader, pad_id, device, step, config)
             else:
@@ -591,9 +563,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 global_state['best_val_loss'] = best_val_loss
                 best_model_path = Path(config['model_folder']) / f"{config['model_filename']}_best.pt"
                 Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
-                # Best-model save uses the live weights (the trained artifact is
-                # what you want for downstream use). Set to torch.save(ema.shadow)
-                # if you prefer to ship the EMA-averaged model.
                 torch.save(model.state_dict(), best_model_path)
                 print(f"New best model saved (val_loss: {val_loss:.4f})")
             model.train()
@@ -608,7 +577,14 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             save_checkpoint(model, optimizer, scheduler, step, config,
                             best_val_loss, async_save=False, ema=ema)
             if config.get('keep_last_n_checkpoints', 0) > 0:
-                cleanup_old_checkpoints(config, step)
+                # Inline checkpoint GC: keep the last N, drop the rest.
+                ckpt_dir = Path(config['model_folder'])
+                if ckpt_dir.exists():
+                    pattern = f"{config['model_filename']}_step_*.pt"
+                    old = sorted(ckpt_dir.glob(pattern),
+                                 key=lambda p: int(p.stem.split('_step_')[-1]))
+                    for stale in old[:-config['keep_last_n_checkpoints']]:
+                        stale.unlink()
 
     total_time = time.time() - training_start_time
     print(f"\nTraining completed in {total_time/3600:.2f} hours!")

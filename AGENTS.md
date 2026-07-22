@@ -35,11 +35,9 @@ number in the portfolio.
 - Gradient checkpointing.
 
 **Training:**
-- AdamW (decoupled weight decay on 2D+ only).
-- Cosine LR (3e-4 → 3e-5, 2000 warmup).
-- BF16 autocast + GradScaler, TF32, `torch.compile`, FA2.
-- Async CPU→GPU transfer.
-- Full RNG-state checkpoint restore for reproducibility.
+- AdamW (decayed on 2D+ only). Cosine LR (3e-4 → 3e-5, 2000 warmup).
+- BF16 autocast + TF32, `torch.compile`, FA2. Async CPU→GPU transfer.
+- Full RNG-state checkpoint restore.
 - Validation every 2000 / generation every 20000 / checkpoint every 5000
   (keep 3). W&B logging.
 
@@ -69,15 +67,64 @@ number in the portfolio.
 - `model.py`, `train.py`, `dataset.py`.
 - `tests/` — config, dataset, model, train, smoke tests.
 
+**Triton kernel contract:**
+
+- **Sanctioned Triton paths:** *(none yet)*. The rule is in place for
+  future additions; the structure mirrors `DeepSeek-v3-Lite/AGENTS.md`
+  so additions can be slotted in without rewriting this file.
+- No custom Triton kernels exist in this project today. Until a
+  kernel is added, all hot paths run on `torch.compile` + FA2 only.
+- When a kernel is added: place it in `models/<name>_triton.py`,
+  gate on `import triton` with a `try/except ImportError` setting
+  `HAS_TRITON = False`, wrap the kernel in a `torch.autograd.Function`,
+  add a `tests/test_<name>_triton.py` with a pure-PyTorch reference
+  that runs on CPU without triton, and add the new path to the
+  sanctioned list in rule #1 below.
+
 **Hard rules:**
-1. **Raw PyTorch Only:** Never suggest HuggingFace Trainer, PyTorch Lightning, or similar wrappers. The user builds from scratch to understand every detail.
-2. **Hardware Optimization:** Prioritize hardware-optimized training and maximizing hardware utilization.
-2. **Quote memory savings** adaptively where relevant.
+1. **Raw PyTorch by default; custom Triton kernels are first-party for
+   sanctioned hot paths.** The bulk of the codebase (RMSNorm, SwiGLU,
+   embeddings, LM head, loss, attention, MTP, inference) stays
+   raw PyTorch. No HuggingFace Trainer, no Lightning, no high-level
+   wrappers. The sanctioned Triton paths are listed above; currently
+   empty. No new component gets a custom kernel without updating this
+   file and adding a `documentation/<name>.md` plan.
+2. **Hardware Optimization:** Maximize hardware utilization. For any
+   sanctioned Triton path, target ≥ 1.5× speedup over the
+   raw-PyTorch path in `scripts/microbench_a100.py`; below that, do
+   not enable by default.
 3. **Always** preserve the chunked-CE chunk size (default 256 tokens).
-4. **Always** preserve `tie_embeddings=False` — the LLaMA-3 paper does not
-   tie input/output embeddings.
+4. **Always** preserve `tie_embeddings=False` — the LLaMA-3 paper does
+   not tie input/output embeddings.
 5. **RoPE θ=500K** is load-bearing for long-context extrapolation;
    reducing it to 10K cuts context quality dramatically.
 6. **Document packing** must include EOS separators; without them the
    model sees run-on concatenated documents and degrades.
+7. **Never** let a Triton kernel silently fall back to the raw-PyTorch
+   path during a default-config training run. The opt-in is explicit
+   (per-kernel config key + `ENABLE_TRITON_KERNELS=1` env-var). If
+   the kernel fails to compile or throws at runtime, the run must
+   surface a clear error, not a silent fallback.
+8. **Always** add a unit test in `tests/` for any new Triton kernel
+   path. The test must run on CPU (using the pure-PyTorch reference)
+   without `triton` installed. GPU-only behaviour is gated behind
+   `@pytest.mark.gpu` and is auto-skipped on CPU-only machines.
+9. **Concise comments only.** Docstrings and inline comments must
+   justify non-obvious code, not restate it. A docstring is at most
+   three short lines unless the function is a public API. Inline
+   comments appear only when the code itself is opaque. Verifiable
+   targets per file:
+   - **Public function docstring:** ≤ 3 lines, or one short paragraph.
+   - **Module docstring:** ≤ 6 lines.
+   - **Inline comment density:** ≤ 1 comment per ~10 lines of code on
+     average; comments that say what the next line does
+     (`# compute x`, `# loop over rows`) are forbidden.
+   - **Section banners** (`# ---- ... ----`) are reserved for the top
+     level of a file (≤ 3 per file) and inside kernels to delimit
+     named algorithm phases.
+   Violations are reviewable on `wc -l <file>` and `grep -c '^[[:space:]]*#' <file>`.
 
+**Known issues:**
+- Full 8.25B-token run not yet started.
+- The 78% memory reduction headline is the most-tested number in the
+  portfolio; do not regress it.

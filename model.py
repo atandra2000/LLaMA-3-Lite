@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
+from kernels.rmsnorm_triton import triton_rmsnorm
+from kernels.swiglu_triton import triton_swiglu
+from kernels.cross_entropy_triton import triton_chunked_cross_entropy_with_z
+
 
 # ponytail: InputEmbedding wrapper inlined — it only forwarded to nn.Embedding
 # and stored d_model, which was never read.
@@ -27,6 +31,34 @@ class RoPE(nn.Module):
         return rotated.flatten(-2)
 
 
+class RMSNorm(nn.Module):
+    """RMSNorm with optional Triton fused-path opt-in.
+
+    The PyTorch eager path is a 4-launch chain (pow, mean, add, rsqrt,
+    multiply). The Triton path fuses them into a single row-wise program.
+    """
+    def __init__(self, d_model: int, eps: float = 1e-5, impl: str = "pytorch"):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(d_model))
+        self.eps = eps
+        self.impl = impl
+        self._triton_fallback_warned = False
+
+    def forward(self, x):
+        if self.impl == "triton":
+            try:
+                return triton_rmsnorm(x, self.weight, self.eps)
+            except (ImportError, ValueError) as exc:
+                if not self._triton_fallback_warned:
+                    print(
+                        f"[RMSNorm] triton path unavailable "
+                        f"({type(exc).__name__}: {exc}); "
+                        f"falling back to 'pytorch'."
+                    )
+                    self._triton_fallback_warned = True
+        return x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps) * self.weight
+
+
 class GroupedQueryAttention(nn.Module):
     """Grouped-Query Attention with RoPE, optional QK-norm, and Flash Attention 2."""
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
@@ -48,8 +80,8 @@ class GroupedQueryAttention(nn.Module):
         # Bounding attention logit growth prevents the late-training "attention collapse" failure
         # mode. Negligible param cost: 2 * head_dim per layer.
         if qknorm:
-            self.q_norm = nn.RMSNorm(head_dim, eps=1e-5)
-            self.k_norm = nn.RMSNorm(head_dim, eps=1e-5)
+            self.q_norm = RMSNorm(head_dim, eps=1e-5)
+            self.k_norm = RMSNorm(head_dim, eps=1e-5)
         else:
             self.q_norm = nn.Identity()
             self.k_norm = nn.Identity()
@@ -85,14 +117,27 @@ class GroupedQueryAttention(nn.Module):
 
 class SwiGLUFFN(nn.Module):
     """SwiGLU Feed-Forward Network with fused gate+up projection."""
-    def __init__(self, d_model: int, d_ff: int):
+    def __init__(self, d_model: int, d_ff: int, swiglu_impl: str = "pytorch"):
         super().__init__()
         self.gate_up_proj = nn.Linear(d_model, 2 * d_ff, bias=False)
         self.down_proj = nn.Linear(d_ff, d_model, bias=False)
         self.d_ff = d_ff
+        self.swiglu_impl = swiglu_impl
+        self._triton_fallback_warned = False
 
     def forward(self, x):
         gate_up = self.gate_up_proj(x)
+        if self.swiglu_impl == "triton":
+            try:
+                return self.down_proj(triton_swiglu(gate_up, self.d_ff))
+            except (ImportError, ValueError) as exc:
+                if not self._triton_fallback_warned:
+                    print(
+                        f"[SwiGLUFFN] triton path unavailable "
+                        f"({type(exc).__name__}: {exc}); "
+                        f"falling back to 'pytorch'."
+                    )
+                    self._triton_fallback_warned = True
         gate, up = gate_up.chunk(2, dim=-1)
         return self.down_proj(F.silu(gate) * up)
 
@@ -100,14 +145,15 @@ class SwiGLUFFN(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
                  head_dim: int, d_ff: int, max_seq_len: int, rope_theta: float,
-                 qknorm: bool = True):
+                 qknorm: bool = True, rmsnorm_impl: str = "pytorch",
+                 swiglu_impl: str = "pytorch"):
         super().__init__()
         self.attention = GroupedQueryAttention(
             d_model, n_heads, n_kv_heads, head_dim, max_seq_len, rope_theta,
             qknorm=qknorm)
-        self.ffn = SwiGLUFFN(d_model, d_ff)
-        self.attention_norm = nn.RMSNorm(d_model, eps=1e-5)
-        self.ffn_norm = nn.RMSNorm(d_model, eps=1e-5)
+        self.ffn = SwiGLUFFN(d_model, d_ff, swiglu_impl=swiglu_impl)
+        self.attention_norm = RMSNorm(d_model, eps=1e-5, impl=rmsnorm_impl)
+        self.ffn_norm = RMSNorm(d_model, eps=1e-5, impl=rmsnorm_impl)
 
     def forward(self, x):
         x = x + self.attention(self.attention_norm(x))
@@ -116,10 +162,11 @@ class DecoderBlock(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, layers: nn.ModuleList, d_model: int, eps: float = 1e-5):
+    def __init__(self, layers: nn.ModuleList, d_model: int, eps: float = 1e-5,
+                 rmsnorm_impl: str = "pytorch"):
         super().__init__()
         self.layers = layers
-        self.norm = nn.RMSNorm(d_model, eps=eps)
+        self.norm = RMSNorm(d_model, eps=eps, impl=rmsnorm_impl)
 
     def forward(self, x):
         for layer in self.layers:
@@ -132,16 +179,19 @@ class Transformer(nn.Module):
                  n_heads: int, n_kv_heads: int, head_dim: int, d_ff: int,
                  max_seq_len: int, rope_theta: float = 500000.0,
                  rms_norm_eps: float = 1e-5, gradient_checkpointing: bool = False,
-                 qknorm: bool = True):
+                 qknorm: bool = True, rmsnorm_impl: str = "pytorch",
+                 swiglu_impl: str = "pytorch"):
         super().__init__()
         self.input_embedding = nn.Embedding(vocab_size, d_model)
 
         decoder_layers = nn.ModuleList([
             DecoderBlock(d_model, n_heads, n_kv_heads, head_dim,
-                         d_ff, max_seq_len, rope_theta, qknorm=qknorm)
+                         d_ff, max_seq_len, rope_theta, qknorm=qknorm,
+                         rmsnorm_impl=rmsnorm_impl, swiglu_impl=swiglu_impl)
             for _ in range(n_layers)
         ])
-        self.decoder = Decoder(decoder_layers, d_model, eps=rms_norm_eps)
+        self.decoder = Decoder(decoder_layers, d_model, eps=rms_norm_eps,
+                                rmsnorm_impl=rmsnorm_impl)
 
         self.output_proj = nn.Linear(d_model, vocab_size, bias=False)
 
@@ -200,15 +250,29 @@ def chunked_cross_entropy(logits, targets, chunk_size=65536, ignore_index=-100):
 
 def chunked_cross_entropy_with_z(
     logits, targets, chunk_size=65536, ignore_index=-100, z_loss_weight=1e-4,
+    cross_entropy_impl: str = "pytorch",
 ):
     """CE + z-loss (PaLM / Gemma2). Penalises log-partition growth so output
-    logits can't drift unbounded late in training. Z-loss is computed in FP32
-    per chunk: torch.logsumexp over a 128K-vocab BF16 buffer accumulates
-    rounding error in the exponent, and z-loss is precisely measuring that
-    exponent — precision matters.
+    logits can't drift unbounded late in training.
 
-    The returned loss is `ce + z_loss_weight * mean(logsumexp(logits.float())**2)`.
+    ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for a
+    single fused Triton kernel; falls back to the PyTorch path with a
+    one-shot warning when triton is unavailable.
     """
+    if cross_entropy_impl == "triton":
+        try:
+            return triton_chunked_cross_entropy_with_z(
+                logits, targets,
+                chunk_size=chunk_size,
+                ignore_index=ignore_index,
+                z_loss_weight=z_loss_weight,
+            )
+        except (ImportError, ValueError) as exc:
+            print(
+                f"[chunked_cross_entropy_with_z] triton path unavailable "
+                f"({type(exc).__name__}: {exc}); falling back to 'pytorch'."
+            )
+
     total_ce = torch.tensor(0.0, device=logits.device)
     total_count = torch.tensor(0, device=logits.device, dtype=torch.long)
     z_accum = torch.tensor(0.0, device=logits.device)
@@ -248,6 +312,8 @@ def build_transformer(
     rms_norm_eps: float = 1e-5,
     gradient_checkpointing: bool = False,
     qknorm: bool = True,
+    rmsnorm_impl: str = "pytorch",
+    swiglu_impl: str = "pytorch",
 ) -> Transformer:
     """Build LLaMA 3 model with specified architecture."""
     model = Transformer(
@@ -257,6 +323,8 @@ def build_transformer(
         rms_norm_eps=rms_norm_eps,
         gradient_checkpointing=gradient_checkpointing,
         qknorm=qknorm,
+        rmsnorm_impl=rmsnorm_impl,
+        swiglu_impl=swiglu_impl,
     )
     num_params = sum(p.numel() for p in model.parameters())
     non_embed = model.get_num_params(non_embedding=True)
@@ -264,6 +332,9 @@ def build_transformer(
     print(f"Non-embedding params: {non_embed:,} ({non_embed/1e6:.1f}M)")
     if gradient_checkpointing:
         print(f"Gradient checkpointing: ENABLED")
+    if rmsnorm_impl == "triton" or swiglu_impl == "triton":
+        active = [k for k, v in (("rmsnorm", rmsnorm_impl), ("swiglu", swiglu_impl)) if v == "triton"]
+        print(f"Triton kernels active: {', '.join(active)}")
     if qknorm:
         # QK-norm adds 2 * head_dim per layer = 4,096 scalars for the default config.
         # Don't add this to the headline param count — it's noise.

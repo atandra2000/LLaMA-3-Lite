@@ -1,7 +1,6 @@
 """Tests for ``train.py`` (unit-testable components only, not full train_model)."""
 from __future__ import annotations
 
-import math
 import os
 import random
 from pathlib import Path
@@ -10,65 +9,17 @@ import numpy as np
 import pytest
 import torch
 import torch.nn as nn
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 
 import train as train_mod
 
 
-class TestCosineWithWarmup:
-    def _make(self, warmup=10, max_steps=100, min_lr=1e-5, peak_lr=1e-3):
-        opt = torch.optim.SGD([torch.nn.Parameter(torch.zeros(1))], lr=peak_lr)
-        return train_mod.CosineWithWarmup(opt, warmup, max_steps, min_lr, peak_lr)
-
-    def test_warmup_starts_near_zero(self):
-        sched = self._make()
-        sched.step()
-        assert sched.get_lr() == pytest.approx(1e-3 * 1 / 10, rel=1e-9)
-
-    def test_warmup_is_linear(self):
-        sched = self._make(warmup=10, peak_lr=1e-3)
-        lrs = []
-        for _ in range(10):
-            sched.step()
-            lrs.append(sched.get_lr())
-        expected = [1e-3 * (k + 1) / 10 for k in range(10)]
-        assert lrs == pytest.approx(expected, rel=1e-9)
-
-    def test_peak_at_end_of_warmup(self):
-        sched = self._make(warmup=10, max_steps=100, peak_lr=1e-3)
-        for _ in range(10):
-            sched.step()
-        assert sched.get_lr() == pytest.approx(1e-3, rel=1e-9)
-
-    def test_decay_is_cosine(self):
-        sched = self._make(warmup=0, max_steps=100, min_lr=1e-5, peak_lr=1e-3)
-        for _ in range(50):
-            sched.step()
-        progress = 50 / 100
-        expected = 1e-5 + (1e-3 - 1e-5) * 0.5 * (1 + math.cos(math.pi * progress))
-        assert sched.get_lr() == pytest.approx(expected, rel=1e-9)
-
-    def test_never_below_min_lr(self):
-        sched = self._make(warmup=0, max_steps=100, min_lr=1e-5, peak_lr=1e-3)
-        for _ in range(200):
-            sched.step()
-        assert sched.get_lr() >= 1e-5 - 1e-12
-
-    def test_lr_is_set_on_optimizer(self):
-        opt = torch.optim.SGD([torch.nn.Parameter(torch.zeros(1))], lr=1.0)
-        sched = train_mod.CosineWithWarmup(opt, warmup_steps=10, max_steps=100,
-                                           min_lr=1e-5, peak_lr=1e-3)
-        sched.step()
-        assert opt.param_groups[0]["lr"] == sched.get_lr()
-
-    def test_state_dict_roundtrip(self):
-        sched = self._make()
-        for _ in range(7):
-            sched.step()
-        sd = sched.state_dict()
-        sched2 = self._make()
-        sched2.load_state_dict(sd)
-        assert sched2._step == 7
-        assert sched2.get_lr() == sched.get_lr()
+def make_tiny_scheduler(opt, warmup_steps=2, max_steps=10, min_lr=1e-5, peak_lr=3e-4):
+    """Mirror of the production scheduler chain (LinearLR → CosineAnnealingLR → SequentialLR)."""
+    start_factor = max(min_lr / peak_lr, 1e-4) if peak_lr > 0 else 1e-4
+    warm = LinearLR(opt, start_factor=start_factor, total_iters=warmup_steps)
+    cos = CosineAnnealingLR(opt, T_max=max_steps - warmup_steps, eta_min=min_lr)
+    return SequentialLR(opt, schedulers=[warm, cos], milestones=[warmup_steps])
 
 
 class TestTopKTopPSampling:
@@ -132,10 +83,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(device)
         opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
-        sched = train_mod.CosineWithWarmup(
-            opt, warmup_steps=2, max_steps=10,
-            min_lr=1e-5, peak_lr=3e-4,
-        )
+        sched = make_tiny_scheduler(opt)
         for _ in range(3):
             loss = model(torch.randint(0, tiny_config["vocab_size"],
                                        (2, tiny_config["seq_len"]),
@@ -183,8 +131,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(device)
         fresh_opt = torch.optim.AdamW(fresh.parameters(), lr=3e-4)
-        fresh_sched = train_mod.CosineWithWarmup(
-            fresh_opt, 2, 10, 1e-5, 3e-4)
+        fresh_sched = make_tiny_scheduler(fresh_opt)
         fresh.eval()
         with torch.no_grad():
             pre_load = fresh(ids).clone()
@@ -232,7 +179,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(device)
         fresh_opt = torch.optim.AdamW(fresh.parameters(), lr=3e-4)
-        fresh_sched = train_mod.CosineWithWarmup(fresh_opt, 2, 10, 1e-5, 3e-4)
+        fresh_sched = make_tiny_scheduler(fresh_opt)
         train_mod.load_checkpoint(fresh, fresh_opt, fresh_sched, cfg, device)
 
         assert torch.equal(torch.random.get_rng_state(), torch_after_draw)
@@ -263,7 +210,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(device)
         opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
-        sched = train_mod.CosineWithWarmup(opt, 2, 10, 1e-5, 3e-4)
+        sched = make_tiny_scheduler(opt)
         cfg = {**tiny_config, "model_folder": str(tmp_path)}
         step, best = train_mod.load_checkpoint(model, opt, sched, cfg, device)
         assert step == 0
@@ -316,7 +263,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(save_device)
         opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
-        sched = train_mod.CosineWithWarmup(opt, 2, 10, 1e-5, 3e-4)
+        sched = make_tiny_scheduler(opt)
         ids = torch.randint(0, tiny_config["vocab_size"],
                             (2, tiny_config["seq_len"]),
                             device=save_device, dtype=torch.long)
@@ -341,7 +288,7 @@ class TestCheckpointRoundTrip:
             rms_norm_eps=tiny_config["rms_norm_eps"],
         ).to(load_device)
         fresh_opt = torch.optim.AdamW(fresh.parameters(), lr=3e-4)
-        fresh_sched = train_mod.CosineWithWarmup(fresh_opt, 2, 10, 1e-5, 3e-4)
+        fresh_sched = make_tiny_scheduler(fresh_opt)
         step, best = train_mod.load_checkpoint(fresh, fresh_opt, fresh_sched,
                                                cfg, load_device)
         assert step == 3
@@ -361,140 +308,3 @@ class TestSetupGpuOptimizations:
         train_mod.setup_gpu_optimizations(cfg)
         train_mod.setup_gpu_optimizations(cfg)
 
-class TestEMA:
-    """EMA class: initialization, update mechanics, swap context manager,
-    and checkpoint round-trip."""
-
-    @pytest.fixture
-    def tiny_model(self, tiny_config, device):
-        from model import build_transformer
-        torch.manual_seed(0)
-        m = build_transformer(
-            vocab_size=tiny_config["vocab_size"],
-            d_model=tiny_config["d_model"],
-            n_layers=tiny_config["n_layers"],
-            n_heads=tiny_config["n_heads"],
-            n_kv_heads=tiny_config["n_kv_heads"],
-            head_dim=tiny_config["head_dim"],
-            d_ff=tiny_config["d_ff"],
-            max_seq_len=tiny_config["seq_len"],
-            rope_theta=tiny_config["rope_theta"],
-            rms_norm_eps=tiny_config["rms_norm_eps"],
-        ).to(device)
-        return m
-
-    def test_initialized_to_param_values(self, tiny_model):
-        """EMA shadow must equal the model's initial params (within FP32↔model-dtype round-trip)."""
-        ema = train_mod.EMA(tiny_model, decay=0.999)
-        for n, p in tiny_model.named_parameters():
-            if p.requires_grad:
-                assert n in ema.shadow
-                assert torch.allclose(ema.shadow[n].cpu(), p.detach().float().cpu(), atol=1e-6)
-
-    def test_update_moves_shadow_toward_new_params(self, tiny_model):
-        """After a single update, the shadow should be `decay * old + (1-decay) * new`."""
-        torch.manual_seed(1)
-        ema = train_mod.EMA(tiny_model, decay=0.9)
-        old_shadow = {n: t.clone() for n, t in ema.shadow.items()}
-        # Mutate the model parameters
-        with torch.no_grad():
-            for p in tiny_model.parameters():
-                if p.requires_grad:
-                    p.add_(torch.randn_like(p))
-        ema.update(tiny_model)
-        for n, p in tiny_model.named_parameters():
-            if p.requires_grad:
-                expected = 0.9 * old_shadow[n] + 0.1 * p.detach().float()
-                assert torch.allclose(ema.shadow[n].cpu(), expected.cpu(), atol=1e-5), n
-
-    def test_swap_restores_originals(self, tiny_model):
-        """`with ema.averaged_parameters(model)` must restore originals on exit."""
-        torch.manual_seed(2)
-        ema = train_mod.EMA(tiny_model, decay=0.5)
-        # Force the shadow to differ from the model
-        with torch.no_grad():
-            for p in tiny_model.parameters():
-                if p.requires_grad:
-                    p.add_(torch.randn_like(p))
-        ema.update(tiny_model)
-        # Snapshot the (now-updated) live params
-        pre_swap = {n: p.detach().clone()
-                    for n, p in tiny_model.named_parameters() if p.requires_grad}
-
-        with ema.averaged_parameters(tiny_model):
-            # Inside the block, model params should match the shadow
-            for n, p in tiny_model.named_parameters():
-                if p.requires_grad:
-                    assert torch.allclose(
-                        p.detach().float().cpu(),
-                        ema.shadow[n].cpu(),
-                        atol=1e-5,
-                    ), f"inside-block: {n}"
-        # After the block, model params should match pre_swap
-        for n, p in tiny_model.named_parameters():
-            if p.requires_grad:
-                assert torch.allclose(
-                    p.detach().cpu(), pre_swap[n].cpu(), atol=1e-6,
-                ), f"outside-block: {n}"
-
-    def test_save_load_roundtrip(self, tiny_model, tiny_config, tmp_path):
-        """EMA state must survive save/load via checkpoint."""
-        torch.manual_seed(3)
-        ema = train_mod.EMA(tiny_model, decay=0.99)
-        # Step the EMA a few times so its shadow differs from the model
-        for _ in range(3):
-            with torch.no_grad():
-                for p in tiny_model.parameters():
-                    if p.requires_grad:
-                        p.add_(torch.randn_like(p) * 0.1)
-            ema.update(tiny_model)
-        expected_shadow = {n: t.clone() for n, t in ema.shadow.items()}
-
-        # Build optimizer/scheduler for save_checkpoint
-        opt = torch.optim.AdamW(tiny_model.parameters(), lr=3e-4)
-        sched = train_mod.CosineWithWarmup(opt, 2, 10, 1e-5, 3e-4)
-        cfg = {**tiny_config, "model_folder": str(tmp_path), "async_checkpoint": False}
-        train_mod.save_checkpoint(
-            tiny_model, opt, sched, step=7, config=cfg,
-            best_val_loss=1.0, async_save=False, ema=ema,
-        )
-
-        # Build a fresh model + EMA, then load — the EMA shadow must match.
-        from model import build_transformer
-        torch.manual_seed(99)  # different seed → different init
-        fresh = build_transformer(
-            vocab_size=tiny_config["vocab_size"], d_model=tiny_config["d_model"],
-            n_layers=tiny_config["n_layers"], n_heads=tiny_config["n_heads"],
-            n_kv_heads=tiny_config["n_kv_heads"], head_dim=tiny_config["head_dim"],
-            d_ff=tiny_config["d_ff"], max_seq_len=tiny_config["seq_len"],
-            rope_theta=tiny_config["rope_theta"], rms_norm_eps=tiny_config["rms_norm_eps"],
-        ).to(next(tiny_model.parameters()).device)
-        fresh_opt = torch.optim.AdamW(fresh.parameters(), lr=3e-4)
-        fresh_sched = train_mod.CosineWithWarmup(fresh_opt, 2, 10, 1e-5, 3e-4)
-        fresh_ema = train_mod.EMA(fresh, decay=0.99)
-        train_mod.load_checkpoint(fresh, fresh_opt, fresh_sched, cfg, next(fresh.parameters()).device, ema=fresh_ema)
-        for n, t in fresh_ema.shadow.items():
-            assert torch.allclose(t.cpu(), expected_shadow[n].cpu(), atol=1e-5), n
-
-    def test_load_without_ema_ignores_ema_state(self, tiny_model, tiny_config, tmp_path):
-        """If the caller has ema=None, old checkpoints (with ema_state_dict=None)
-        must load cleanly. Conversely a checkpoint WITHOUT ema_state_dict must
-        not crash a caller with ema=EMA(...)."""
-        torch.manual_seed(4)
-        opt = torch.optim.AdamW(tiny_model.parameters(), lr=3e-4)
-        sched = train_mod.CosineWithWarmup(opt, 2, 10, 1e-5, 3e-4)
-        cfg = {**tiny_config, "model_folder": str(tmp_path), "async_checkpoint": False}
-        # Save WITHOUT ema (ema=None) — simulates a pre-EMA checkpoint
-        train_mod.save_checkpoint(
-            tiny_model, opt, sched, step=5, config=cfg,
-            best_val_loss=0.5, async_save=False, ema=None,
-        )
-        # Load with an ema=EMA() — must not crash, EMA must stay at init
-        fresh_ema = train_mod.EMA(tiny_model, decay=0.95)
-        pre_load_shadow = {n: t.clone() for n, t in fresh_ema.shadow.items()}
-        train_mod.load_checkpoint(
-            tiny_model, opt, sched, cfg, next(tiny_model.parameters()).device, ema=fresh_ema,
-        )
-        # EMA shadow should be untouched (the checkpoint had no ema_state_dict)
-        for n, t in fresh_ema.shadow.items():
-            assert torch.allclose(t.cpu(), pre_load_shadow[n].cpu(), atol=1e-6), n

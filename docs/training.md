@@ -56,7 +56,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 **`TOKENIZERS_PARALLELISM = "false"`** — HuggingFace tokenizers spawn a Rust-backed thread pool. When combined with PyTorch's multiprocessing DataLoader workers, this causes a deadlock on fork. Disabling parallelism in the tokenizer is the standard fix; the DataLoader workers themselves handle the parallelism at a higher level.
 
-**Import separation** — `dataset`, `model`, and `config` are kept as separate modules. This means `train.py` can be tested or replaced independently, and smoke tests (`test_pipeline.py`) can inject synthetic data without touching the training script.
+**Import separation** — `dataset`, `model`, and `config` are kept as separate modules. This means `train.py` can be tested or replaced independently, and the pytest suite (`tests/`) can inject synthetic data without touching the training script.
 
 ---
 
