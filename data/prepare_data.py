@@ -4,9 +4,10 @@ import sys
 from pathlib import Path
 
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_LLM_ROOT = _PROJECT_ROOT.parent.parent  # .../CoreProjects/
-for _p in (_PROJECT_ROOT, _LLM_ROOT):
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../LLaMA-3-Lite/
+_DATA_ROOT = Path(__file__).resolve().parent  # vendored shared_data lives here
+_WORKSPACE_ROOT = _PROJECT_ROOT.parent.parent  # workspace LLM/shared_data, if present
+for _p in (_DATA_ROOT, _PROJECT_ROOT, _WORKSPACE_ROOT):
     _p = str(_p)
     if _p not in sys.path:
         sys.path.insert(0, _p)

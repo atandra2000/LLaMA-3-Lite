@@ -1,25 +1,22 @@
-"""LLaMA-3-Lite data loading — thin shim over the universal pipeline.
+"""LLaMA-3-Lite data-loading shim over the vendored universal pipeline.
 
-All data *preparation* (download, clean, tokenise, pack, dedup) and the
-training *loader* now live in ``shared_data`` (the single source of truth
-for the whole portfolio). This module only re-exports the canonical
-symbols so existing call sites (``train.py``, ``benchmark_data.py``)
-keep working unchanged.
-
-To prepare a real corpus, run the shim first::
-
-    python data/prepare_data.py          # delegates to shared_data.run_pipeline
-    python train.py                       # build_training_data reads the shards
+The actual ``PackedDataset`` / DataLoader glue lives in ``data/shared_data``;
+this module re-exports the public symbols so ``train.py`` and
+``benchmark_data.py`` keep working unchanged.
 """
 import sys
 from pathlib import Path
 
-# Ensure the shared_data package (at the LLM/ root) is importable.
-_LLM_ROOT = Path(__file__).resolve().parents[1]  # .../LLM/
-if str(_LLM_ROOT) not in sys.path:
-    sys.path.insert(0, str(_LLM_ROOT))
 
-from shared_data.loader import (
+_PROJECT_ROOT = Path(__file__).resolve().parent
+_WORKSPACE_ROOT = _PROJECT_ROOT.parent.parent  # workspace LLM/shared_data, if present
+
+for _p in (_PROJECT_ROOT / "data", _WORKSPACE_ROOT):
+    _p_str = str(_p)
+    if _p_str not in sys.path:
+        sys.path.insert(0, _p_str)
+
+from shared_data.loader import (  # noqa: E402
     PackedDataset,
     ShuffledRangeSampler,
     collate_fn,
