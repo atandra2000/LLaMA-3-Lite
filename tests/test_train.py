@@ -15,7 +15,7 @@ import train as train_mod
 
 
 def make_tiny_scheduler(opt, warmup_steps=2, max_steps=10, min_lr=1e-5, peak_lr=3e-4):
-    """Mirror of the production scheduler chain (LinearLR → CosineAnnealingLR → SequentialLR)."""
+    """Mirror of the production scheduler chain (LinearLR → CosineAnnealingLR)."""
     start_factor = max(min_lr / peak_lr, 1e-4) if peak_lr > 0 else 1e-4
     warm = LinearLR(opt, start_factor=start_factor, total_iters=warmup_steps)
     cos = CosineAnnealingLR(opt, T_max=max_steps - warmup_steps, eta_min=min_lr)

@@ -17,12 +17,8 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("WANDB_MODE", "offline")
 os.environ.setdefault("WANDB_DISABLED", "true")
 
-# Inject a minimal `wandb` stub into sys.modules when the real package is
-# not installed, so that `train.py`'s module-level `import wandb` succeeds
-# on a CPU/Mac dev box and the test `monkeypatch.setattr(wandb, "log", ...)`
-# has a real attribute to patch. The stub records calls in-memory; tests
-# assert against `wandb._calls["log"]` if needed (the live test uses
-# monkeypatch.setattr on top, which still works).
+# Inject a minimal `wandb` stub when the real package is missing, so
+# `train.py`'s module-level `import wandb` succeeds on CPU/Mac dev boxes.
 if "wandb" not in sys.modules:
     try:
         importlib.import_module("wandb")
@@ -102,7 +98,7 @@ def device(request) -> torch.device:
 
 @pytest.fixture(scope="session")
 def dtype(device: torch.device) -> torch.dtype:
-    """Use float32 on CPU for numerical exactness; bf16 only on GPU."""
+    """FP32 on CPU for exactness; bf16 only on GPU."""
     return torch.float32 if device.type == "cpu" else torch.bfloat16
 
 

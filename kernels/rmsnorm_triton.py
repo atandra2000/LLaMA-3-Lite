@@ -1,18 +1,7 @@
 """Fused RMSNorm Triton kernel + pure-PyTorch reference.
 
-Drop-in replacement for ``nn.RMSNorm`` in the LLaMA-3-Lite hot path. The
-PyTorch eager chain ``pow().mean() + rsqrt + multiply`` is 4 separate
-launches; this fuses them into a single row-wise Triton program.
-
-The kernel reads ``x`` once, computes the row mean-square, normalises, and
-applies the learnable weight in a single pass. d_model=1024 (LLaMA-3-Lite
-default) maps to BLOCK_SIZE=1024 — well inside the 256-cap register
-budget for a single program.
-
-Backward is a v1 reference stub: forward saves ``x`` and ``weight``;
-backward re-runs the PyTorch autograd through the reference. Slower than
-a re-compute backward, but correct and small. v2 plan in the kernel
-docstring.
+Fuses the 4-launch eager chain (pow, mean, add, rsqrt, multiply) into a
+single row-wise program. Backward is a PyTorch autograd re-compute stub.
 """
 from __future__ import annotations
 

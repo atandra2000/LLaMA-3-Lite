@@ -1,7 +1,7 @@
-"""Fused chunked CE + z-loss Triton kernel (drop-in for `chunked_cross_entropy_with_z`).
+"""Fused chunked CE + z-loss Triton kernel.
 
-Online-softmax pass that writes (ce_sum, ce_count, z_accum) into three FP32
-scalar accumulators via `atomic_add`. Backward is a re-compute stub.
+Online-softmax pass writing (ce_sum, ce_count, z_accum) via atomic_add.
+Backward is a re-compute stub.
 """
 from __future__ import annotations
 
@@ -17,8 +17,7 @@ except ImportError:
     HAS_TRITON = False
 
 
-# Vocab dimension is the per-block reduction axis. 128k fits; 256k does
-# not (would need 2 programs per row + cross-program reduction).
+# Vocab is the per-block reduction axis; 128k fits, 256k would need 2 programs/row.
 _MAX_VOCAB_BLOCK = 131072
 
 
@@ -28,10 +27,7 @@ def cross_entropy_with_z_pytorch(
     ignore_index: int,
     z_loss_weight: float,
 ) -> torch.Tensor:
-    """Reference: ce + z_loss_weight * mean(logsumexp(logits.float())**2).
-
-    Matches ``chunked_cross_entropy_with_z`` from ``model.py`` to <1e-5.
-    """
+    """Reference: ce + z_loss_weight * mean(logsumexp(logits.float())**2)."""
     log_z = torch.logsumexp(logits.float(), dim=-1)
     ce = F.cross_entropy(logits, targets, ignore_index=ignore_index, reduction="mean")
     z = log_z.pow(2).mean()
@@ -77,7 +73,7 @@ if HAS_TRITON:
         if valid:
             tl.atomic_add(CE_SUM_ptr, nll)
             tl.atomic_add(CE_CNT_ptr, 1.0)
-        # z-loss: mean of log_z**2 is computed outside by dividing by M.
+        # z-loss mean is computed outside as Z_SUM / M.
 
         tl.atomic_add(Z_SUM_ptr, log_z * log_z)
 
@@ -143,12 +139,7 @@ def triton_chunked_cross_entropy_with_z(
     ignore_index: int = -100,
     z_loss_weight: float = 1e-4,
 ) -> torch.Tensor:
-    """Public entry point. Direct drop-in for ``chunked_cross_entropy_with_z``.
-
-    The ``chunk_size`` argument is accepted for API compatibility but
-    ignored — the Triton path materialises the full logits per call and
-    processes the entire vocab axis in one fused pass.
-    """
+    """Public entry point; drop-in for ``chunked_cross_entropy_with_z``; ``chunk_size`` is accepted for API compatibility but ignored — the Triton path materialises the full logits and processes the entire vocab axis in one fused pass."""
     if not HAS_TRITON:
         raise ImportError(
             "triton_chunked_cross_entropy_with_z requires the `triton` package. "

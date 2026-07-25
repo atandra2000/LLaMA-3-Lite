@@ -1,15 +1,8 @@
 """Fused SwiGLU activation Triton kernel + pure-PyTorch reference.
 
-The LLaMA-3 FFN path: ``down_proj(silu(gate) * up)``. The
-``silu(gate) * up`` step is two separate elementwise launches in PyTorch
-eager (silu, then multiply). The kernel fuses them, reading the already-
-fused ``gate_up`` projection output (2*d_ff wide) and writing the
-``d_ff`` activation in a single pass.
-
-For d_ff=4096 (LLaMA-3-Lite default), BLOCK_SIZE=4096 fits A100 register
-budget. Backward is a v1 reference stub: forward saves ``gate_up``;
-backward re-runs PyTorch autograd on the reference. v2 plan in the kernel
-docstring.
+Fuses ``silu(gate) * up`` (two elementwise launches in eager) into one
+row-wise program. ``gate_up`` is the fused 2*d_ff projection output.
+Backward is a PyTorch autograd re-compute stub.
 """
 from __future__ import annotations
 
@@ -102,12 +95,7 @@ class _TritonSwiGLU(torch.autograd.Function):
 
 
 def triton_swiglu(gate_up: torch.Tensor, d_ff: int) -> torch.Tensor:
-    """Public entry point. Raises ``ImportError`` when triton is missing.
-
-    ``gate_up`` is the fused ``gate_proj + up_proj`` output of width
-    ``2 * d_ff``. The kernel splits internally and returns the
-    ``d_ff``-wide activation.
-    """
+    """Public entry point; raises ``ImportError`` when triton is missing; ``gate_up`` is the fused ``gate_proj + up_proj`` output of width ``2*d_ff`` and the kernel returns the ``d_ff``-wide activation."""
     if not HAS_TRITON:
         raise ImportError(
             "triton_swiglu requires the `triton` package. "

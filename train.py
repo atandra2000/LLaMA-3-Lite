@@ -1,3 +1,8 @@
+"""LLaMA-3-Lite training loop: validate, checkpoint, AdamW, EMA, BF16 autocast.
+
+``ENABLE_TRITON_KERNELS=1`` is required alongside per-kernel ``*_impl='triton'``
+config keys; otherwise the trainer force-restores all three to ``'pytorch'``.
+"""
 import torch
 import torch.nn as nn
 from pathlib import Path
@@ -10,7 +15,8 @@ import random
 import threading
 import numpy
 
-# Optional experiment tracker; keep training loop runnable without it.
+
+# Optional experiment tracker; the loop runs without it.
 try:
     import wandb as _wandb
     wandb = _wandb
@@ -30,7 +36,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def setup_gpu_optimizations(config):
-    """Configure A100 GPU for maximum throughput (TF32, BF16, cuDNN benchmark)."""
+    """Configure the GPU for throughput (TF32, BF16, cuDNN benchmark)."""
     if config.get('tf32', True):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
@@ -49,12 +55,6 @@ def setup_gpu_optimizations(config):
         if hasattr(torch.cuda, 'get_device_capability'):
             cap = torch.cuda.get_device_capability(0)
             print(f"CUDA Compute Capability: {cap[0]}.{cap[1]}")
-
-
-
-
-
-
 
 
 def top_k_top_p_sampling(logits, top_k, top_p, temperature):
@@ -120,7 +120,7 @@ def generate_samples(model, tokenizer, device, step, config):
 
 @torch.no_grad()
 def validate(model, val_dataloader, pad_id, device, step, config):
-    """Validation loop with chunked cross-entropy + z-loss for memory efficiency."""
+    """Chunked CE + z-loss validation loop."""
     model.eval()
     total_loss = 0
     num_batches = 0
@@ -261,9 +261,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     qknorm = config.get('qknorm', True)
     z_loss_weight = config.get('z_loss_weight', 1e-4)
     cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
-    # Two-layered opt-in for Triton kernels: per-kernel config keys are honoured
-    # only when ENABLE_TRITON_KERNELS=1; otherwise they're forced to 'pytorch'
-    # so a default-config run never silently switches to a fused path.
+    # Per-kernel '*_impl='triton'' keys only fire when ENABLE_TRITON_KERNELS=1;
+    # default runs never silently switch to a fused path.
     triton_enabled = os.environ.get("ENABLE_TRITON_KERNELS", "0") == "1"
     rmsnorm_impl = config.get('rmsnorm_impl', 'pytorch')
     swiglu_impl = config.get('swiglu_impl', 'pytorch')
@@ -307,8 +306,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     bs, seq = config['batch_size'], config['seq_len']
     tokens_per_step = bs * seq
     use_ema = config.get('use_ema', True)
-    # Memory budget (GB): model BF16 + FP32 master + AdamW (m+v) ≈ 7.2× params,
-    # plus 1× if EMA, plus chunked-CE (negligible for chunk=65K) and ~3 GB workspace.
+    # Memory budget: BF16 + FP32 master + AdamW (m+v) ≈ 7.2× params + EMA + workspace.
     ema_overhead = 1.0 if use_ema else 0.0
     if gradient_checkpointing:
         est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * config['vocab_size'] * 2 / 1e9 + 3
@@ -319,8 +317,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
-    # Pre-fetch one batch BEFORE torch.compile: CUDA graphs recompile on shape
-    # change, so the warmup must use the exact training shapes.
+    # CUDA graphs recompile on shape change, so the warmup must use real training shapes.
     step_iterator = iter(train_dataloader)
     try:
         _warmup_batch = next(step_iterator)
@@ -333,11 +330,10 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     if config.get('compile_model', True) and hasattr(torch, 'compile'):
         compile_mode = config.get('compile_mode', 'reduce-overhead')
         print(f"Compiling model with torch.compile(mode={compile_mode!r})...")
-        # 'reduce-overhead' uses CUDA graphs, which own the stream — manual
-        # torch.cuda.Stream() prefetch is incompatible, so we rely on
-        # non_blocking=True + pin_memory=True for async H2D.
+        # 'reduce-overhead' uses CUDA graphs which own the stream; non_blocking H2D
+        # is the only async prefetch compatible with that mode.
         model = torch.compile(model, mode=compile_mode)
-        # Pre-warmup: first step would otherwise stall 30s–2min on autotune.
+        # First step stalls 30s–2min on autotune; warm it up before the loop.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             _logits = model(_warmup_input)
@@ -435,17 +431,14 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     grad_accum_steps = config.get('gradient_accumulation', 1)
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
     if ema is not None and not config.get('preload'):
-        # Skip the EMA banner on resume — the shadow is already loaded.
         print(f"EMA: enabled (decay={ema.decay}, {len(ema.shadow)} parameter shadows)")
 
     if device.type == 'cuda':
         end_event = torch.cuda.Event(enable_timing=True)
 
-    # Warmup pass consumed batch 0; the next() below pulls batch 1.
     training_start_time = time.time()
     step_start_time = time.time()
     data_wait_time = 0.0
-    warmup_steps = 5
 
     pbar = tqdm(range(initial_step, config['max_steps']), desc="Training", unit="step")
 
@@ -473,14 +466,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         fetch_time = time.time() - data_start
         data_wait_time += fetch_time
 
-        # non_blocking=True + pin_memory=True (set on the DataLoader) gives
-        # async H2D copy without an explicit stream. CUDA graphs in
-        # torch.compile(mode="reduce-overhead") own the stream, so we can't
-        # touch it manually here.
+        # non_blocking=True + pin_memory=True gives async H2D; manual streams
+        # are off-limits while CUDA graphs own the device stream.
         next_input = batch['input'].to(device, non_blocking=True)
         next_target = batch['target'].to(device, non_blocking=True)
 
-        # CUDA graphs own the stream, so async H2D here is non_blocking + pin_memory only.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             logits = model(input_ids)
@@ -552,8 +542,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         if step > 0 and step % config['val_interval'] == 0:
             if device.type == 'cuda':
                 torch.cuda.reset_peak_memory_stats()
-            # Validate with EMA weights when available; shadow is a noise-free
-            # centre of the recent optimization trajectory.
+            # EMA is the noise-free centre of the recent opt trajectory; prefer it for val.
             if ema is not None:
                 val_loss = validate(ema, val_dataloader, pad_id, device, step, config)
             else:
@@ -577,7 +566,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             save_checkpoint(model, optimizer, scheduler, step, config,
                             best_val_loss, async_save=False, ema=ema)
             if config.get('keep_last_n_checkpoints', 0) > 0:
-                # Inline checkpoint GC: keep the last N, drop the rest.
                 ckpt_dir = Path(config['model_folder'])
                 if ckpt_dir.exists():
                     pattern = f"{config['model_filename']}_step_*.pt"

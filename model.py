@@ -1,3 +1,7 @@
+"""LLaMA-3-Lite decoder: RoPE, GQA, RMSNorm, SwiGLU, optional Triton paths.
+
+Pure PyTorch by default; ``*_impl='triton'`` swaps in fused kernels.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,11 +36,7 @@ class RoPE(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    """RMSNorm with optional Triton fused-path opt-in.
-
-    The PyTorch eager path is a 4-launch chain (pow, mean, add, rsqrt,
-    multiply). The Triton path fuses them into a single row-wise program.
-    """
+    """RMSNorm with optional Triton fused-path opt-in."""
     def __init__(self, d_model: int, eps: float = 1e-5, impl: str = "pytorch"):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(d_model))
@@ -76,9 +76,8 @@ class GroupedQueryAttention(nn.Module):
         self.v_proj = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.out_proj = nn.Linear(n_heads * head_dim, d_model, bias=False)
 
-        # QK-norm: applied per-head, after projection, before RoPE (Qwen2 / Gemma2 placement).
-        # Bounding attention logit growth prevents the late-training "attention collapse" failure
-        # mode. Negligible param cost: 2 * head_dim per layer.
+        # QK-norm placement: per-head, after projection, before RoPE (Qwen2 / Gemma2).
+        # Bounds attention logit growth late in training.
         if qknorm:
             self.q_norm = RMSNorm(head_dim, eps=1e-5)
             self.k_norm = RMSNorm(head_dim, eps=1e-5)
@@ -91,8 +90,7 @@ class GroupedQueryAttention(nn.Module):
     def forward(self, x, mask=None):
         B, S, _ = x.shape
 
-        # view -> (B, S, H, D). Normalize over last axis (D) BEFORE transpose so RMSNorm
-        # sees head_dim as the reduction axis.
+        # Normalize over last axis (D) BEFORE transpose so RMSNorm sees head_dim.
         q = self.q_proj(x).view(B, S, self.n_heads, self.head_dim)
         k = self.k_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
         v = self.v_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
@@ -116,7 +114,7 @@ class GroupedQueryAttention(nn.Module):
 
 
 class SwiGLUFFN(nn.Module):
-    """SwiGLU Feed-Forward Network with fused gate+up projection."""
+    """SwiGLU FFN with fused gate+up projection."""
     def __init__(self, d_model: int, d_ff: int, swiglu_impl: str = "pytorch"):
         super().__init__()
         self.gate_up_proj = nn.Linear(d_model, 2 * d_ff, bias=False)
@@ -218,7 +216,7 @@ class Transformer(nn.Module):
         return logits
 
     def get_num_params(self, non_embedding=True):
-        """Return the parameter count (subtracts input embedding and output proj when non_embedding=True)."""
+        """Parameter count; subtracts embeddings when ``non_embedding=True``."""
         n_params = sum(p.numel() for p in self.parameters())
         if non_embedding:
             n_params -= self.input_embedding.weight.numel()
@@ -252,13 +250,7 @@ def chunked_cross_entropy_with_z(
     logits, targets, chunk_size=65536, ignore_index=-100, z_loss_weight=1e-4,
     cross_entropy_impl: str = "pytorch",
 ):
-    """CE + z-loss (PaLM / Gemma2). Penalises log-partition growth so output
-    logits can't drift unbounded late in training.
-
-    ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for a
-    single fused Triton kernel; falls back to the PyTorch path with a
-    one-shot warning when triton is unavailable.
-    """
+    """CE + z-loss (PaLM / Gemma2); bounds log-partition growth late in training. ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for a single fused kernel; falls back to PyTorch when triton is unavailable."""
     if cross_entropy_impl == "triton":
         try:
             return triton_chunked_cross_entropy_with_z(
@@ -280,8 +272,7 @@ def chunked_cross_entropy_with_z(
 
     for start in range(0, logits.shape[0], chunk_size):
         end = min(start + chunk_size, logits.shape[0])
-        # Upcast chunk to FP32 once for both logsumexp and CE — keeps z-loss precise
-        # and matches the reference's numerics within 1e-5.
+        # Upcast to FP32 once so logsumexp + CE share a single precision promotion.
         cl = logits[start:end].float()
         ct = targets[start:end]
 
@@ -336,7 +327,6 @@ def build_transformer(
         active = [k for k, v in (("rmsnorm", rmsnorm_impl), ("swiglu", swiglu_impl)) if v == "triton"]
         print(f"Triton kernels active: {', '.join(active)}")
     if qknorm:
-        # QK-norm adds 2 * head_dim per layer = 4,096 scalars for the default config.
-        # Don't add this to the headline param count — it's noise.
+        # 2 * head_dim per layer — noise on the headline count, omit intentionally.
         pass
     return model
