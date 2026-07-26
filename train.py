@@ -15,15 +15,7 @@ import random
 import threading
 import numpy
 
-
-# Optional experiment tracker; the loop runs without it.
-try:
-    import wandb as _wandb
-    wandb = _wandb
-    HAS_WANDB = True
-except ImportError:
-    wandb = None  # type: ignore[assignment]
-    HAS_WANDB = False
+import wandb
 
 from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
@@ -306,24 +298,13 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     bs, seq = config['batch_size'], config['seq_len']
     tokens_per_step = bs * seq
     use_ema = config.get('use_ema', True)
-    # Memory budget: BF16 + FP32 master + AdamW (m+v) ≈ 7.2× params + EMA + workspace.
-    ema_overhead = 1.0 if use_ema else 0.0
-    if gradient_checkpointing:
-        est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * config['vocab_size'] * 2 / 1e9 + 3
-    else:
-        est_peak = model_mem_gb * (7.2 + ema_overhead) + tokens_per_step * 2 * 16 * config['d_model'] * 2 / 1e9 + 3
     print(f"Batch size: {bs} | Seq len: {seq} | Tokens/step: {tokens_per_step:,}")
-    print(f"Estimated peak GPU memory: {est_peak:.1f} GB (A100 80GB available)")
     print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
     # CUDA graphs recompile on shape change, so the warmup must use real training shapes.
     step_iterator = iter(train_dataloader)
-    try:
-        _warmup_batch = next(step_iterator)
-    except StopIteration:
-        step_iterator = iter(train_dataloader)
-        _warmup_batch = next(step_iterator)
+    _warmup_batch = next(step_iterator)
     _warmup_input = _warmup_batch['input'].to(device, non_blocking=True)
     _warmup_target = _warmup_batch['target'].to(device, non_blocking=True)
 
@@ -379,8 +360,6 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     cosine_scheduler = CosineAnnealingLR(optimizer, T_max=max_steps - warmup_steps, eta_min=config['min_lr'])
     scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_steps])
 
-    # EMA is built before load_checkpoint so a resumed run inherits the shadow.
-    use_ema = config.get('use_ema', True)
     ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get('ema_decay', 0.999))) if use_ema else None
 
     initial_step, best_val_loss = 0, float('inf')
@@ -443,11 +422,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     pbar = tqdm(range(initial_step, config['max_steps']), desc="Training", unit="step")
 
     data_start = time.time()
-    try:
-        next_batch = next(step_iterator)
-    except StopIteration:
-        step_iterator = iter(train_dataloader)
-        next_batch = next(step_iterator)
+    next_batch = next(step_iterator)
     data_wait_time += time.time() - data_start
 
     next_input = next_batch['input'].to(device, non_blocking=True)
@@ -458,11 +433,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         target_ids = next_target
 
         data_start = time.time()
-        try:
-            batch = next(step_iterator)
-        except StopIteration:
-            step_iterator = iter(train_dataloader)
-            batch = next(step_iterator)
+        batch = next(step_iterator)
         fetch_time = time.time() - data_start
         data_wait_time += fetch_time
 

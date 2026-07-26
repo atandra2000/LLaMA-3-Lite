@@ -135,11 +135,10 @@ class _TritonCEWithZ(torch.autograd.Function):
 def triton_chunked_cross_entropy_with_z(
     logits: torch.Tensor,
     targets: torch.Tensor,
-    chunk_size: int = 65536,
     ignore_index: int = -100,
     z_loss_weight: float = 1e-4,
 ) -> torch.Tensor:
-    """Public entry point; drop-in for ``chunked_cross_entropy_with_z``; ``chunk_size`` is accepted for API compatibility but ignored — the Triton path materialises the full logits and processes the entire vocab axis in one fused pass."""
+    """Public entry point; drop-in for ``chunked_cross_entropy_with_z``; the Triton path materialises the full logits and processes the entire vocab axis in one fused pass — there is no per-chunk streaming. ``chunk_size`` from the PyTorch API is intentionally not accepted here (passing it would silently no-op)."""
     if not HAS_TRITON:
         raise ImportError(
             "triton_chunked_cross_entropy_with_z requires the `triton` package. "

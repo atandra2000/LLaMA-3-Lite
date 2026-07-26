@@ -15,7 +15,6 @@ from model import (
     SwiGLUFFN,
     Transformer,
     build_transformer,
-    chunked_cross_entropy,
     chunked_cross_entropy_with_z,
 )
 
@@ -186,69 +185,7 @@ class TestSwiGLUFFN:
         assert ffn.down_proj.weight.shape == (16, 32)
 
 
-class TestChunkedCrossEntropy:
-    @pytest.mark.numeric
-    def test_equals_pytorch_cross_entropy(self, device):
-        """Chunked CE must match F.cross_entropy to <1e-5."""
-        torch.manual_seed(0)
-        B, S, V = 4, 32, 100
-        logits = torch.randn(B * S, V, device=device, requires_grad=True)
-        targets = torch.randint(0, V, (B * S,), device=device)
 
-        ref = F.cross_entropy(logits, targets, reduction="mean")
-        chk = chunked_cross_entropy(logits.detach().clone().requires_grad_(True),
-                                    targets, chunk_size=8192)
-        diff = (ref - chk).abs().item()
-        assert diff < 1e-5, f"chunked CE differs from reference by {diff}"
-        assert 3.0 < chk.item() < 6.0
-
-    @pytest.mark.numeric
-    def test_chunk_size_does_not_change_result(self, device):
-        """Different chunk sizes must all give the same loss."""
-        torch.manual_seed(1)
-        N, V = 1000, 50
-        logits = torch.randn(N, V, device=device)
-        targets = torch.randint(0, V, (N,), device=device)
-        losses = [
-            chunked_cross_entropy(logits.clone(), targets, chunk_size=c).item()
-            for c in (1, 7, 50, 256, 100_000)
-        ]
-        assert max(losses) - min(losses) < 1e-5, losses
-
-    @pytest.mark.numeric
-    def test_ignore_index_excluded_from_loss(self, device):
-        """Targets marked ignore_index must not contribute to the mean."""
-        torch.manual_seed(2)
-        N, V = 20, 10
-        logits = torch.randn(N, V, device=device)
-        targets = torch.randint(0, V, (N,), device=device)
-        targets[:10] = -100
-
-        ref = F.cross_entropy(logits, targets, ignore_index=-100,
-                               reduction="mean")
-        chk = chunked_cross_entropy(logits.clone(), targets, chunk_size=5,
-                                    ignore_index=-100)
-        assert torch.allclose(ref, chk, atol=1e-6), (ref, chk)
-
-    @pytest.mark.numeric
-    def test_all_ignored_returns_zero(self, device):
-        N, V = 16, 8
-        logits = torch.randn(N, V, device=device, requires_grad=True)
-        targets = torch.full((N,), -100, device=device, dtype=torch.long)
-        loss = chunked_cross_entropy(logits, targets, ignore_index=-100)
-        assert loss.item() == 0.0
-
-    @pytest.mark.numeric
-    def test_gradients_flow(self, device):
-        """The chunked loss must produce gradients."""
-        torch.manual_seed(3)
-        logits = torch.randn(64, 20, device=device, requires_grad=True)
-        targets = torch.randint(0, 20, (64,), device=device)
-        loss = chunked_cross_entropy(logits, targets, chunk_size=16)
-        loss.backward()
-        assert logits.grad is not None
-        assert torch.isfinite(logits.grad).all()
-        assert logits.grad.abs().sum().item() > 0
 
 
 class TestTransformerParamCount:
@@ -400,7 +337,7 @@ class TestChunkedCrossEntropyWithZ:
         logits = torch.randn(N, V, device=device)
         targets = torch.randint(0, V, (N,), device=device, dtype=torch.long)
         a = chunked_cross_entropy_with_z(logits, targets, chunk_size=16, z_loss_weight=0.0)
-        b = chunked_cross_entropy(logits, targets, chunk_size=16)
+        b = F.cross_entropy(logits, targets, reduction="mean")
         assert torch.allclose(a, b, atol=1e-6)
 
     def test_gradients_flow(self, device):

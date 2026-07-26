@@ -235,8 +235,8 @@ class TestCheckpointRoundTrip:
         t = train_mod.save_checkpoint(model, opt, sched, step=5, config=cfg,
                                        best_val_loss=1.0, async_save=True)
         assert t is not None
-        assert t.is_alive() or not t.is_alive()
         t.join(timeout=5)
+        assert not t.is_alive()
         assert (tmp_path / f"{cfg['model_filename']}_step_5.pt").exists()
 
     @pytest.mark.gpu

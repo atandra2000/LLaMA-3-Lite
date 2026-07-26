@@ -30,7 +30,6 @@ os.chdir(ROOT)
 import dataset as ds
 from model import (
     build_transformer,
-    chunked_cross_entropy,
     chunked_cross_entropy_with_z,
 )
 
@@ -220,7 +219,7 @@ def train_steps(model, train_dl, cfg, device):
 def check_chunked_ce(cfg, device, model):
     print()
     print("=" * 70)
-    print("[5/8] chunked_cross_entropy matches dense cross_entropy")
+    print("[5/8] chunked_cross_entropy_with_z matches dense cross_entropy")
     print("=" * 70)
     model.eval()
     with torch.no_grad():
@@ -230,7 +229,7 @@ def check_chunked_ce(cfg, device, model):
         flat = logits.view(-1, logits.size(-1))
         targets = tgt.view(-1)
         dense = F.cross_entropy(flat.float(), targets)
-        chunked = chunked_cross_entropy(flat.float(), targets, chunk_size=128)
+        chunked = chunked_cross_entropy_with_z(flat.float(), targets, chunk_size=128, z_loss_weight=0.0)
     diff = (dense - chunked).abs().max().item()
     print(f"  dense   = {dense.item():.6f}")
     print(f"  chunked = {chunked.item():.6f}")

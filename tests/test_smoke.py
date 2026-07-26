@@ -115,9 +115,10 @@ class TestEndToEndSmoke:
             logits = tiny_model(ids)
             full = F.cross_entropy(logits.view(-1, logits.size(-1)),
                                    tgt.view(-1), reduction="mean")
-            from model import chunked_cross_entropy
-            chk = chunked_cross_entropy(logits.view(-1, logits.size(-1)),
-                                        tgt.view(-1), chunk_size=7)
+            from model import chunked_cross_entropy_with_z
+            chk = chunked_cross_entropy_with_z(logits.view(-1, logits.size(-1)),
+                                                tgt.view(-1), chunk_size=7,
+                                                z_loss_weight=0.0)
         assert torch.allclose(full, chk, atol=1e-5), (full, chk)
 
     def test_validate_runs_and_returns_finite_loss(self, tiny_model, tiny_config,

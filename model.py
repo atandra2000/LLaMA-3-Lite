@@ -12,10 +12,6 @@ from kernels.swiglu_triton import triton_swiglu
 from kernels.cross_entropy_triton import triton_chunked_cross_entropy_with_z
 
 
-# ponytail: InputEmbedding wrapper inlined — it only forwarded to nn.Embedding
-# and stored d_model, which was never read.
-
-
 class RoPE(nn.Module):
     """Rotary Position Embeddings with precomputed cos/sin buffers."""
     def __init__(self, head_dim: int, max_seq_len: int, theta: float = 500000.0):
@@ -227,25 +223,6 @@ class Transformer(nn.Module):
     # the flag is set only in __init__ and never toggled at runtime.
 
 
-def chunked_cross_entropy(logits, targets, chunk_size=65536, ignore_index=-100):
-    """Memory-efficient cross-entropy processing logits in chunks."""
-    total_loss = torch.tensor(0.0, device=logits.device)
-    total_count = torch.tensor(0, device=logits.device, dtype=torch.long)
-
-    for start in range(0, logits.shape[0], chunk_size):
-        end = min(start + chunk_size, logits.shape[0])
-        chunk_logits = logits[start:end]
-        chunk_targets = targets[start:end]
-        chunk_loss = F.cross_entropy(chunk_logits, chunk_targets, ignore_index=ignore_index, reduction='none')
-        mask = chunk_targets != ignore_index
-        total_loss = total_loss + chunk_loss[mask].sum()
-        total_count = total_count + mask.sum()
-
-    if total_count > 0:
-        return total_loss / total_count.float()
-    return torch.tensor(0.0, device=logits.device, requires_grad=True)
-
-
 def chunked_cross_entropy_with_z(
     logits, targets, chunk_size=65536, ignore_index=-100, z_loss_weight=1e-4,
     cross_entropy_impl: str = "pytorch",
@@ -326,7 +303,4 @@ def build_transformer(
     if rmsnorm_impl == "triton" or swiglu_impl == "triton":
         active = [k for k, v in (("rmsnorm", rmsnorm_impl), ("swiglu", swiglu_impl)) if v == "triton"]
         print(f"Triton kernels active: {', '.join(active)}")
-    if qknorm:
-        # 2 * head_dim per layer — noise on the headline count, omit intentionally.
-        pass
     return model
