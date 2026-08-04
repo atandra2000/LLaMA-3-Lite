@@ -272,7 +272,7 @@ Step checkpoints are saved on a background thread when `async_checkpoint` is
 `True` (the default); `train_model` joins the thread before exiting so the
 final writes never get cut off.
 
-## 7. What to read next
+## References
 
 - [learning-paths.md](learning-paths.md) — where this fits in the doc tree
 - [training.md](../training.md) — the loop this guide starts

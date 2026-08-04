@@ -100,7 +100,7 @@ forming their own sequence:
 
 ---
 
-## Cheat sheet — Which doc answers which question
+## References
 
 | Question | Doc |
 |----------|-----|

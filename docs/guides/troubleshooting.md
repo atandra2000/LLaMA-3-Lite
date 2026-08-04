@@ -444,7 +444,7 @@ AGENTS.md lists two known issues worth reading before a long run:
   forbids — see entry 1 and
   [memory-engineering.md](../concepts/training-and-memory.md).
 
-## Further reading
+## References
 
 - [quickstart.md](quickstart.md) — the happy path this guide assumes
 - [training.md](../training.md) — loop, checkpoint, and resume mechanics

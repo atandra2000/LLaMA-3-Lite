@@ -221,7 +221,7 @@ budget are in [`config.md`](../references/model-reference.md).
 | `pytest.ini` | Marker registration (`gpu`, `numeric`, `smoke`) and test options |
 | `.github/workflows/ci.yml` | CI: import check, smoke suite, doc-ref checker |
 
-## 5. Reading on
+## References
 
 - Deep-dive on every key: [`config.md`](../references/model-reference.md)
 - Memory arithmetic that motivates the notation: [`memory-engineering.md`](../concepts/training-and-memory.md)

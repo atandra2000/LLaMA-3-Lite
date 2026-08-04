@@ -1,4 +1,4 @@
-# LLaMA-3-Lite Documentation
+# LLaMA-3-Lite — Documentation Index
 
 The documentation is organized in four parts plus this index: **concepts**
 (`docs/concepts/`, theory and architecture built from first principles),
