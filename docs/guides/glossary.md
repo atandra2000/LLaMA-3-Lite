@@ -16,7 +16,7 @@ of tensor-shape conventions (`[B, S, d]` hidden states, `[N, V]` logits), and a
 fixed set of acronyms (GQA, RoPE, RMSNorm, SwiGLU, FA2, BF16, ...). This file
 is the lookup table for all of them, plus a one-line map of every config key
 and every top-level file. The full key-by-key rationale lives in
-[`config.md`](../reference/config.md).
+[`config.md`](../references/model-reference.md).
 
 ## 1. Notation
 
@@ -114,7 +114,7 @@ flowchart LR
 
 Every key below lives in `config.py:get_config`; defaults are the current
 values. One-line semantics only — interactions, why, and the worked memory
-budget are in [`config.md`](../reference/config.md).
+budget are in [`config.md`](../references/model-reference.md).
 
 **Architecture**
 
@@ -216,14 +216,14 @@ budget are in [`config.md`](../reference/config.md).
 | `data/shared_data/loader.py` | Vendored loader: `PackedDataset`, `ShuffledRangeSampler`, `collate_fn`, `build_tokenizer`, `build_synthetic_data`, `build_training_data`, `_SyntheticTokenizerStub` |
 | `kernels/` | The three optional Triton kernels (`rmsnorm_triton.py`, `swiglu_triton.py`, `cross_entropy_triton.py`) with a package `__init__.py` |
 | `tests/` | Unit + equivalence + smoke suite (`test_model.py`, `test_train.py`, `test_config.py`, `test_smoke.py`), `conftest.py` fixtures, the GPU `e2e_gpu_smoke.py`, and the doc checker `test_doc_refs.py` |
-| `scripts/generate_code_map.py` | Regenerates `docs/CODE_MAP.md` (symbol ↔ doc ↔ test table) |
+| `scripts/generate_code_map.py` | Regenerates the file→doc map that used to be `docs/CODE_MAP.md` (symbol ↔ doc ↔ test table; the map is now folded into `docs/README.md`) |
 | `benchmark_data.py` | Standalone data-loading microbenchmark |
 | `pytest.ini` | Marker registration (`gpu`, `numeric`, `smoke`) and test options |
 | `.github/workflows/ci.yml` | CI: import check, smoke suite, doc-ref checker |
 
 ## 5. Reading on
 
-- Deep-dive on every key: [`config.md`](../reference/config.md)
-- Memory arithmetic that motivates the notation: [`memory-engineering.md`](../theory/memory-engineering.md)
-- The loss symbols: [`loss-functions.md`](../theory/loss-functions.md)
+- Deep-dive on every key: [`config.md`](../references/model-reference.md)
+- Memory arithmetic that motivates the notation: [`memory-engineering.md`](../concepts/training-and-memory.md)
+- The loss symbols: [`loss-functions.md`](../concepts/architecture-components.md)
 - Where to go next: [`learning-paths.md`](learning-paths.md), [`quickstart.md`](quickstart.md), [`troubleshooting.md`](troubleshooting.md)

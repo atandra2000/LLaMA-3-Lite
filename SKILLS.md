@@ -1,3 +1,10 @@
+---
+name: llama3-lite-skills
+description: Project-scoped operational skills for LLaMA-3-Lite — chunked CE tuning, disk-backed cache, data sources, RoPE, resume, memory profiling, FA2 verification, stability knobs, EMA.
+metadata:
+  type: skills
+---
+
 # SKILLS.md — LLaMA-3-Lite
 
 > Skills for the memory-optimized LLaMA-3-style model. The headline anchor
@@ -67,7 +74,7 @@ For 8K → 32K extension:
 ```
 
 For >128K: combine with YaRN attention scaling (`attention_temperature`).
-Refer to the `docs/reference/rope.md` deep-dive.
+Refer to the `docs/references/model-reference.md` RoPE deep-dive.
 
 ## Skill 5: Resume training from a checkpoint
 

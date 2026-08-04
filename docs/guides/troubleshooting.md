@@ -7,9 +7,9 @@ message here, and you get the cause, the fix, and how to prevent it next
 time. Every quoted message is the exact text the code prints. Facts are
 anchored to symbols in `train.py`, `model.py`, `config.py`,
 `data/shared_data/loader.py`, and `data/prepare_data.py` — see
-[`model.md`](../reference/model.md) and
-[`training.md`](../reference/training.md) for the full walkthroughs, and
-[`memory-engineering.md`](../theory/memory-engineering.md) for the memory
+[`model.md`](../references/model-reference.md) and
+[`training.md`](../training.md) for the full walkthroughs, and
+[`memory-engineering.md`](../concepts/training-and-memory.md) for the memory
 arithmetic behind the OOM entry.
 
 The two messages that confuse people the most, up front:
@@ -78,7 +78,7 @@ toggle is off, or the chunk size is raised, you are back in OOM territory.
    `expandable_segments:True` by default. If you overrode it, put it back.
 
 **Prevention.** Treat the memory budget as a derived quantity, not a
-guess — [memory-engineering.md](../theory/memory-engineering.md) derives
+guess — [memory-engineering.md](../concepts/training-and-memory.md) derives
 every line of the stack table including the 92 GB → 20 GB arithmetic.
 Change one knob at a time and watch `gpu/memory_peak_mb` in the W&B log
 dict produced by `train.py:train_model`.
@@ -150,7 +150,8 @@ outside the `LLM/` tree), the import fails with `ModuleNotFoundError` and
 failing, entry 2 is the **train** step warning. On machines without the
 workspace pipeline you cannot build the real corpus; use the synthetic
 fallback (entry 2) or prepare `tokens.bin` elsewhere and copy it in. The
-two-file vendored reality is documented honestly in `data/DATA_PIPELINE.md`.
+two-file vendored reality is documented honestly in
+[training.md](../training.md) (the data-pipeline section).
 
 ---
 
@@ -194,8 +195,8 @@ not a bug. On a Linux box with CUDA: `pip install triton`, then set
 
 **Prevention.** Default config is `'pytorch'` for all three impls
 (`config.py:get_config`), so nothing to do. The `HAS_TRITON` gate pattern
-is covered in [kernel-programming.md](../theory/kernel-programming.md) and
-the kernel reference [`kernels.md`](../reference/kernels.md).
+is covered in [kernel-programming.md](../concepts/data-and-kernels.md) and
+the kernel reference [`kernels.md`](../references/data-reference.md).
 
 ---
 
@@ -222,7 +223,7 @@ and any impl requests `'triton'`, all three are force-restored to
 **Prevention.** Treat the warning as information, not an error: it proves
 the gate works. If you want Triton on the A100, set both switches; the
 ≥1.5× speedup rule for enabling a kernel by default is in
-[`kernel-programming.md`](../theory/kernel-programming.md).
+[`kernel-programming.md`](../concepts/data-and-kernels.md).
 
 ---
 
@@ -262,8 +263,8 @@ whole run, and don't change `batch_size` mid-run — the warmup comment
 exists because a shape change recompiles. `'reduce-overhead'` also "owns
 the stream", which is why the H2D copies in `train.py:train_model` are
 `non_blocking=True` and manual streams are avoided. See
-[`optimization.md`](../theory/optimization.md) and
-[`mixed-precision.md`](../theory/mixed-precision.md) for the surrounding
+[`optimization.md`](../concepts/training-and-memory.md) and
+[`mixed-precision.md`](../concepts/training-and-memory.md) for the surrounding
 throughput design.
 
 ---
@@ -300,8 +301,8 @@ partial file before resuming. For long runs, the atomic-save discipline
 (`.tmp` + rename) used elsewhere in the workspace portfolio is a stronger
 pattern than async threads; until then, `keep_last_n_checkpoints` limits
 how many step files accumulate. Checkpoint contents and the RNG-restore
-contract are documented in [`training.md`](../reference/training.md) and
-[`reproducibility.md`](../theory/reproducibility.md).
+contract are documented in [`training.md`](../training.md) and
+[`reproducibility.md`](../concepts/training-and-memory.md).
 
 ---
 
@@ -333,7 +334,7 @@ the wrapper does not cover.
 run, or shorten `max_steps` to match the corpus. If you want to avoid the
 wrap entirely, build the larger corpus with `data/prepare_data.py`
 (entry 3) and verify `data_cache/tokens.bin` size first
-([`data-engineering.md`](../theory/data-engineering.md) has the
+([`data-engineering.md`](../concepts/data-and-kernels.md) has the
 tokens-per-byte math).
 
 ---
@@ -395,7 +396,7 @@ current tree; if you are on an older checkout, pull the current loader.
 **Prevention.** Import the stub directly to confirm: `from
 data.shared_data.loader import _SyntheticTokenizerStub; len(_SyntheticTokenizerStub(128000, 0, 0))`.
 The tokenizer contract (pad defaults to EOS in `build_tokenizer`) is
-documented in [`tokenizer.md`](../reference/tokenizer.md).
+documented in [`tokenizer.md`](../references/data-reference.md).
 
 ---
 
@@ -441,12 +442,12 @@ AGENTS.md lists two known issues worth reading before a long run:
   `ce_chunk_size: 256`, and the mmap loader. If you are tempted to disable
   any of them for convenience, that is exactly the regression the rule
   forbids — see entry 1 and
-  [memory-engineering.md](../theory/memory-engineering.md).
+  [memory-engineering.md](../concepts/training-and-memory.md).
 
 ## Further reading
 
 - [quickstart.md](quickstart.md) — the happy path this guide assumes
-- [training.md](../reference/training.md) — loop, checkpoint, and resume mechanics
-- [config.md](../reference/config.md) — every knob referenced above
-- [memory-engineering.md](../theory/memory-engineering.md) — the OOM arithmetic
+- [training.md](../training.md) — loop, checkpoint, and resume mechanics
+- [config.md](../references/model-reference.md) — every knob referenced above
+- [memory-engineering.md](../concepts/training-and-memory.md) — the OOM arithmetic
 - [glossary.md](glossary.md) — notation and acronyms used here

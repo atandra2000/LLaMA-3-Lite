@@ -408,7 +408,7 @@ LLaMA-3-Lite/
 ├── train.py            # Training loop (validation, generation, checkpointing)
 ├── kernels/            # Opt-in Triton kernels (rmsnorm, swiglu, chunked CE)
 ├── data/               # prepare_data.py shim + vendored loader (data/shared_data/)
-├── docs/               # theory/ + reference/ + guides/ (see docs/README.md)
+├── docs/               # concepts/ + references/ + guides/ + training.md (see docs/README.md)
 ├── tests/              # pytest suite (smoke + numeric + GPU) + doc-ref checker
 ├── benchmark_data.py   # Data pipeline benchmark (GPU)
 ├── weights/            # Checkpoints (created at runtime)
@@ -424,8 +424,9 @@ LLaMA-3-Lite/
 | `dataset.py` | `build_training_data()`, `build_synthetic_data()`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn` | Re-exports the vendored training loader from `data/shared_data/loader` (single source of truth) |
 | `train.py` | `train_model()`, `validate()`, `generate_samples()`, `save_checkpoint()`, `load_checkpoint()` | Full training orchestration with W&B logging |
 
-Full code walkthroughs: `docs/reference/model.md`, `docs/reference/training.md`,
-`docs/reference/data.md`, `docs/reference/config.md`.
+Full code walkthroughs: `docs/references/model-reference.md` (model, RoPE,
+config), `docs/training.md` (training loop + memory stack + data pipeline),
+`docs/references/data-reference.md` (data, tokenizer, kernels).
 
 ---
 

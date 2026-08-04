@@ -19,9 +19,7 @@ for _p in (ROOT, ROOT / "data"):
 DOC_GLOBS = [
     "docs/**/*.md",
     "*.md",              # README.md, AGENTS.md, SKILLS.md
-    "data/*.md",
 ]
-SKIP_FILES = {"docs/docs_expansion_plan.md"}  # the plan cites planned symbols
 
 # `file.py:Symbol` or `file.py:Class.method` (backticked, or bare in prose)
 SYMBOL_RE = re.compile(
@@ -64,7 +62,7 @@ def _doc_files():
     found = []
     for pattern in DOC_GLOBS:
         for p in ROOT.glob(pattern):
-            if p.is_file() and p.suffix == ".md" and str(p.relative_to(ROOT)) not in SKIP_FILES:
+            if p.is_file() and p.suffix == ".md":
                 found.append(p)
     return sorted(set(found))
 

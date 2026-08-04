@@ -1,3 +1,10 @@
+---
+name: llama3-lite-agents
+description: Project-scoped subagent, memory-stack rules, and hard rules for the LLaMA-3-Lite raw-PyTorch transformer at ~/Desktop/CoreProjects/LLM/LLaMA-3-Lite.
+metadata:
+  type: project
+---
+
 # AGENTS.md — LLaMA-3-Lite
 
 > **CRITICAL RULE:** You must also read, understand, and strictly obey all workspace-level rules defined in the top-level `CoreProjects/AGENTS.md` and `CoreProjects/.agents/AGENTS.md` files. Those higher-level instructions apply globally to all projects.
@@ -66,11 +73,13 @@ number in the portfolio.
 - `config.py` — all hyperparameters.
 - `model.py`, `train.py`, `dataset.py`.
 - `tests/` — config, dataset, model, train, smoke tests.
-- `docs/` — three-track documentation: `docs/theory/` (from-scratch
-  concept building), `docs/reference/` (code-keyed walkthroughs),
-  `docs/guides/` (learning paths, quickstart, troubleshooting, glossary).
-  `docs/CODE_MAP.md` maps symbols ↔ docs ↔ tests; `tests/test_doc_refs.py`
-  fails CI on any stale doc citation (see hard rule 10).
+- `docs/` — canonical documentation: `docs/concepts/` (theory,
+  from-scratch concept building), `docs/references/` (code-keyed
+  walkthroughs), `docs/guides/` (learning paths, quickstart,
+  troubleshooting, glossary), `docs/training.md` (training pipeline +
+  memory stack + data pipeline). `docs/README.md` is the nav map;
+  `tests/test_doc_refs.py` fails CI on any stale doc citation (see
+  hard rule 10).
 
 **Triton kernel contract:**
 
@@ -132,9 +141,9 @@ number in the portfolio.
     alters a documented symbol updates the relevant doc(s) in the same
     change. Docs cite symbols only — `<module>.py:<symbol>`, never line
     numbers. `tests/test_doc_refs.py` must stay green (it resolves every
-    citation and bans line-number anchors); `docs/CODE_MAP.md` is the
-    symbol ↔ doc ↔ test map. Theory belongs in `docs/theory/`,
-    code walkthroughs in `docs/reference/` — never both.
+    citation and bans line-number anchors); `docs/README.md` maps files ↔
+    docs ↔ tests. Theory belongs in `docs/concepts/`, code walkthroughs
+    in `docs/references/` — never both.
 
 **Known issues:**
 - Full 8.25B-token run not yet started.

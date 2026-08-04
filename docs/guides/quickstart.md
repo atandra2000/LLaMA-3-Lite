@@ -28,7 +28,7 @@ config keys worth touching first, and where artifacts land.
 |---|---|
 | Python | 3.10+ |
 | PyTorch | 2.x (CUDA 12.1 build on a GPU host: `pip install torch --index-url https://download.pytorch.org/whl/cu121`) |
-| GPU | NVIDIA A100 80GB for the full 42,000-step run at batch 96; anything with ≥20 GB VRAM with the memory stack on (see [memory-stack.md](../reference/memory-stack.md)) |
+| GPU | NVIDIA A100 80GB for the full 42,000-step run at batch 96; anything with ≥20 GB VRAM with the memory stack on (see [memory-stack.md](../training.md)) |
 | `wandb` | imported unconditionally by `train.py` — install even for offline runs |
 | `transformers` / `datasets` | only needed for the real tokenizer (`data/shared_data/loader.py:build_tokenizer`) and the real-data pipeline; the synthetic path never touches them |
 | Workspace package | `LLM/shared_data` (the universal pipeline) — required only for Mode 2, real data |
@@ -165,7 +165,7 @@ CE ≡ dense CE), the config contract, training mechanics (scheduler, EMA,
 checkpoint round-trip), and the end-to-end smoke class. `gpu`-marked tests
 are skipped by default; the conftest injects a `wandb` stub and sets
 `WANDB_MODE=offline`/`WANDB_DISABLED` so the suite is hermetic. See
-[tests.md](../reference/tests.md) for the full fixture/marker reference.
+[tests.md](../references/training-reference.md) for the full fixture/marker reference.
 
 For a true end-to-end GPU check, the standalone script:
 
@@ -210,7 +210,7 @@ things worth knowing:
   present; and the recorded `step` + `best_val_loss`. The loop then runs
   `range(initial_step, max_steps)` and prints `Resumed from step N`. This is
   what makes resumes bit-identical — see
-  [reproducibility.md](../theory/reproducibility.md).
+  [reproducibility.md](../concepts/training-and-memory.md).
 
 ## 4. W&B: online, offline, disabled
 
@@ -237,10 +237,10 @@ run:
 |---|---|---|
 | `max_steps` | 42000 | the full pretraining run (~8.26B tokens = 42,000 × 96 × 2048). Set 20–100 for a smoke run |
 | `warmup_steps` | 2000 | the cosine scheduler gets `T_max = max_steps − warmup_steps`, so **keep `max_steps > warmup_steps`**; for a 50-step run use `warmup_steps: 10` |
-| `batch_size` | 96 | the A100 budget; drop to 48/32/16 on smaller GPUs (sizing math in [memory-engineering.md](../theory/memory-engineering.md)) |
+| `batch_size` | 96 | the A100 budget; drop to 48/32/16 on smaller GPUs (sizing math in [memory-engineering.md](../concepts/training-and-memory.md)) |
 | `compile_model` | True | `torch.compile(mode='reduce-overhead')` captures CUDA graphs; the first step stalls 30s–2min on autotune. Set `False` for quick/CPU smoke runs |
 | `gradient_checkpointing` | True | the main activation-memory lever; leave on unless profiling |
-| `ce_chunk_size` | 256 | chunk width of the head+loss (memory vs overhead tradeoff; see [loss-functions.md](../theory/loss-functions.md)) |
+| `ce_chunk_size` | 256 | chunk width of the head+loss (memory vs overhead tradeoff; see [loss-functions.md](../concepts/architecture-components.md)) |
 | `model_folder` | `weights` | where every artifact lands |
 | `checkpoint_interval` / `val_interval` / `log_interval` | 5000 / 2000 / 50 | cadence of checkpoints, validation, and W&B logging |
 | `preload` | `None` | set non-`None` to resume (see §3) |
@@ -252,7 +252,7 @@ Other load-bearing keys to be aware of (not first-run knobs): `use_z_loss`
 (loader), and the `*_impl` Triton gates — `rmsnorm_impl`/`swiglu_impl`/
 `cross_entropy_impl` only take effect with `ENABLE_TRITON_KERNELS=1`;
 otherwise `train.py` force-restores all three to `'pytorch'` with a warning.
-Full key-by-key reference: [config.md](../reference/config.md).
+Full key-by-key reference: [config.md](../references/model-reference.md).
 
 ## 6. Where artifacts land
 
@@ -275,9 +275,9 @@ final writes never get cut off.
 ## 7. What to read next
 
 - [learning-paths.md](learning-paths.md) — where this fits in the doc tree
-- [training.md](../reference/training.md) — the loop this guide starts
-- [config.md](../reference/config.md) — every key, with interactions
-- [data.md](../reference/data.md) — the vendored loader, line by line
-- [data-engineering.md](../theory/data-engineering.md) — the universal pipeline behind `prepare_data.py`
+- [training.md](../training.md) — the loop this guide starts
+- [config.md](../references/model-reference.md) — every key, with interactions
+- [data.md](../references/data-reference.md) — the vendored loader, line by line
+- [data-engineering.md](../concepts/data-and-kernels.md) — the universal pipeline behind `prepare_data.py`
 - [troubleshooting.md](troubleshooting.md) — OOM, CUDA-graph stalls, missing-cache errors
 - [glossary.md](glossary.md) — notation used across the docs
