@@ -16,6 +16,7 @@ from model import (
     Transformer,
     build_transformer,
     chunked_cross_entropy_with_z,
+    chunked_head_cross_entropy_with_z,
 )
 
 
@@ -305,6 +306,41 @@ class TestTransformerForward:
             out_b = model_b(ids)
         assert torch.allclose(out_a, out_b, atol=1e-6), (out_a - out_b).abs().max()
 
+    def test_gradient_checkpointing_matches_normal_in_training(
+            self, tiny_config, device, seed_everything):
+        """Training-mode regression: the checkpointed branch must apply the
+        final decoder norm, so forward outputs match the plain path exactly."""
+        seed_everything(43)
+        common = dict(
+            vocab_size=tiny_config["vocab_size"],
+            d_model=tiny_config["d_model"],
+            n_layers=tiny_config["n_layers"],
+            n_heads=tiny_config["n_heads"],
+            n_kv_heads=tiny_config["n_kv_heads"],
+            head_dim=tiny_config["head_dim"],
+            d_ff=tiny_config["d_ff"],
+            max_seq_len=tiny_config["seq_len"],
+            rope_theta=tiny_config["rope_theta"],
+            rms_norm_eps=tiny_config["rms_norm_eps"],
+        )
+        model_a = build_transformer(**common, gradient_checkpointing=False).to(device)
+        model_b = build_transformer(**common, gradient_checkpointing=True).to(device)
+        model_b.load_state_dict(model_a.state_dict())
+
+        ids = torch.randint(0, tiny_config["vocab_size"],
+                            (2, tiny_config["seq_len"]),
+                            device=device, dtype=torch.long)
+        model_a.train(); model_b.train()
+        out_a = model_a(ids)
+        out_b = model_b(ids)
+        assert torch.allclose(out_a, out_b, atol=1e-6), (out_a - out_b).abs().max()
+
+        # Gradients must flow through the checkpointed path too.
+        loss_b = out_b.sum()
+        loss_b.backward()
+        grads = [p.grad for p in model_b.parameters() if p.grad is not None]
+        assert grads and all(torch.isfinite(g).all() for g in grads)
+
 class TestChunkedCrossEntropyWithZ:
     """Numerical-equivalence + behaviour tests for the z-loss variant."""
 
@@ -362,6 +398,104 @@ class TestChunkedCrossEntropyWithZ:
         z_small = chunked_cross_entropy_with_z(small, targets, z_loss_weight=1.0).item()
         z_large = chunked_cross_entropy_with_z(large, targets, z_loss_weight=1.0).item()
         assert z_large > z_small, (z_small, z_large)
+
+    def test_z_loss_ignores_ignore_index_positions(self, device):
+        """Ignored positions must not contribute to the z-loss average."""
+        torch.manual_seed(23)
+        N, V = 40, 32
+        logits = torch.randn(N, V, device=device)
+        targets = torch.randint(0, V, (N,), device=device, dtype=torch.long)
+        targets[:10] = -100
+
+        mask = targets != -100
+        ref_log_z = torch.logsumexp(logits.float(), dim=-1)
+        ref_z = ref_log_z[mask].pow(2).mean()
+        ref_ce = F.cross_entropy(logits, targets, ignore_index=-100,
+                                 reduction="mean")
+        ref = ref_ce + 0.5 * ref_z
+
+        got = chunked_cross_entropy_with_z(logits, targets, chunk_size=7,
+                                           z_loss_weight=0.5)
+        assert torch.allclose(got, ref, atol=1e-5), (ref.item(), got.item())
+
+
+class TestChunkedHeadCrossEntropyWithZ:
+    """The memory-bounded LM-head loss must match dense CE + z-loss exactly."""
+
+    def test_matches_dense_ce_with_zero_z(self, tiny_model, tiny_config, device):
+        torch.manual_seed(31)
+        B, S = 2, tiny_config["seq_len"]
+        ids = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tgt = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tiny_model.eval()
+        with torch.no_grad():
+            logits = tiny_model(ids)
+            dense = F.cross_entropy(logits.view(-1, logits.size(-1)),
+                                    tgt.view(-1), reduction="mean")
+            hidden = tiny_model(ids, return_hidden=True)
+            chk = chunked_head_cross_entropy_with_z(
+                hidden.view(-1, hidden.size(-1)),
+                tiny_model.output_proj.weight,
+                tgt.view(-1), chunk_size=7, z_loss_weight=0.0,
+            )
+        assert torch.allclose(dense, chk, atol=1e-5), (dense.item(), chk.item())
+
+    def test_matches_dense_ce_plus_z(self, tiny_model, tiny_config, device):
+        torch.manual_seed(37)
+        B, S = 2, tiny_config["seq_len"]
+        ids = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tgt = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tiny_model.eval()
+        with torch.no_grad():
+            logits = tiny_model(ids)
+            ref_z = torch.logsumexp(logits.float(), dim=-1).pow(2).mean()
+            dense = F.cross_entropy(logits.view(-1, logits.size(-1)),
+                                    tgt.view(-1), reduction="mean")
+            ref = dense + 1e-4 * ref_z
+            hidden = tiny_model(ids, return_hidden=True)
+            chk = chunked_head_cross_entropy_with_z(
+                hidden.view(-1, hidden.size(-1)),
+                tiny_model.output_proj.weight,
+                tgt.view(-1), chunk_size=7, z_loss_weight=1e-4,
+            )
+        assert torch.allclose(ref, chk, atol=1e-5), (ref.item(), chk.item())
+
+    def test_gradients_flow_to_hidden_and_head(self, tiny_model, tiny_config,
+                                                device):
+        torch.manual_seed(41)
+        B, S = 2, tiny_config["seq_len"]
+        ids = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tgt = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        tiny_model.train()
+        hidden = tiny_model(ids, return_hidden=True)
+        loss = chunked_head_cross_entropy_with_z(
+            hidden.view(-1, hidden.size(-1)),
+            tiny_model.output_proj.weight,
+            tgt.view(-1), chunk_size=7, z_loss_weight=1e-3,
+        )
+        loss.backward()
+        assert torch.isfinite(loss).item()
+        assert tiny_model.output_proj.weight.grad is not None
+        assert torch.isfinite(tiny_model.output_proj.weight.grad).all()
+        # hidden is a non-leaf tensor (grad=None by default); gradient flow
+        # through it is proven by the embedding receiving grads.
+        assert tiny_model.input_embedding.weight.grad is not None
+        assert torch.isfinite(tiny_model.input_embedding.weight.grad).all()
+
+    def test_return_hidden_skips_head(self, tiny_model, tiny_config, device):
+        B, S = 2, tiny_config["seq_len"]
+        ids = torch.randint(0, tiny_config["vocab_size"], (B, S),
+                            device=device, dtype=torch.long)
+        hidden = tiny_model(ids, return_hidden=True)
+        assert hidden.shape == (B, S, tiny_config["d_model"])
+        logits = tiny_model(ids)
+        assert logits.shape == (B, S, tiny_config["vocab_size"])
 
 
 class TestQKNorm:

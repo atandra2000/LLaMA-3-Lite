@@ -138,7 +138,7 @@ def triton_chunked_cross_entropy_with_z(
     ignore_index: int = -100,
     z_loss_weight: float = 1e-4,
 ) -> torch.Tensor:
-    """Public entry point; drop-in for ``chunked_cross_entropy_with_z``; the Triton path materialises the full logits and processes the entire vocab axis in one fused pass — there is no per-chunk streaming. ``chunk_size`` from the PyTorch API is intentionally not accepted here (passing it would silently no-op)."""
+    """Public entry point; drop-in for ``chunked_cross_entropy_with_z``. Processes the entire vocab axis of the given logits in one fused pass; in the training path it is called per chunk from ``chunked_head_cross_entropy_with_z`` so only a chunk's logits are live at a time. ``chunk_size`` from the PyTorch API is intentionally not accepted here (passing it would silently no-op)."""
     if not HAS_TRITON:
         raise ImportError(
             "triton_chunked_cross_entropy_with_z requires the `triton` package. "

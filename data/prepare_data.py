@@ -6,7 +6,7 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../LLaMA-3-Lite/
 _DATA_ROOT = Path(__file__).resolve().parent  # vendored shared_data lives here
-_WORKSPACE_ROOT = _PROJECT_ROOT.parent.parent  # workspace LLM/shared_data, if present
+_WORKSPACE_ROOT = _PROJECT_ROOT.parent  # workspace LLM/shared_data (universal pipeline)
 for _p in (_DATA_ROOT, _PROJECT_ROOT, _WORKSPACE_ROOT):
     _p = str(_p)
     if _p not in sys.path:
@@ -44,7 +44,15 @@ def main() -> int:
     parser.add_argument("--skip-pack", action="store_true")
     args = parser.parse_args()
 
-    _apply_llama3_defaults()
+    try:
+        _apply_llama3_defaults()
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "LLaMA-3-Lite data prep delegates to the universal pipeline at "
+            "`LLM/shared_data/` (shared_data.config / shared_data.prepare_data). "
+            "That workspace package is not importable on this machine "
+            f"({exc}). This project vendors only the loader (data/shared_data/)."
+        ) from exc
 
     from shared_data.config import UNIVERSAL_MIXTURE_PATH, UNIVERSAL_DATA_CONFIG_PATH
     from shared_data.prepare_data import run_pipeline

@@ -24,4 +24,7 @@ jobs:
           python -c "import model; import dataset; import train"
       - name: CPU smoke test
         run: |
-          python -m pytest tests/ -m smoke --no-header -q
+          python -m pytest tests/ --no-header -q
+      - name: Doc reference checker
+        run: |
+          python -m pytest tests/test_doc_refs.py --no-header -q

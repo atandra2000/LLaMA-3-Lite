@@ -71,7 +71,7 @@ def build_tiny_config() -> dict:
         "weight_decay": 0.1, "max_grad_norm": 1.0,
         "optimizer": "AdamW", "beta1": 0.9, "beta2": 0.95, "eps": 1e-8,
         "compile_model": False, "gradient_checkpointing": False,
-        "use_chunked_cross_entropy": True,
+        "ce_chunk_size": 128,
         "tf32": device_supports_tf32(), "cudnn_benchmark": False,
         "cuda_alloc_conf": "expandable_segments:True",
         "rmsnorm_impl": "pytorch", "swiglu_impl": "pytorch",

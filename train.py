@@ -20,8 +20,8 @@ import wandb
 from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
-from dataset import build_training_data
-from model import build_transformer, chunked_cross_entropy_with_z
+from dataset import build_training_data, build_synthetic_data
+from model import build_transformer, chunked_head_cross_entropy_with_z
 from config import get_config
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -110,9 +110,16 @@ def generate_samples(model, tokenizer, device, step, config):
     model.train()
 
 
+def _head_weight(model: torch.nn.Module) -> torch.nn.Parameter:
+    """Resolve the LM head weight through EMA/compile wrappers."""
+    if hasattr(model, "output_proj"):
+        return model.output_proj.weight
+    return model.module.output_proj.weight
+
+
 @torch.no_grad()
-def validate(model, val_dataloader, pad_id, device, step, config):
-    """Chunked CE + z-loss validation loop."""
+def validate(model, val_dataloader, ignore_index, device, step, config):
+    """Chunked-head CE + z-loss validation loop (no full logits materialized)."""
     model.eval()
     total_loss = 0
     num_batches = 0
@@ -120,6 +127,7 @@ def validate(model, val_dataloader, pad_id, device, step, config):
     val_max_batches = config.get('val_max_batches', 200)
     z_loss_weight = config.get('z_loss_weight', 1e-4)
     cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
+    ce_chunk_size = config.get('ce_chunk_size', 256)
 
     with torch.autocast(device_type='cuda', dtype=torch.bfloat16, enabled=device.type == 'cuda'):
         for batch in val_dataloader:
@@ -128,13 +136,14 @@ def validate(model, val_dataloader, pad_id, device, step, config):
             input_ids = batch['input'].to(device, non_blocking=True)
             target_ids = batch['target'].to(device, non_blocking=True)
 
-            logits = model(input_ids)
+            hidden = model(input_ids, return_hidden=True)
 
-            loss = chunked_cross_entropy_with_z(
-                logits.view(-1, logits.size(-1)),
+            loss = chunked_head_cross_entropy_with_z(
+                hidden.view(-1, hidden.size(-1)),
+                _head_weight(model),
                 target_ids.view(-1),
-                chunk_size=65536,
-                ignore_index=pad_id,
+                chunk_size=ce_chunk_size,
+                ignore_index=ignore_index,
                 z_loss_weight=z_loss_weight,
                 cross_entropy_impl=cross_entropy_impl,
             )
@@ -236,6 +245,26 @@ def load_checkpoint(model, optimizer, scheduler, config, device, ema=None):
     return checkpoint['step'], checkpoint.get('best_val_loss', float('inf'))
 
 
+def _next_batch(step_iterator, train_dataloader, epoch_state):
+    """Fetch the next batch; restart the sampler when the corpus is exhausted.
+
+    The 42k-step plan consumes ~8.26B tokens, which can exceed the prepared
+    corpus; wrap around instead of crashing on StopIteration.
+    """
+    try:
+        return next(step_iterator)
+    except StopIteration:
+        epoch_state['epoch'] += 1
+        if hasattr(train_dataloader.sampler, 'set_epoch'):
+            train_dataloader.sampler.set_epoch(epoch_state['epoch'])
+        print(
+            f"WARN: train corpus exhausted (epoch {epoch_state['epoch']}); "
+            f"restarting the sampler with a fresh permutation. The 42k-step "
+            f"plan (~8.26B tokens) exceeds the prepared corpus."
+        )
+        return next(iter(train_dataloader))
+
+
 def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=None):
     device_str = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device_str)
@@ -245,8 +274,19 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         setup_gpu_optimizations(config)
 
     if train_dataloader is None or val_dataloader is None or tokenizer is None:
-        train_dataloader, val_dataloader, tokenizer = build_training_data(config)
-    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+        try:
+            train_dataloader, val_dataloader, tokenizer = build_training_data(config)
+        except FileNotFoundError as exc:
+            print(
+                f"WARN: {exc}\n"
+                f"WARN: no token cache found — falling back to synthetic data. "
+                f"Run `python data/prepare_data.py` to build the real corpus "
+                f"cache at {config['data_cache_dir']}/{config['data_cache_filename']}."
+            )
+            train_dataloader, val_dataloader, tokenizer = build_synthetic_data(config)
+    # No padding in this pipeline (packed documents, full windows), so nothing
+    # is ignored; using -100 keeps EOS separators learnable.
+    ignore_index = -100
 
     gradient_checkpointing = config.get('gradient_checkpointing', True)
     real_vocab_size = max(config['vocab_size'], len(tokenizer))
@@ -302,9 +342,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
+    ce_chunk_size = config.get('ce_chunk_size', 256)
+    epoch_state = {'epoch': 0}
     # CUDA graphs recompile on shape change, so the warmup must use real training shapes.
     step_iterator = iter(train_dataloader)
-    _warmup_batch = next(step_iterator)
+    _warmup_batch = _next_batch(step_iterator, train_dataloader, epoch_state)
     _warmup_input = _warmup_batch['input'].to(device, non_blocking=True)
     _warmup_target = _warmup_batch['target'].to(device, non_blocking=True)
 
@@ -317,12 +359,13 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         # First step stalls 30s–2min on autotune; warm it up before the loop.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
-            _logits = model(_warmup_input)
-            _warmup_loss = chunked_cross_entropy_with_z(
-                _logits.view(-1, _logits.size(-1)),
+            _warmup_hidden = model(_warmup_input, return_hidden=True)
+            _warmup_loss = chunked_head_cross_entropy_with_z(
+                _warmup_hidden.view(-1, _warmup_hidden.size(-1)),
+                _head_weight(model),
                 _warmup_target.view(-1),
-                chunk_size=65536,
-                ignore_index=pad_id,
+                chunk_size=ce_chunk_size,
+                ignore_index=ignore_index,
                 z_loss_weight=z_loss_weight,
                 cross_entropy_impl=cross_entropy_impl,
             )
@@ -394,7 +437,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             "weight_decay": config['weight_decay'],
             "precision": "bf16",
             "gradient_checkpointing": gradient_checkpointing,
-            "chunked_cross_entropy": config.get('use_chunked_cross_entropy', True),
+            "ce_chunk_size": ce_chunk_size,
             "torch_compile": config.get('compile_model', True),
         },
         tags=config.get('wandb_tags', []),
@@ -410,7 +453,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     grad_accum_steps = config.get('gradient_accumulation', 1)
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
     if ema is not None and not config.get('preload'):
-        print(f"EMA: enabled (decay={ema.decay}, {len(ema.shadow)} parameter shadows)")
+        print(f"EMA: enabled (decay={config.get('ema_decay', 0.999)})")
 
     if device.type == 'cuda':
         end_event = torch.cuda.Event(enable_timing=True)
@@ -421,8 +464,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     pbar = tqdm(range(initial_step, config['max_steps']), desc="Training", unit="step")
 
+    grad_norm = 0.0  # logged even on non-optimizer steps (grad_accum > 1)
+    ckpt_thread = None
+
     data_start = time.time()
-    next_batch = next(step_iterator)
+    next_batch = _next_batch(step_iterator, train_dataloader, epoch_state)
     data_wait_time += time.time() - data_start
 
     next_input = next_batch['input'].to(device, non_blocking=True)
@@ -433,7 +479,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         target_ids = next_target
 
         data_start = time.time()
-        batch = next(step_iterator)
+        batch = _next_batch(step_iterator, train_dataloader, epoch_state)
         fetch_time = time.time() - data_start
         data_wait_time += fetch_time
 
@@ -444,12 +490,13 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
-            logits = model(input_ids)
-            loss = chunked_cross_entropy_with_z(
-                logits.view(-1, logits.size(-1)),
+            hidden = model(input_ids, return_hidden=True)
+            loss = chunked_head_cross_entropy_with_z(
+                hidden.view(-1, hidden.size(-1)),
+                _head_weight(model),
                 target_ids.view(-1),
-                chunk_size=65536,
-                ignore_index=pad_id,
+                chunk_size=ce_chunk_size,
+                ignore_index=ignore_index,
                 z_loss_weight=z_loss_weight,
                 cross_entropy_impl=cross_entropy_impl,
             )
@@ -515,9 +562,9 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 torch.cuda.reset_peak_memory_stats()
             # EMA is the noise-free centre of the recent opt trajectory; prefer it for val.
             if ema is not None:
-                val_loss = validate(ema, val_dataloader, pad_id, device, step, config)
+                val_loss = validate(ema, val_dataloader, ignore_index, device, step, config)
             else:
-                val_loss = validate(model, val_dataloader, pad_id, device, step, config)
+                val_loss = validate(model, val_dataloader, ignore_index, device, step, config)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 global_state['best_val_loss'] = best_val_loss
@@ -534,8 +581,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 generate_samples(model, tokenizer, device, step, config)
 
         if step > 0 and step % config['checkpoint_interval'] == 0:
-            save_checkpoint(model, optimizer, scheduler, step, config,
-                            best_val_loss, async_save=False, ema=ema)
+            ckpt_thread = save_checkpoint(
+                model, optimizer, scheduler, step, config,
+                best_val_loss, async_save=config.get('async_checkpoint', False),
+                ema=ema,
+            )
             if config.get('keep_last_n_checkpoints', 0) > 0:
                 ckpt_dir = Path(config['model_folder'])
                 if ckpt_dir.exists():
@@ -548,6 +598,9 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     total_time = time.time() - training_start_time
     print(f"\nTraining completed in {total_time/3600:.2f} hours!")
     print(f"Average throughput: {config['max_steps'] * tokens_per_step / total_time / 1e6:.2f}M tokens/sec")
+
+    if ckpt_thread is not None:
+        ckpt_thread.join()  # don't exit while the last async checkpoint is mid-write
 
     save_checkpoint(model, optimizer, scheduler, config['max_steps'], config, best_val_loss, is_final=True, ema=ema)
 

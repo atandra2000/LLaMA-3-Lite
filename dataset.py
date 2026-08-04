@@ -1,4 +1,4 @@
-"""LLaMA-3-Lite data-loading shim over the vendored universal pipeline.
+"""LLaMA-3-Lite data-loading shim over the vendored universal loader.
 
 The actual ``PackedDataset`` / DataLoader glue lives in ``data/shared_data``;
 this module re-exports the public symbols so ``train.py`` and
@@ -9,9 +9,8 @@ from pathlib import Path
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
-_WORKSPACE_ROOT = _PROJECT_ROOT.parent.parent  # workspace LLM/shared_data, if present
 
-for _p in (_PROJECT_ROOT / "data", _WORKSPACE_ROOT):
+for _p in (_PROJECT_ROOT / "data",):
     _p_str = str(_p)
     if _p_str not in sys.path:
         sys.path.insert(0, _p_str)

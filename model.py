@@ -83,7 +83,7 @@ class GroupedQueryAttention(nn.Module):
 
         self.rope = RoPE(head_dim, max_seq_len, rope_theta)
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
         B, S, _ = x.shape
 
         # Normalize over last axis (D) BEFORE transpose so RMSNorm sees head_dim.
@@ -201,13 +201,16 @@ class Transformer(nn.Module):
             elif isinstance(module, nn.Embedding):
                 torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, x):
+    def forward(self, x, return_hidden: bool = False):
         x = self.input_embedding(x)
         if self.gradient_checkpointing and self.training:
             for layer in self.decoder.layers:
                 x = checkpoint(layer, x, use_reentrant=False)
+            x = self.decoder.norm(x)
         else:
             x = self.decoder(x)
+        if return_hidden:
+            return x
         logits = self.output_proj(x)
         return logits
 
@@ -224,15 +227,22 @@ class Transformer(nn.Module):
 
 
 def chunked_cross_entropy_with_z(
-    logits, targets, chunk_size=65536, ignore_index=-100, z_loss_weight=1e-4,
+    logits, targets, chunk_size=256, ignore_index=-100, z_loss_weight=1e-4,
     cross_entropy_impl: str = "pytorch",
 ):
-    """CE + z-loss (PaLM / Gemma2); bounds log-partition growth late in training. ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for a single fused kernel; falls back to PyTorch when triton is unavailable."""
+    """CE + z-loss (PaLM / Gemma2) over an already-materialized logits tensor.
+
+    Chunks along the token axis so the FP32 loss chain never sees more than
+    ``chunk_size`` rows at once; z-loss is averaged over non-ignored tokens
+    only. ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for
+    the fused kernel (falls back to PyTorch when triton is unavailable).
+    Prefer :func:`chunked_head_cross_entropy_with_z` when the logits tensor
+    itself would not fit in memory — this function still receives full logits.
+    """
     if cross_entropy_impl == "triton":
         try:
             return triton_chunked_cross_entropy_with_z(
                 logits, targets,
-                chunk_size=chunk_size,
                 ignore_index=ignore_index,
                 z_loss_weight=z_loss_weight,
             )
@@ -253,16 +263,85 @@ def chunked_cross_entropy_with_z(
         cl = logits[start:end].float()
         ct = targets[start:end]
 
+        mask = ct != ignore_index
         log_z = torch.logsumexp(cl, dim=-1)
-        z_accum = z_accum + log_z.pow(2).sum()
-        n_z += log_z.numel()
+        z_accum = z_accum + log_z[mask].pow(2).sum()
+        n_z += mask.sum()
 
         ce = F.cross_entropy(cl, ct, ignore_index=ignore_index, reduction='none')
-        mask = ct != ignore_index
         total_ce = total_ce + ce[mask].sum()
         total_count = total_count + mask.sum()
 
     ce_loss = (total_ce / total_count.float()) if total_count > 0 else torch.tensor(0.0, device=logits.device)
+    z_loss = z_accum / max(int(n_z), 1)
+    return ce_loss + z_loss_weight * z_loss
+
+
+def chunked_head_cross_entropy_with_z(
+    hidden, head_weight, targets, chunk_size=256, ignore_index=-100,
+    z_loss_weight=1e-4, cross_entropy_impl: str = "pytorch",
+):
+    """Memory-bounded LM head + CE + z-loss: never materializes full logits.
+
+    Computes ``hidden @ head_weight.T`` in ``chunk_size``-row slices and
+    applies the FP32 CE + z-loss chain per chunk. Each chunk runs inside
+    ``checkpoint`` so only one chunk's logits are alive at a time — this is
+    what bounds the loss memory to ~0.3 GB at ``chunk_size=256`` instead of
+    the ~50 GB a full ``[N, V]`` logits tensor would need. Gradients flow to
+    both ``hidden`` and ``head_weight``. ``cross_entropy_impl='triton'``
+    swaps the per-chunk loss for the fused kernel; per-chunk losses are then
+    averaged (equal-size chunks ⇒ exact).
+    """
+    from kernels.cross_entropy_triton import HAS_TRITON
+
+    use_triton = False
+    if cross_entropy_impl == "triton":
+        if HAS_TRITON:
+            use_triton = True
+        else:
+            print(
+                "[chunked_head_cross_entropy_with_z] triton unavailable "
+                "(`import triton` failed); falling back to 'pytorch'."
+            )
+
+    def _chunk(hidden_c, w, targets_c):
+        logits = F.linear(hidden_c, w)
+        if use_triton:
+            return triton_chunked_cross_entropy_with_z(
+                logits, targets_c, ignore_index=ignore_index,
+                z_loss_weight=z_loss_weight,
+            )
+        cl = logits.float()
+        log_z = torch.logsumexp(cl, dim=-1)
+        ce = F.cross_entropy(cl, targets_c, ignore_index=ignore_index,
+                             reduction='none')
+        mask = targets_c != ignore_index
+        return ce[mask].sum(), mask.sum().float(), log_z[mask].pow(2).sum()
+
+    total_ce = torch.tensor(0.0, device=hidden.device)
+    total_count = torch.tensor(0, device=hidden.device, dtype=torch.long)
+    z_accum = torch.tensor(0.0, device=hidden.device)
+    n_z = 0
+    n_chunks = 0
+    triton_acc = torch.tensor(0.0, device=hidden.device)
+
+    for start in range(0, hidden.shape[0], chunk_size):
+        end = min(start + chunk_size, hidden.shape[0])
+        out = checkpoint(_chunk, hidden[start:end], head_weight,
+                         targets[start:end], use_reentrant=False)
+        n_chunks += 1
+        if use_triton:
+            triton_acc = triton_acc + out
+            continue
+        total_ce = total_ce + out[0]
+        total_count = total_count + out[1].long()
+        z_accum = z_accum + out[2]
+        n_z += int(out[1])
+
+    if use_triton:
+        return triton_acc / max(n_chunks, 1)
+
+    ce_loss = (total_ce / total_count.float()) if total_count > 0 else torch.tensor(0.0, device=hidden.device)
     z_loss = z_accum / max(n_z, 1)
     return ce_loss + z_loss_weight * z_loss
 
