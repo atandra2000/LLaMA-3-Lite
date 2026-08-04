@@ -792,10 +792,10 @@ gradient checks cannot drift from the reference implementation even if the
 forward kernel has subtle rounding.
 
 One caveat about the 1.5× rule: AGENTS.md names `scripts/microbench_a100.py`
-as the measurement harness, but that script is not in the working tree
-(only `scripts/generate_code_map.py` is [verified]). No in-repo
-microbenchmark exists, so the speedup contract is currently enforced by
-rule, not by measurement — treat any throughput claim below as an estimate,
+as the measurement harness, but that script is not in the working tree.
+No in-repo microbenchmark exists, so the speedup contract is currently
+enforced by rule, not by measurement — treat any throughput claim below as
+an estimate,
 not a benchmark.
 
 ### The Triton model of computation

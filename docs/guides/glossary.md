@@ -216,7 +216,7 @@ budget are in [`config.md`](../references/model-reference.md).
 | `data/shared_data/loader.py` | Vendored loader: `PackedDataset`, `ShuffledRangeSampler`, `collate_fn`, `build_tokenizer`, `build_synthetic_data`, `build_training_data`, `_SyntheticTokenizerStub` |
 | `kernels/` | The three optional Triton kernels (`rmsnorm_triton.py`, `swiglu_triton.py`, `cross_entropy_triton.py`) with a package `__init__.py` |
 | `tests/` | Unit + equivalence + smoke suite (`test_model.py`, `test_train.py`, `test_config.py`, `test_smoke.py`), `conftest.py` fixtures, the GPU `e2e_gpu_smoke.py`, and the doc checker `test_doc_refs.py` |
-| `scripts/generate_code_map.py` | Regenerates the file→doc map that used to be `docs/CODE_MAP.md` (symbol ↔ doc ↔ test table; the map is now folded into `docs/README.md`) |
+| `docs/README.md` | File→doc map (symbol ↔ doc ↔ test table; hand-maintained since the 2026-08-04 cleanup) |
 | `benchmark_data.py` | Standalone data-loading microbenchmark |
 | `pytest.ini` | Marker registration (`gpu`, `numeric`, `smoke`) and test options |
 | `.github/workflows/ci.yml` | CI: import check, smoke suite, doc-ref checker |
