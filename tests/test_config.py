@@ -13,7 +13,7 @@ REQUIRED_KEYS = {
     "min_lr", "warmup_steps", "weight_decay", "max_grad_norm",
     "beta1", "beta2", "eps",
     "compile_model", "compile_mode",
-    "gradient_checkpointing", "use_chunked_cross_entropy",
+    "gradient_checkpointing", "ce_chunk_size",
     "use_z_loss", "z_loss_weight", "qknorm", "use_ema", "ema_decay",
     "tf32", "cudnn_benchmark", "cuda_alloc_conf",
     "data_sources", "num_workers", "prefetch_factor", "pin_memory",
@@ -27,7 +27,6 @@ REQUIRED_KEYS = {
     "model_folder", "model_filename", "checkpoint_interval",
     "keep_last_n_checkpoints", "async_checkpoint", "preload",
     "wandb_project", "wandb_entity", "wandb_tags", "log_interval",
-    "optimizer",
     # Triton dispatch keys (opt-in; force-back by default — see
     # documentation/triton_kernels.md and AGENTS.md §Hard rules).
     "cross_entropy_impl", "rmsnorm_impl", "swiglu_impl",
@@ -54,6 +53,7 @@ class TestGetConfig:
         ("d_model", 1024), ("n_layers", 16), ("n_heads", 8),
         ("n_kv_heads", 4), ("head_dim", 128), ("d_ff", 4096),
         ("vocab_size", 128000), ("seq_len", 2048),
+        ("ce_chunk_size", 256),
     ])
     def test_known_values(self, full_config, key, expected):
         assert full_config[key] == expected

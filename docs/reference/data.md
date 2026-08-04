@@ -104,12 +104,12 @@ Three behaviors worth naming:
    whole windows. Any trailing partial window is silently dropped — it can
    never be a full `seq_len` input + shifted target.
 
-Note the constructor stores `eos_id` but `PackedDataset.__getitem__` never
-consults it: windowing is position-only. The EOS separator's only job is
+Note the constructor takes no `eos_id`: `PackedDataset.__getitem__` never
+consults one — windowing is position-only. The EOS separator's only job is
 to be a learnable token id at document boundaries; the windower does not
-need to know where documents start or end. `eos_id` is "reserved for
-document-boundary callers" (the docstring's words) — a hook, not a
-behavior.
+need to know where documents start or end. An `eos_id` parameter existed
+once as a "reserved for document-boundary callers" hook and was removed in
+the cleanup — no caller ever used it.
 
 ### Item access (`data/shared_data/loader.py:PackedDataset.__getitem__`)
 
@@ -255,8 +255,8 @@ Key steps:
    `DataLoader`s (table below).
 5. **Stub.** Returns `_SyntheticTokenizerStub(vocab=vocab, eos_id=0, pad_id=0)`.
 
-Note `PackedDataset` is called without `eos_id` here (defaults to `0`),
-as is the stub's `eos_id`/`pad_id` — consistent with the `[2, vocab)` id
+Note `PackedDataset` takes no `eos_id` (windowing is position-only); the
+stub's `eos_id`/`pad_id` are `0` — consistent with the `[2, vocab)` id
 range, where `0` never appears in the data.
 
 ## `build_tokenizer` — real tokenizer, pad→eos
@@ -304,7 +304,7 @@ training calls. In order:
 4. **Split.** Identical math to the synthetic path: truncate to whole
    windows, chunk-align the 5% validation holdout
    (`config.py:get_config` `val_split: 0.05`).
-5. **Loaders.** `PackedDataset` (default `eos_id=0`) + sampler seeded with
+5. **Loaders.** `PackedDataset` (position-windowed, no `eos_id`) + sampler seeded with
    `shuffle_seed` (default `42` — note the synthetic builder's sampler
    default falls back to its own `seed` argument instead) + the same
    `DataLoader` configuration as synthetic.
@@ -511,7 +511,7 @@ with `tiny_config` values (`seq_len=32`, `vocab=256`, `batch=4`,
 `n_tokens = (seq_len + 1) * 32 + 10` tokens — deliberately **not** a
 multiple of the chunk size, so the floor-to-whole-windows truncation is
 part of what the fixture covers — then splits chunk-aligned, constructs
-`PackedDataset` with an explicit `eos_id`, seeds the sampler with
+`PackedDataset` (no `eos_id` — windowing is position-only), seeds the sampler with
 `seed=42, offset=0`, and wires `ds.collate_fn` into both loaders. The
 `TestEndToEndSmoke` class then runs real forward/backward steps, chunked-
 vs-dense loss equivalence, and validation on these loaders.

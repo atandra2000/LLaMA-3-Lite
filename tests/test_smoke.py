@@ -25,8 +25,8 @@ def tiny_dataloaders(tiny_config):
                              seed=0)
     chunk = seq_len + 1
     split = (int(len(data) * (1.0 - tiny_config["val_split"])) // chunk) * chunk
-    train_ds = ds.PackedDataset(data[:split], seq_len, eos)
-    val_ds = ds.PackedDataset(data[split:], seq_len, eos)
+    train_ds = ds.PackedDataset(data[:split], seq_len)
+    val_ds = ds.PackedDataset(data[split:], seq_len)
     sampler = ds.ShuffledRangeSampler(train_ds.n_chunks, seed=42, offset=0)
     train_dl = torch.utils.data.DataLoader(
         train_ds, batch_size=tiny_config["batch_size"], sampler=sampler,

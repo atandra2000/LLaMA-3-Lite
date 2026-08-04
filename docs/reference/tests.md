@@ -88,7 +88,6 @@ of truth).
 | `tests/conftest.py:full_config` | session | The production config straight from `config.get_config()` — used only by the param-count and config-contract tests, never to build a training model. |
 | `tests/conftest.py:tiny_config` | function | The small CPU-friendly config dict every fast test builds on: `d_model=64`, `n_layers=2`, `n_heads=4`, `n_kv_heads=2`, `head_dim=16`, `d_ff=128`, `vocab_size=256`, `seq_len=32`, `batch_size=4`, `max_steps=10`, `ce_chunk_size=16`, `warmup_steps=2`, `val_split=0.1`. It mirrors the production key set (minus Triton dispatch keys), so config plumbing is exercised at small scale. |
 | `tests/conftest.py:tiny_model` | function | A `build_transformer(...)` instance built from `tiny_config` hyperparameters, moved to `device`/`dtype`, seeded via `seed_everything(1234)`. |
-| `tests/conftest.py:weights_dir` | function | A fresh `tmp_path / "weights"` directory meant to stand in for `config["model_folder"]` so checkpoint tests never write into the repo. (The checkpoint tests in `test_train.py` currently pass `tmp_path` directly and leave this fixture for future consumers.) |
 
 Dependencies among fixtures:
 
@@ -99,14 +98,12 @@ graph TD
     device --> tiny_model
     dtype --> tiny_model
     seed_everything --> tiny_model
-    tmp_path --> weights_dir
     full_config
 ```
 
 ### 3.5 Module-level helpers
 
 - `tests/conftest.py:make_token_stream(num_tokens, vocab_size, seq_len, eos_id=0, bos_id=1, seed=42)` — builds a synthetic `uint32` token buffer packed as repeated `BOS … EOS` documents (each document `max(8, seq_len // 2)` tokens long), exactly the layout `PackedDataset` expects. Used by `tests/test_smoke.py:tiny_dataloaders` to build train/val loaders without a tokenizer.
-- `tests/conftest.py:count_params(module)` — `sum(p.numel() for p in module.parameters())`; the shared param counter (some tests inline their own to avoid the import).
 
 ## 4. Markers and pytest configuration
 

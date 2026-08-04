@@ -23,7 +23,6 @@ def get_config():
         'weight_decay':         0.1,
         'max_grad_norm':        1.0,
 
-        'optimizer':            'AdamW',
         'beta1':                0.9,
         'beta2':                0.95,
         'eps':                  1e-8,
@@ -31,7 +30,7 @@ def get_config():
         'compile_model':        True,
         'compile_mode':         'reduce-overhead',
         'gradient_checkpointing': True,
-        'use_chunked_cross_entropy': True,
+        'ce_chunk_size':        256,
 
         'rmsnorm_impl':         'pytorch',
         'swiglu_impl':          'pytorch',
@@ -69,7 +68,7 @@ def get_config():
         'num_workers':          6,
         'prefetch_factor':       16,
         'pin_memory':            True,
-        'target_tokens':         4_000_000_000,
+        'target_tokens':         8_000_000_000,
 
         'data_cache_dir':        'data_cache',
         'data_cache_filename':   'tokens.bin',

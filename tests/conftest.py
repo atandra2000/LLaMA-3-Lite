@@ -150,7 +150,7 @@ def tiny_config() -> dict:
         "eps": 1e-8,
         "compile_model": False,
         "gradient_checkpointing": False,
-        "use_chunked_cross_entropy": True,
+        "ce_chunk_size": 16,
         "tf32": False,
         "cudnn_benchmark": False,
         "data_sources": {},
@@ -209,13 +209,6 @@ def tiny_model(tiny_config, device, dtype, seed_everything):
     return model
 
 
-@pytest.fixture
-def weights_dir(tmp_path, monkeypatch) -> Path:
-    """Redirect config['model_folder'] into a tmp dir so tests don't pollute the repo."""
-    d = tmp_path / "weights"
-    d.mkdir()
-    return d
-
 
 def make_token_stream(num_tokens: int, vocab_size: int, seq_len: int,
                       eos_id: int = 0, bos_id: int = 1, seed: int = 42) -> np.ndarray:
@@ -229,7 +222,3 @@ def make_token_stream(num_tokens: int, vocab_size: int, seq_len: int,
         out.extend(body)
         out.append(eos_id)
     return np.asarray(out[:num_tokens], dtype=np.uint32)
-
-
-def count_params(module: torch.nn.Module) -> int:
-    return sum(p.numel() for p in module.parameters())

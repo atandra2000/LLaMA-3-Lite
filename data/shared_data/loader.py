@@ -15,9 +15,9 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 
 
 class PackedDataset(Dataset):
-    """Read-only uint32 token buffer chunked into ``seq_len+1`` training windows; each chunk returns ``seq_len`` inputs and ``seq_len`` targets (next-token shift), and ``eos_id`` is reserved for document-boundary callers."""
+    """Read-only uint32 token buffer chunked into ``seq_len+1`` training windows; each chunk returns ``seq_len`` inputs and ``seq_len`` targets (next-token shift)."""
 
-    def __init__(self, tokens: np.ndarray, seq_len: int, eos_id: int = 0):
+    def __init__(self, tokens: np.ndarray, seq_len: int):
         if tokens.dtype != np.uint32:
             tokens = tokens.astype(np.uint32, copy=False)
         chunk = seq_len + 1
@@ -27,7 +27,6 @@ class PackedDataset(Dataset):
             tokens = np.concatenate([tokens, pad])
         self.tokens = tokens
         self.seq_len = seq_len
-        self.eos_id = eos_id
         self.n_chunks = tokens.size // (seq_len + 1)
 
     def __len__(self) -> int:
@@ -71,13 +70,30 @@ def collate_fn(batch: list[dict]) -> dict:
     }
 
 
+def build_tokenizer(config: dict):
+    """Load the project tokenizer from ``tokenizer_name``; pad defaults to eos.
+
+    Raises when transformers is missing or the download fails; callers fall
+    back to the byte stub.
+    """
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        config["tokenizer_name"],
+        cache_dir=config.get("tokenizer_cache_dir", None),
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    return tokenizer
+
+
 def build_synthetic_data(
     config: dict,
     *,
     num_tokens: Optional[int] = None,
     seed: int = 0,
 ) -> tuple[DataLoader, DataLoader, "object"]:
-    """Returns ``(train_dl, val_dl, tokenizer)`` over a synthetic uint32 stream; ``tokenizer`` is a stub exposing ``pad_token_id`` / ``eos_token_id`` / ``encode`` / ``decode``."""
+    """Returns ``(train_dl, val_dl, tokenizer)`` over a synthetic uint32 stream; ``tokenizer`` is a stub exposing ``pad_token_id`` / ``eos_token_id`` / ``encode`` / ``decode``. Synthetic ids are random, so the byte stub is used unconditionally (no HF download)."""
     seq_len = int(config["seq_len"])
     vocab = int(config["vocab_size"])
     batch = int(config["batch_size"])
@@ -162,7 +178,16 @@ def build_training_data(config: dict) -> tuple[DataLoader, DataLoader, "object"]
     )
 
     real_vocab = int(config["vocab_size"])
-    return train_dl, val_dl, _SyntheticTokenizerStub(vocab=real_vocab, eos_id=0, pad_id=0)
+    try:
+        tokenizer = build_tokenizer(config)
+    except Exception as exc:
+        print(
+            f"[data] tokenizer load failed ({type(exc).__name__}: {exc}); "
+            f"using the byte stub. Generation samples will be meaningless "
+            f"until a real tokenizer is available."
+        )
+        tokenizer = _SyntheticTokenizerStub(vocab=real_vocab, eos_id=0, pad_id=0)
+    return train_dl, val_dl, tokenizer
 
 
 class _SyntheticTokenizerStub:
@@ -172,6 +197,9 @@ class _SyntheticTokenizerStub:
         self._vocab = vocab
         self.eos_token_id = eos_id
         self.pad_token_id = pad_id
+
+    def __len__(self) -> int:
+        return self._vocab
 
     def encode(self, text: str) -> list[int]:
         return [min(b, self._vocab - 1) for b in text.encode("utf-8")]

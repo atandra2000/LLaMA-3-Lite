@@ -334,8 +334,8 @@ Three subtleties worth flagging:
    (configured there with `LLAMA3_TOKENIZER_NAME = "llama3"`) uses that id
    to separate packed documents in `tokens.bin`. The loader itself never
    checks EOS ids while reading — `PackedDataset` slices fixed `seq_len+1`
-   windows and does not even receive the eos id from
-   `build_training_data` (it defaults to 0 and is reserved for
+   windows and has no `eos_id` parameter at all (windowing is
+   position-only; the eos id is reserved for
    document-boundary callers).
 2. **What `tokenizer.eos_token_id` reports depends on the loaded
    checkpoint.** The base `NousResearch/Meta-Llama-3-8B` artifact declares
