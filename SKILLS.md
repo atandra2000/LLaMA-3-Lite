@@ -5,11 +5,14 @@
 
 ---
 
-## Skill 1: Tune chunked cross-entropy
+## Skill 1: Tune chunked LM-head cross-entropy
 
-`chunked_cross_entropy(logits, labels, chunk_size=256)` lives in `model.py`.
-The trick: compute `log_softmax(logits)` and `nll_loss` in FP32 over one
-chunk at a time, never materializing the full `[B, T, V]` tensor.
+`chunked_head_cross_entropy_with_z(hidden, head_weight, targets, chunk_size=256)`
+lives in `model.py`. The trick: the training path returns final hidden states
+(`model(x, return_hidden=True)`) and the loss computes the output projection
+in `chunk_size`-row slices, each inside `torch.utils.checkpoint` — the full
+`[B, T, V]` logits tensor is never materialized, and only one chunk's logits
+are alive at a time.
 
 | Chunk | Peak logits mem | Throughput |
 |-------|-----------------|------------|
@@ -17,7 +20,7 @@ chunk at a time, never materializing the full `[B, T, V]` tensor.
 | 256   | ~0.3 GB         | baseline   |
 | 1024  | ~1.2 GB         | +5%        |
 | 4096  | ~5 GB           | +10%       |
-| full  | ~50 GB          | OOM        |
+| dense head | ~50 GB      | OOM        |
 
 **Default 256 is the sweet spot** for the 1× A100 80GB target. Increase
 only if you also enable gradient checkpointing on the chunk compute.
@@ -26,21 +29,23 @@ only if you also enable gradient checkpointing on the chunk compute.
 
 In `config.py`:
 ```python
-"use_disk_cache": True,     # default — 112 GB → ~1 MB RAM
-"disk_cache_path": "data/cache/tokens.bin",
+"data_cache_dir": "data_cache",          # mmap-backed uint32 corpus
+"data_cache_filename": "tokens.bin",
 ```
 
 The cache is mmap-backed uint32. Build it once:
 ```bash
-python dataset.py --build_cache
+python data/prepare_data.py
 ```
 
-Then load it lazily on each `__getitem__`. The cache must be **regenerated**
-whenever you change the source mixture or tokenizer.
+The loader (`data/shared_data/loader.py::build_training_data`) mmaps it on
+each run; missing cache → `train.py` falls back to synthetic data with a
+warning. The cache must be **regenerated** whenever you change the source
+mixture or tokenizer.
 
 ## Skill 3: Add a new data source
 
-In `config.py:data_sources`, add:
+In the `data_sources` dict of `config.py:get_config`, add:
 ```python
 "the_stack_rust": {"weight": 0.05, "source": "bigcode/the-stack",
                    "split": "train", "languages": ["Rust"]},
@@ -55,45 +60,55 @@ Default `rope_theta = 500_000.0` (LLaMA-3 base).
 
 For 8K → 32K extension:
 ```python
+# illustrative
 # Architecture: NTK-aware scaling
 "rope_theta": 1_000_000.0,   # or apply YaRN-style factor
 "rope_factor": 1.0,          # >1.0 enables NTK scaling
 ```
 
 For >128K: combine with YaRN attention scaling (`attention_temperature`).
-Refer to the `docs/rope.md` deep-dive.
+Refer to the `docs/reference/rope.md` deep-dive.
 
 ## Skill 5: Resume training from a checkpoint
 
-```bash
-python train.py --resume checkpoints/llama3_step_30000.pt
+Set `"preload": true` in `config.py`, or pass `config['preload']` via a
+small wrapper; checkpoints live in `weights/` (`model_filename`):
+
+```python
+from train import load_checkpoint
+load_checkpoint(model, optimizer, scheduler, config, device, ema=ema)
 ```
 
 The resume path restores:
 - model weights
 - optimizer state (AdamW moments)
 - LR scheduler state
-- RNG state (Python + NumPy + PyTorch)
-- W&B run ID
+- RNG state (Python + NumPy + PyTorch + CUDA)
+- EMA shadow (when present)
 
 This is **full reproducibility** — re-running gives identical loss curves.
 
 ## Skill 6: Profile memory before scaling
 
 ```python
+# illustrative
 torch.cuda.reset_peak_memory_stats()
-with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-    loss = model(batch)
+with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+    hidden = model(batch, return_hidden=True)
+    loss = chunked_head_cross_entropy_with_z(
+        hidden.view(-1, hidden.size(-1)), model.output_proj.weight,
+        targets.view(-1), chunk_size=cfg["ce_chunk_size"])
 loss.backward()
 peak_gb = torch.cuda.max_memory_allocated() / 1e9
 print(f"peak={peak_gb:.1f} GB")
 ```
 
-Expected at batch 96 + grad-ckpt + chunked CE: **~20 GB peak**.
+Expected at batch 96 + grad-ckpt + chunked head CE: **~20 GB peak**.
 
 ## Skill 7: Verify FA2 is active
 
 ```python
+# illustrative
 from torch.nn.attention import sdpa_kernel, SDPBackend
 with sdpa_kernel(SDPBackend.FLASH_ATTENTION):
     out = attn(q, k, v)
@@ -124,10 +139,12 @@ difference between adjacent settings.
 
 **How to inspect EMA at a checkpoint:**
 ```python
-from train import EMA
-ema = EMA(model, decay=0.999)
-# shadow is a dict[str, Tensor] of FP32 copies keyed by param name.
-print(list(ema.shadow.keys())[:5])
+# illustrative
+from torch.optim.swa_utils import AveragedModel
+# train.py builds it as AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))
+ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(0.999))
+# shadow weights are FP32 copies under ema.module (same named params).
+print(list(ema.module.state_dict().keys())[:5])
 ```
 
 ## Skill 9: Resume with EMA
@@ -152,8 +169,9 @@ resume, then flip it on.
   doesn't help. Skip it.
 - **EOS token** must exist in the LLaMA-3 tokenizer vocab (it does, id
   `128009`). Document packing requires it as a separator.
-- **`use_chunked_cross_entropy`** must be `True` or you OOM.
-- **Z-loss + QK-norm interact**: both are present, both are off by default
-  via `z_loss_weight=0` / `qknorm=False`. Running with both off recovers
-  the original recipe exactly (within FP32↔BF16 round-trip noise).
+- **Chunked head CE is unconditional** — the training path never materializes
+  the full logits tensor; `ce_chunk_size` only tunes the per-chunk slice.
+- **Z-loss + QK-norm interact**: both default ON
+  (`use_z_loss=True`, `qknorm=True`). Setting `z_loss_weight=0` /
+  `qknorm=False` recovers the base recipe.
 

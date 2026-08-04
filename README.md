@@ -223,7 +223,7 @@ Input Token IDs
   Output Projection (d_model → vocab_size, no bias)
        │
        ▼
-  Chunked Cross-Entropy (65K tokens/chunk)
+  Chunked LM Head + CE (256 tokens/chunk)
 ```
 
 
@@ -232,12 +232,12 @@ Input Token IDs
 | Decision | Rationale |
 |----------|-----------|
 | **Gradient Checkpointing** | Trades ~25% per-step compute for ~78% memory reduction. Net throughput **+33%** via 2× batch size. |
-| **Chunked Cross-Entropy** | Processes logits in 65K-token chunks. Numerically identical to standard CE (<1e-5 difference). |
+| **Chunked LM Head + CE** | Computes the output projection in 256-token chunks inside a checkpoint region, so the full logits tensor is never materialized. Numerically identical to standard CE (<1e-5 difference). |
 | **Fused SwiGLU** | Merges `gate_proj` + `up_proj` into single matmul. Reads input activation once instead of twice. |
 | **GQA (8Q/4KV)** | Shares each KV head across 2 query heads. Improves inference throughput without quality loss. |
 | **No Dropout** | Relies on data scale and weight decay for regularization. |
 | **No Weight Tying** | Output projection is a separate learnable matrix from input embedding. |
-| **Disk-Backed Cache** | Streams tokens once to memory-mapped uint32 file (~16 GB). Subsequent runs reuse cache. |
+| **Disk-Backed Cache** | Streams tokens once to memory-mapped uint32 file (~32 GB). Subsequent runs reuse cache. |
 
 ---
 
@@ -304,7 +304,7 @@ All settings are defined in [`config.py`](config.py). Key configuration groups:
 | `batch_size` | 96 | Per-GPU batch size |
 | `gradient_accumulation` | 1 | Gradient accumulation steps |
 | `gradient_checkpointing` | `True` | Required for A100 80GB |
-| `use_chunked_cross_entropy` | `True` | Avoids 50 GB logits tensor |
+| `ce_chunk_size` | 256 | LM-head rows per loss chunk (bounds logits memory to ~0.3 GB) |
 | `max_steps` | 42000 | Total training steps |
 | `learning_rate` | 3e-4 | Peak learning rate |
 | `min_lr` | 3e-5 | Minimum LR floor |
@@ -321,7 +321,7 @@ All settings are defined in [`config.py`](config.py). Key configuration groups:
 | `reuse_data_cache` | `True` | Reuse cache on subsequent runs |
 | `shuffle_documents` | `True` | Within-source diversity |
 | `dedup` | `True` | SHA-256 exact deduplication |
-| `target_tokens` | 4,000,000,000 | Total tokens to download |
+| `target_tokens` | 8,000,000,000 | Total tokens in the universal corpus |
 | `document_packing` | `True` | Multiple docs per sequence |
 
 ### Data Sources
@@ -404,22 +404,28 @@ Training uses **BFloat16** mixed precision via `torch.autocast` and `torch.amp.G
 LLaMA-3-Lite/
 ├── config.py           # Central configuration & hyperparameters
 ├── model.py            # Transformer architecture (RoPE, GQA, SwiGLU, RMSNorm)
-├── dataset.py          # Thin shim re-exporting the universal training loader (shared_data.loader)
+├── dataset.py          # Thin shim re-exporting the vendored loader (data/shared_data/loader)
 ├── train.py            # Training loop (validation, generation, checkpointing)
-├── tests/              # pytest suite (smoke + numeric + GPU)
+├── kernels/            # Opt-in Triton kernels (rmsnorm, swiglu, chunked CE)
+├── data/               # prepare_data.py shim + vendored loader (data/shared_data/)
+├── docs/               # theory/ + reference/ + guides/ (see docs/README.md)
+├── tests/              # pytest suite (smoke + numeric + GPU) + doc-ref checker
 ├── benchmark_data.py   # Data pipeline benchmark (GPU)
 ├── weights/            # Checkpoints (created at runtime)
-└── data_cache/         # Token cache (created at runtime, ~16 GB)
+└── data_cache/         # Token cache (created at runtime, ~32 GB)
 ```
 
 ### Module Reference
 
 | Module | Key Functions | Description |
 |--------|---------------|-------------|
-| `config.py` | `get_config()`, `get_weights_file_path()`, `latest_weights_file_path()`, `cleanup_old_checkpoints()` | Central configuration with A100-optimized defaults |
-| `model.py` | `build_transformer()`, `chunked_cross_entropy()` | Pure PyTorch model with gradient checkpointing support |
-| `dataset.py` | `build_training_data()`, `build_synthetic_data()`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn` | Re-exports the universal training loader from `shared_data.loader` (single source of truth) |
+| `config.py` | `get_config()` | Central configuration with A100-optimized defaults |
+| `model.py` | `build_transformer()`, `chunked_head_cross_entropy_with_z()`, `Transformer` | Pure PyTorch model with gradient checkpointing support |
+| `dataset.py` | `build_training_data()`, `build_synthetic_data()`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn` | Re-exports the vendored training loader from `data/shared_data/loader` (single source of truth) |
 | `train.py` | `train_model()`, `validate()`, `generate_samples()`, `save_checkpoint()`, `load_checkpoint()` | Full training orchestration with W&B logging |
+
+Full code walkthroughs: `docs/reference/model.md`, `docs/reference/training.md`,
+`docs/reference/data.md`, `docs/reference/config.md`.
 
 ---
 
@@ -438,9 +444,9 @@ LLaMA-3-Lite/
 
 | GPU VRAM | Recommended Settings |
 |----------|---------------------|
-| **80 GB (A100)** | `batch_size=96`, `gradient_checkpointing=True`, `use_chunked_cross_entropy=True` |
-| **40 GB (A100 40GB)** | `batch_size=48`, `gradient_checkpointing=True`, `use_chunked_cross_entropy=True` |
-| **24 GB (A10G, 3090)** | `batch_size=16`, `gradient_accumulation=6`, `gradient_checkpointing=True`, `use_chunked_cross_entropy=True` |
+| **80 GB (A100)** | `batch_size=96`, `gradient_checkpointing=True`, `ce_chunk_size=256` |
+| **40 GB (A100 40GB)** | `batch_size=48`, `gradient_checkpointing=True`, `ce_chunk_size=256` |
+| **24 GB (A10G, 3090)** | `batch_size=16`, `gradient_accumulation=6`, `gradient_checkpointing=True`, `ce_chunk_size=256` |
 | **16 GB (V100, T4)** | Not recommended — model state alone requires ~7.2 GB |
 
 > **Note**: Gradient checkpointing and chunked cross-entropy are **required** for batch_size=96. Without them, peak memory exceeds 90 GB (OOM on A100 80GB).

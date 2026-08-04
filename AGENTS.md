@@ -57,15 +57,20 @@ number in the portfolio.
 - Sources: FineWeb-Edu 0.5 / FineWeb-Code 0.1 / Stack Python 0.2 /
   Stack multi-lang 0.05 / Wikipedia 0.05 / StackOverflow-QA 0.05.
 - Tokenizer: LLaMA-3 (128K vocab).
-- Disk-backed uint32 mmap cache (~16 GB), SHA-256 exact dedup.
+- Disk-backed uint32 mmap cache (~32 GB), SHA-256 exact dedup.
 - Document packing: sequences packed to seq_len=2048 with EOS separators.
 - Async CPU→GPU prefetch.
 
 **Files:**
-- `README.md`, `architecture.md` (1,234-line first-principles walkthrough).
+- `README.md`, `AGENTS.md`, `SKILLS.md`.
 - `config.py` — all hyperparameters.
 - `model.py`, `train.py`, `dataset.py`.
 - `tests/` — config, dataset, model, train, smoke tests.
+- `docs/` — three-track documentation: `docs/theory/` (from-scratch
+  concept building), `docs/reference/` (code-keyed walkthroughs),
+  `docs/guides/` (learning paths, quickstart, troubleshooting, glossary).
+  `docs/CODE_MAP.md` maps symbols ↔ docs ↔ tests; `tests/test_doc_refs.py`
+  fails CI on any stale doc citation (see hard rule 10).
 
 **Triton kernel contract:**
 
@@ -123,6 +128,13 @@ number in the portfolio.
      level of a file (≤ 3 per file) and inside kernels to delimit
      named algorithm phases.
    Violations are reviewable on `wc -l <file>` and `grep -c '^[[:space:]]*#' <file>`.
+10. **Docs ship with code; stale docs fail CI.** Every code change that
+    alters a documented symbol updates the relevant doc(s) in the same
+    change. Docs cite symbols only — `<module>.py:<symbol>`, never line
+    numbers. `tests/test_doc_refs.py` must stay green (it resolves every
+    citation and bans line-number anchors); `docs/CODE_MAP.md` is the
+    symbol ↔ doc ↔ test map. Theory belongs in `docs/theory/`,
+    code walkthroughs in `docs/reference/` — never both.
 
 **Known issues:**
 - Full 8.25B-token run not yet started.
