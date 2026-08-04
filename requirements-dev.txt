@@ -1,6 +1,5 @@
 # Test dependencies for LLaMA-3-Lite
 pytest>=7.4
-pytest-xdist>=3.5
 # Runtime deps (already in README install instructions):
 # torch>=2.0
 # transformers>=4.40
