@@ -3,8 +3,8 @@
 Pure PyTorch by default; ``*_impl='triton'`` swaps in fused kernels.
 """
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from kernels.cross_entropy_triton import triton_chunked_cross_entropy_with_z
@@ -185,9 +185,7 @@ class Transformer(nn.Module):
 
     def _init_weights(self):
         for module in self.modules():
-            if isinstance(module, nn.Linear):
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            elif isinstance(module, nn.Embedding):
+            if isinstance(module, nn.Linear) or isinstance(module, nn.Embedding):
                 torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, x, return_hidden: bool = False):
@@ -363,7 +361,7 @@ def build_transformer(
     print(f"Total params: {num_params:,} ({num_params/1e6:.1f}M)")
     print(f"Non-embedding params: {non_embed:,} ({non_embed/1e6:.1f}M)")
     if gradient_checkpointing:
-        print(f"Gradient checkpointing: ENABLED")
+        print("Gradient checkpointing: ENABLED")
     if rmsnorm_impl == "triton" or swiglu_impl == "triton":
         active = [k for k, v in (("rmsnorm", rmsnorm_impl), ("swiglu", swiglu_impl)) if v == "triton"]
         print(f"Triton kernels active: {', '.join(active)}")
