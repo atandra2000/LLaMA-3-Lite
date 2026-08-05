@@ -1,30 +1,17 @@
 # Learning Paths — How to Read the LLaMA-3-Lite Docs
 
-> Audience: all levels. This guide is the navigational entry point for the
-> documentation tree. It does not teach any model topic itself; it tells you
-> which doc to read next depending on what you already know and what you want
-> out of the codebase.
+> Audience: all levels. This guide is the navigational entry point for the documentation tree. It does not teach any model topic itself; it tells you which doc to read next depending on what you already know and what you want out of the codebase.
 
-The docs are organized into three tracks: **concepts** (`docs/concepts/`,
-concept building from first principles), **references** (`docs/references/`,
-code-keyed walkthroughs of specific files), and **guides** (`docs/guides/`,
-navigation and operations). This file and the
+The docs are organized into three tracks: **concepts** (`docs/concepts/`, concept building from first principles), **references** (`docs/references/`, code-keyed walkthroughs of specific files), and **guides** (`docs/guides/`, navigation and operations). This file and the
 [index](../README.md) form the meta layer on top of them.
 
-There are three reading paths. Each assumes the previous one, and each is a
-table of steps in order: start at the top, read the docs in sequence, and you
-end with a working mental model of the whole stack. Every concepts doc is
-self-contained (it builds its own prerequisites), so skipping a step is
-usually survivable — but the "what you will know" column describes what the
-step contributes, and later steps assume it.
+There are three reading paths. Each assumes the previous one, and each is a table of steps in order: start at the top, read the docs in sequence, and you end with a working mental model of the whole stack. Every concepts doc is self-contained (it builds its own prerequisites), so skipping a step is usually survivable — but the "what you will know" column describes what the step contributes, and later steps assume it.
 
 ---
 
 ## Beginner path — What this model is and how it works
 
-Who this is for: you have basic Python and PyTorch tensor fluency, know what
-next-token prediction is, and want to understand the LLaMA-3-Lite architecture
-from the ground up. No transformer background required.
+Who this is for: you have basic Python and PyTorch tensor fluency, know what next-token prediction is, and want to understand the LLaMA-3-Lite architecture from the ground up. No transformer background required.
 
 | Step | Doc | What you will know after |
 |------|-----|--------------------------|
@@ -40,10 +27,7 @@ from the ground up. No transformer background required.
 
 ## Intermediate path — Train it and understand the numerics
 
-Who this is for: you have completed the beginner path (or equivalent) and now
-want to understand how this model is actually trained: the optimizer, the
-number formats, the memory tricks, the data pipeline, and the knobs in the
-config.
+Who this is for: you have completed the beginner path (or equivalent) and now want to understand how this model is actually trained: the optimizer, the number formats, the memory tricks, the data pipeline, and the knobs in the config.
 
 | Step | Doc | What you will know after |
 |------|-----|--------------------------|
@@ -61,9 +45,7 @@ config.
 
 ## Expert path — Memory engineering, kernels, and tests
 
-Who this is for: you have completed the intermediate path and want to
-understand the systems layer: where every byte goes, how the fused Triton
-kernels work, what the test suite defends, and how to debug the hard failures.
+Who this is for: you have completed the intermediate path and want to understand the systems layer: where every byte goes, how the fused Triton kernels work, what the test suite defends, and how to debug the hard failures.
 
 | Step | Doc | What you will know after |
 |------|-----|--------------------------|
@@ -83,15 +65,11 @@ kernels work, what the test suite defends, and how to debug the hard failures.
 | Intermediate | The full beginner path: residual-stream model view, GQA, RMSNorm, SwiGLU, chunked CE, and the `model.py` tour | [positional-encoding.md](../concepts/attention-and-positional.md) |
 | Expert | The full intermediate path: optimizer, numerics, data pipeline, config surface | [memory-engineering.md](../concepts/training-and-memory.md) |
 
-No path has a hard time estimate; each step's doc states its own audience in
-its first lines, and every theory doc is written to be self-contained, so a
-step you already know can be skipped safely. Within a path the order matters:
-later steps reference the concepts (not just the file names) of earlier ones.
+No path has a hard time estimate; each step's doc states its own audience in its first lines, and every theory doc is written to be self-contained, so a step you already know can be skipped safely. Within a path the order matters: later steps reference the concepts (not just the file names) of earlier ones.
 
 ### Off-path docs
 
-These docs serve specific needs and plug into the paths as needed rather than
-forming their own sequence:
+These docs serve specific needs and plug into the paths as needed rather than forming their own sequence:
 
 - [glossary.md](glossary.md) — the shared vocabulary of the whole tree; read it first if any acronym or symbol stops you.
 - [data.md](../references/data-reference.md) and [tokenizer.md](../references/data-reference.md) — the code tours behind the data-engineering step; read alongside intermediate step 5.

@@ -1,14 +1,8 @@
 # LLaMA-3-Lite — Documentation Index
 
-The documentation is organized in four parts plus this index: **concepts**
-(`docs/concepts/`, theory and architecture built from first principles),
-**references** (`docs/references/`, code-keyed walkthroughs), **guides**
-(`docs/guides/`, how-to and operations), and a top-level
+The documentation is organized in four parts plus this index: **concepts** (`docs/concepts/`, theory and architecture built from first principles), **references** (`docs/references/`, code-keyed walkthroughs), **guides** (`docs/guides/`, how-to and operations), and a top-level
 [training.md](training.md) covering the applied training pipeline, memory
-stack, and data pipeline. Every citation to code uses symbol anchors
-(`<module>.py:<symbol>`), verified by `tests/test_doc_refs.py` — stale
-references fail CI. This page is the nav map: it also folds in the file→doc
-map that used to live in `CODE_MAP.md`.
+stack, and data pipeline. Every citation to code uses symbol anchors (`<module>.py:<symbol>`), verified by `tests/test_doc_refs.py` — stale references fail CI. This page is the nav map: it also folds in the file→doc map that used to live in `CODE_MAP.md`.
 
 ## Corpus size
 
@@ -74,15 +68,11 @@ Measured 2026-08-05 (`wc -w` over the working tree).
 ## Top-level training doc
 
 - [training.md](training.md) — the applied training pipeline: `train.py`
-  walkthrough (loop, sampling, validation, checkpointing, EMA), the
-  eight-technique memory stack (92 GB → 20 GB derivation), and the data
-  pipeline (vendored loader + workspace `LLM/shared_data` preparation).
+  walkthrough (loop, sampling, validation, checkpointing, EMA), the eight-technique memory stack (92 GB → 20 GB derivation), and the data pipeline (vendored loader + workspace `LLM/shared_data` preparation).
 
 ## File→doc map (formerly `docs/CODE_MAP.md`)
 
-The old `CODE_MAP.md` was replaced by this hand-maintained map (the
-generator script was removed in the 2026-08-04 doc cleanup).
-`tests/test_doc_refs.py` (CI) verifies every citation resolves.
+The old `CODE_MAP.md` was replaced by this hand-maintained map (the generator script was removed in the 2026-08-04 doc cleanup). `tests/test_doc_refs.py` (CI) verifies every citation resolves.
 
 | Module | Where documented |
 |--------|------------------|

@@ -424,9 +424,7 @@ LLaMA-3-Lite/
 | `dataset.py` | `build_training_data()`, `build_synthetic_data()`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn` | Re-exports the vendored training loader from `data/shared_data/loader` (single source of truth) |
 | `train.py` | `train_model()`, `validate()`, `generate_samples()`, `save_checkpoint()`, `load_checkpoint()` | Full training orchestration with W&B logging |
 
-Full code walkthroughs: `docs/references/model-reference.md` (model, RoPE,
-config), `docs/training.md` (training loop + memory stack + data pipeline),
-`docs/references/data-reference.md` (data, tokenizer, kernels).
+Full code walkthroughs: `docs/references/model-reference.md` (model, RoPE, config), `docs/training.md` (training loop + memory stack + data pipeline), `docs/references/data-reference.md` (data, tokenizer, kernels).
 
 ---
 

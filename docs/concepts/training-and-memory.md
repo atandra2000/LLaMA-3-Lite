@@ -1010,9 +1010,7 @@ To verify the headline on real hardware: run one step at `batch_size=96` behind 
 
 ## Scaling and Metrics
 
-> **Audience:** intermediate
-> **Scope:** why this run is sized the way it is (42,000 steps, 8.26B tokens, ~515M params), what loss/perplexity curves are expected to look like, how validation and generation are measured, every metric W&B records, and how to benchmark the data pipeline.
-> **Status:** no pretraining run has started yet (see [`../../README.md`](../../README.md) status banner). Everything about *actual curves* is therefore marked **expected** / `[INFERENCE]`; everything about *configuration, arithmetic, and code behavior* is verified against the working tree.
+> **Audience:** intermediate **Scope:** why this run is sized the way it is (42,000 steps, 8.26B tokens, ~515M params), what loss/perplexity curves are expected to look like, how validation and generation are measured, every metric W&B records, and how to benchmark the data pipeline. **Status:** no pretraining run has started yet (see [`../../README.md`](../../README.md) status banner). Everything about *actual curves* is therefore marked **expected** / `[INFERENCE]`; everything about *configuration, arithmetic, and code behavior* is verified against the working tree.
 
 Training a 513.8M-parameter LLaMA-3-style decoder on a single A100 80GB is a fixed-budget exercise. The schedule in `config.py:get_config` consumes `max_steps × batch_size × seq_len = 42,000 × 96 × 2048 = 8.26B` tokens against an 8B-token corpus, which is a deliberate near-Chinchilla ratio (~15.6 tokens per parameter; the 20/parameter guideline would want ~10.3B). Because 42,000 steps slightly exceeds one pass over the 95% train split (~38.6k steps), `train.py:_next_batch` wraps the sampler to a fresh permutation instead of crashing at `StopIteration`.
 

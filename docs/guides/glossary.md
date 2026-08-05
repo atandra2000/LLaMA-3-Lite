@@ -1,21 +1,10 @@
 # Glossary — Notation, Acronyms, Config Keys, and File Layout
 
-> Audience: all levels. This is the shared vocabulary of every doc in this
-> tree. When any other doc uses a symbol or acronym, it means what it means
-> here. All values are the project's actual configuration from
-> `config.py:get_config` unless marked `[INFERENCE]`.
+> Audience: all levels. This is the shared vocabulary of every doc in this tree. When any other doc uses a symbol or acronym, it means what it means here. All values are the project's actual configuration from `config.py:get_config` unless marked `[INFERENCE]`.
 
 ## The 60-second summary
 
-LLaMA-3-Lite is a 515M-parameter, decoder-only, LLaMA-3-style transformer:
-16 layers, d_model 1024, 8 query heads with 4 KV heads (GQA), SwiGLU feedforward
-of width 4096, RoPE with θ = 500K, and a 128K vocabulary. One training step
-consumes `B × S = 96 × 2048 = 196,608` tokens (`model.py:Transformer.forward`).
-The docs use a fixed set of symbols (`B`, `S`, `V`, `d`, `N`, ...), a fixed set
-of tensor-shape conventions (`[B, S, d]` hidden states, `[N, V]` logits), and a
-fixed set of acronyms (GQA, RoPE, RMSNorm, SwiGLU, FA2, BF16, ...). This file
-is the lookup table for all of them, plus a one-line map of every config key
-and every top-level file. The full key-by-key rationale lives in
+LLaMA-3-Lite is a 515M-parameter, decoder-only, LLaMA-3-style transformer: 16 layers, d_model 1024, 8 query heads with 4 KV heads (GQA), SwiGLU feedforward of width 4096, RoPE with θ = 500K, and a 128K vocabulary. One training step consumes `B × S = 96 × 2048 = 196,608` tokens (`model.py:Transformer.forward`). The docs use a fixed set of symbols (`B`, `S`, `V`, `d`, `N`, ...), a fixed set of tensor-shape conventions (`[B, S, d]` hidden states, `[N, V]` logits), and a fixed set of acronyms (GQA, RoPE, RMSNorm, SwiGLU, FA2, BF16, ...). This file is the lookup table for all of them, plus a one-line map of every config key and every top-level file. The full key-by-key rationale lives in
 [`config.md`](../references/model-reference.md).
 
 ## 1. Notation
@@ -51,10 +40,7 @@ and every top-level file. The full key-by-key rationale lives in
 | tokens_seen | cumulative tokens consumed, $t \cdot N$ | logged as `train/tokens_seen` |
 | tokens_per_sec | throughput, $N / \text{step\_time}$ | logged as `train/tokens_per_sec` |
 
-Conventions: a bare `d` means `d_model`; `N` is always the *flattened* token
-axis ($N = B \cdot S$ for the training loss), never a model size. When grad
-accumulation > 1, the loss is divided by grad_accum before `backward`, and
-`tokens_seen` counts `grad_accum × B × S` per step (`train.py:train_model`).
+Conventions: a bare `d` means `d_model`; `N` is always the *flattened* token axis ($N = B \cdot S$ for the training loss), never a model size. When grad accumulation > 1, the loss is divided by grad_accum before `backward`, and `tokens_seen` counts `grad_accum × B × S` per step (`train.py:train_model`).
 
 ### Tensor-shape conventions
 
@@ -72,12 +58,9 @@ flowchart LR
   `data/shared_data/loader.py:collate_fn`).
 - `[B, S, d]` — hidden states at every point of the residual stream.
 - `[B, n_heads, S, h]` — query tensor after `model.py:GroupedQueryAttention`
-  projection + transpose + RoPE; keys/values are `[B, n_kv, S, h]` before the
-  `n_rep` expansion.
+  projection + transpose + RoPE; keys/values are `[B, n_kv, S, h]` before the `n_rep` expansion.
 - `[N, V]` — the *dense* logits tensor the code deliberately never builds:
-  $196{,}608 \times 128{,}000$ elements = 50.3 GB in BF16. The training path
-  materializes only `[c, V]` slices via
-  `model.py:chunked_head_cross_entropy_with_z` ($c = 256$ rows ≈ 131 MB FP32).
+  $196{,}608 \times 128{,}000$ elements = 50.3 GB in BF16. The training path materializes only `[c, V]` slices via `model.py:chunked_head_cross_entropy_with_z` ($c = 256$ rows ≈ 131 MB FP32).
 
 ## 2. Acronyms
 
@@ -112,9 +95,7 @@ flowchart LR
 
 ## 3. Config-key glossary
 
-Every key below lives in `config.py:get_config`; defaults are the current
-values. One-line semantics only — interactions, why, and the worked memory
-budget are in [`config.md`](../references/model-reference.md).
+Every key below lives in `config.py:get_config`; defaults are the current values. One-line semantics only — interactions, why, and the worked memory budget are in [`config.md`](../references/model-reference.md).
 
 **Architecture**
 
