@@ -48,21 +48,22 @@ number in the portfolio.
 - Validation every 2000 / generation every 20000 / checkpoint every 5000
   (keep 3). W&B logging.
 
-**The 7-technique memory stack:**
+**The 8-technique memory stack (92 GB → 20 GB):**
 | # | Technique | Saves |
 |---|-----------|-------|
-| 1 | Gradient checkpointing | ~55% activations |
-| 2 | Chunked cross-entropy | logits 50 GB → 0.3 GB |
-| 3 | Disk-backed uint32 token cache | RAM 112 GB → ~1 MB |
-| 4 | BF16 mixed precision | 2× vs FP32 weights |
-| 5 | Flash-Attention 2 | fused attention |
-| 6 | `channels_last` | layout speedup |
-| 7 | Fused AdamW | fewer kernel launches |
-| 8 | TF32 matmuls | compute efficiency |
+| 1 | Gradient checkpointing | activations ~70 GB → one saved buffer per layer |
+| 2 | Chunked cross-entropy + z-loss | logits 50.3 GB BF16 → 0.3 GB (256-row slices) |
+| 3 | Disk-backed uint32 token cache | RAM: 32 GB corpus → ~1 MB resident (memmap) |
+| 4 | BF16 mixed precision | halves activation/matmul footprint (master weights stay FP32) |
+| 5 | Flash-Attention 2 (via SDPA) | attention memory O(S²) → O(S) |
+| 6 | Grouped-Query Attention (8Q/4KV) | K/V projection params halved; inference KV cache halved |
+| 7 | Fused SwiGLU + Triton opt-ins | one `gate_up_proj` GEMM instead of two; elementwise fusions in SRAM |
+| 8 | TF32 matmuls | ~3× Tensor-Core matmul throughput (no memory) |
 
 **Data pipeline:**
-- Sources: FineWeb-Edu 0.5 / FineWeb-Code 0.1 / Stack Python 0.2 /
-  Stack multi-lang 0.05 / Wikipedia 0.05 / StackOverflow-QA 0.05.
+- Sources (canonical `LLM/shared_data/config/mixture.yaml`): fineweb-edu
+  0.40 / dclm-baseline 0.15 / the-stack-v2-python 0.15 /
+  the-stack-v2-jupyter 0.05 / openmath 0.10 / arxiv 0.10 / cosmopedia 0.05.
 - Tokenizer: LLaMA-3 (128K vocab).
 - Disk-backed uint32 mmap cache (~32 GB), SHA-256 exact dedup.
 - Document packing: sequences packed to seq_len=2048 with EOS separators.
@@ -83,30 +84,35 @@ number in the portfolio.
 
 **Triton kernel contract:**
 
-- **Sanctioned Triton paths:** *(none yet)*. The rule is in place for
-  future additions; the structure mirrors `DeepSeek-v3-Lite/AGENTS.md`
-  so additions can be slotted in without rewriting this file.
-- No custom Triton kernels exist in this project today. Until a
-  kernel is added, all hot paths run on `torch.compile` + FA2 only.
-- When a kernel is added: place it in `models/<name>_triton.py`,
-  gate on `import triton` with a `try/except ImportError` setting
-  `HAS_TRITON = False`, wrap the kernel in a `torch.autograd.Function`,
-  add a `tests/test_<name>_triton.py` with a pure-PyTorch reference
-  that runs on CPU without triton, and add the new path to the
-  sanctioned list in rule #1 below.
+- **Sanctioned Triton paths:** three opt-in kernels under `kernels/` —
+  `kernels/rmsnorm_triton.py` (`rmsnorm_impl='triton'`), `kernels/swiglu_triton.py`
+  (`swiglu_impl='triton'`), `kernels/cross_entropy_triton.py`
+  (`cross_entropy_impl='triton'`). All three default to `'pytorch'` in
+  `config.py:get_config`, and `train.py:train_model` force-restores them
+  unless `ENABLE_TRITON_KERNELS=1` is set.
+- Each kernel ships with a pure-PyTorch reference that runs on CPU without
+  Triton, wraps its forward in a `torch.autograd.Function` (backward is a
+  re-compute stub through the reference), and is gated at import time via
+  `try: import triton / except ImportError: HAS_TRITON = False`.
+- When a kernel is added: place it in `kernels/<name>_triton.py` (not
+  `models/`), gate on `import triton` with a `try/except ImportError` setting
+  `HAS_TRITON = False`, wrap the kernel in a `torch.autograd.Function`, add a
+  `tests/test_<name>_triton.py` with a pure-PyTorch reference that runs on
+  CPU without triton, and add the new path to the sanctioned list above.
 
 **Hard rules:**
 1. **Raw PyTorch by default; custom Triton kernels are first-party for
    sanctioned hot paths.** The bulk of the codebase (RMSNorm, SwiGLU,
    embeddings, LM head, loss, attention, MTP, inference) stays
    raw PyTorch. No HuggingFace Trainer, no Lightning, no high-level
-   wrappers. The sanctioned Triton paths are listed above; currently
-   empty. No new component gets a custom kernel without updating this
-   file and adding a `documentation/<name>.md` plan.
+   wrappers. The sanctioned Triton paths are the three `kernels/*.py`
+   opt-ins listed above. No new component gets a custom kernel without
+   updating this file and adding a `documentation/<name>.md` plan.
 2. **Hardware Optimization:** Maximize hardware utilization. For any
    sanctioned Triton path, target ≥ 1.5× speedup over the
-   raw-PyTorch path in `scripts/microbench_a100.py`; below that, do
-   not enable by default.
+   raw-PyTorch path in a microbenchmark; below that, do
+   not enable by default. (No `scripts/microbench_a100.py` exists yet —
+   add one before benchmarking a new kernel.)
 3. **Always** preserve the chunked-CE chunk size (default 256 tokens).
 4. **Always** preserve `tie_embeddings=False` — the LLaMA-3 paper does
    not tie input/output embeddings.

@@ -40,10 +40,13 @@ In `config.py`:
 "data_cache_filename": "tokens.bin",
 ```
 
-The cache is mmap-backed uint32. Build it once:
+The cache is mmap-backed uint32. Build it by running the workspace pipeline:
 ```bash
 python data/prepare_data.py
 ```
+
+Note the shim produces `data/shards/shard_*.bin` + `manifest.json` (concatenating the shards in manifest order yields exactly the flat stream the loader wants); the workspace pipeline does not itself write `data_cache/tokens.bin` today — place or link the concatenated shard stream there (or add a stage) before the real-data path can run. See the "missing cache" pitfall in
+`docs/references/data-reference.md`.
 
 The loader (`data/shared_data/loader.py::build_training_data`) mmaps it on
 each run; missing cache → `train.py` falls back to synthetic data with a
@@ -52,29 +55,38 @@ mixture or tokenizer.
 
 ## Skill 3: Add a new data source
 
-In the `data_sources` dict of `config.py:get_config`, add:
-```python
-"the_stack_rust": {"weight": 0.05, "source": "bigcode/the-stack",
-                   "split": "train", "languages": ["Rust"]},
+Edit the **canonical mixture**, not `config.py` — the `data_sources` dict in
+`config.py:get_config` is vestigial (nothing consumes it; only
+`tests/test_config.py` validates it). The real recipe lives in the workspace:
+`LLM/shared_data/config/mixture.yaml` (shared by all five LLM projects):
+
+```yaml
+# in LLM/shared_data/config/mixture.yaml, sources: list
+- id: the-stack-v2-rust
+  dataset: bigcode/the-stack-v2
+  config: Rust
+  split: train
+  text_field: content
+  weight: 0.05
+  lang: rust
 ```
 
-Then **re-build the cache** and **re-validate dedup**. The SHA-256 dedup
-runs on raw text, so existing tokens get re-hashed.
+Weights must sum to 1.0 (validated at load time). Then **re-build the
+shards/cache** and **re-validate dedup**. The SHA-256 dedup runs on raw text,
+so existing tokens get re-hashed.
 
 ## Skill 4: Tune RoPE for long-context extension
 
-Default `rope_theta = 500_000.0` (LLaMA-3 base).
+Default `rope_theta = 500_000.0` (LLaMA-3 base) — load-bearing: AGENTS.md
+rule 5 (reducing it to 10K cuts context quality dramatically).
 
-For 8K → 32K extension:
-```python
-# illustrative
-# Architecture: NTK-aware scaling
-"rope_theta": 1_000_000.0,   # or apply YaRN-style factor
-"rope_factor": 1.0,          # >1.0 enables NTK scaling
-```
-
-For >128K: combine with YaRN attention scaling (`attention_temperature`).
-Refer to the `docs/references/model-reference.md` RoPE deep-dive.
+The only RoPE knob this repo implements is `rope_theta` itself
+(`config.py:get_config`). There is **no** `rope_factor` / NTK-scaling key and
+no `attention_temperature` / YaRN scaling — the model trains on plain RoPE
+with the 500K base and `max_seq_len = 2048`; the 500K base is its
+extrapolation headroom (see `docs/concepts/attention-and-positional.md`,
+"Beyond the training window"). For true NTK/YaRN scaling you would add the
+frequency rescaling to `model.py:RoPE` first.
 
 ## Skill 5: Resume training from a checkpoint
 

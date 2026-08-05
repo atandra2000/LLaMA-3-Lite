@@ -40,7 +40,7 @@ def benchmark(steps: int, batch_size: int, seq_len: int, vocab_size: int,
     n_chunks_target = steps * batch_size * 4  # enough to not run out
     n_tokens = n_chunks_target * chunk + 100
     data = build_benchmark_buffer(n_tokens, vocab_size, seq_len)
-    train_ds = ds.PackedDataset(data, seq_len=seq_len, eos_id=0)
+    train_ds = ds.PackedDataset(data, seq_len=seq_len)
     sampler = ds.ShuffledRangeSampler(train_ds.n_chunks, seed=42, offset=0)
     loader = torch.utils.data.DataLoader(
         train_ds, batch_size=batch_size, sampler=sampler,

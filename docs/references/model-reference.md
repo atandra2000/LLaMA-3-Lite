@@ -66,7 +66,7 @@ Because each pair is rotated by an orthogonal matrix, the norm of every vector i
 
 $$x \odot \frac{1}{\sqrt{\frac{1}{d}\sum_{i=1}^{d} x_i^2 + \epsilon}} \odot w$$
 
-implemented as `x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + eps) * weight`. When `impl == "triton"`, the module first tries `kernels/rmsnorm_triton.py:triton_rmsnorm`; on `ImportError`/`ValueError` (triton missing — the norm on Mac/CPU dev boxes) it prints a one-time fallback notice (guarded by `_triton_fallback_warned`) and takes the PyTorch path. There is no mean subtraction anywhere: the normalization constant is the RMS of the row, not its standard deviation.
+implemented as `x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + eps) * weight`. When `impl == "triton"`, the module delegates to `kernels/rmsnorm_triton.py:triton_rmsnorm`; if triton is unavailable the kernel raises `ImportError` (and a `ValueError` if `d_model` exceeds the kernel's max block size). There is no silent fallback — the trainer (`train.py`) is responsible for force-restoring `rmsnorm_impl` to `"pytorch"` when `ENABLE_TRITON_KERNELS != "1"` (see AGENTS.md hard rule 7). There is no mean subtraction anywhere: the normalization constant is the RMS of the row, not its standard deviation.
 
 #### `GroupedQueryAttention` — GQA with QK-norm and SDPA
 
@@ -109,7 +109,7 @@ If `qknorm=True` (the default), `q_norm` and `k_norm` are `RMSNorm(head_dim=128)
 
 $$x \mapsto \text{down\_proj}\big(\text{SiLU}(xW_{\text{gate}}) \odot xW_{\text{up}}\big)$$
 
-With `swiglu_impl="pytorch"`: `gate, up = gate_up.chunk(2, dim=-1)`, then `down_proj(F.silu(gate) * up)`. With `swiglu_impl="triton"`: the module calls `kernels/swiglu_triton.py:triton_swiglu(gate_up, d_ff)` — one fused elementwise kernel that computes SiLU, gating and splitting in a single launch — falling back to PyTorch on `ImportError`/`ValueError` with a one-time warning. The fusion equivalence is tested by `tests/test_model.py::TestSwiGLUFFN::test_fused_equals_unfused_reference`.
+With `swiglu_impl="pytorch"`: `gate, up = gate_up.chunk(2, dim=-1)`, then `down_proj(F.silu(gate) * up)`. With `swiglu_impl="triton"`: the module calls `kernels/swiglu_triton.py:triton_swiglu(gate_up, d_ff)` — one fused elementwise kernel that computes SiLU, gating and splitting in a single launch; triton failure (`ImportError` when the package is missing, `ValueError` when `d_ff` exceeds the kernel's max block size) surfaces as a raised exception, not a silent fallback. The fusion equivalence is tested by `tests/test_model.py::TestSwiGLUFFN::test_fused_equals_unfused_reference`.
 
 #### `DecoderBlock` — one transformer layer
 
@@ -217,7 +217,7 @@ After the loop:
 
 $$\mathcal{L} = \frac{\sum_{\text{valid}} \text{CE}}{\text{count}} + z\_loss\_weight \cdot \frac{\sum_{\text{valid}} \log z^2}{\max(n_z, 1)}$$
 
-with the `max(…, 1)` guards protecting against an all-ignored batch. `cross_entropy_impl="triton"` swaps the whole per-chunk loop for `kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z` (fused online-softmax kernel; falls back to PyTorch with a printed warning). Equivalence with `F.cross_entropy` plus a `weight·mean(log_z²)` penalty is pinned at 1e-5 by `tests/test_model.py::TestChunkedCrossEntropyWithZ::test_matches_ce_plus_zpen_reference`, and ignore-index masking by `test_z_loss_ignores_ignore_index_positions`.
+with the `max(…, 1)` guards protecting against an all-ignored batch. `cross_entropy_impl="triton"` swaps the whole per-chunk loop for `kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z` (fused online-softmax kernel; a missing `triton` package or a vocab that exceeds the kernel's max block size surfaces as a raised `ImportError`/`ValueError` — there is no silent PyTorch fallback, per AGENTS.md hard rule 7). Equivalence with `F.cross_entropy` plus a `weight·mean(log_z²)` penalty is pinned at 1e-5 by `tests/test_model.py::TestChunkedCrossEntropyWithZ::test_matches_ce_plus_zpen_reference`, and ignore-index masking by `test_z_loss_ignores_ignore_index_positions`.
 
 #### `chunked_head_cross_entropy_with_z` — the training path
 
@@ -241,7 +241,7 @@ This is what `train.py` uses for the training, warmup, and validation losses (`t
 4. Results are accumulated as sums (`total_ce`, `total_count`, `z_accum`,
    `n_z`) and averaged at the end — so the chunked result is **exactly** equal to the dense loss, not an approximation (`test_matches_dense_ce_plus_z` asserts equality at 1e-5 with `z_loss_weight=1e-4`).
 
-The Triton variant differs: with `cross_entropy_impl="triton"` and triton importable (`HAS_TRITON`), each chunk returns the fused kernel's scalar loss and the per-chunk losses are *averaged* — exact only because the chunks are equal-sized (256 divides 196,608). The averaging branch is documented in the function docstring.
+The Triton variant differs: with `cross_entropy_impl="triton"` and triton importable (`HAS_TRITON`), each chunk returns the fused kernel's scalar loss and the per-chunk losses are *averaged* — exact only because the chunks are equal-sized (256 divides 196,608). If `cross_entropy_impl="triton"` but triton is missing, the function raises `ImportError` at entry rather than silently falling back (per AGENTS.md hard rule 7). The averaging branch is documented in the function docstring.
 
 **Why two functions?** `chunked_cross_entropy_with_z` bounds the FP32 loss chain but still requires the caller to own a full logits tensor; it is the reference implementation that the numerical-equivalence tests compare against. `chunked_head_cross_entropy_with_z` additionally bounds the logits themselves, which is what makes training at batch 96 fit in 80 GB. The CE chunk size is a config knob (`config.py:get_config` → `ce_chunk_size: 256`); the [Config Reference](#config-reference-configpyget_config) below documents the knob, [troubleshooting.md](../guides/troubleshooting.md) the OOM symptoms of raising it.
 
@@ -271,22 +271,40 @@ plus `Gradient checkpointing: ENABLED` when the flag is set, and a `Triton kerne
 
 The full data flow, from token ids to scalar loss, at the production shape `[96, 2048]`:
 
-```mermaid
-flowchart TD
-    A["ids [96, 2048] int64"] --> B["input_embedding"]
-    B --> C["hidden [96, 2048, 1024]"]
-    C --> D{"grad_ckpt AND training?"}
-    D -- yes --> E["checkpoint(DecoderBlock) × 16"]
-    D -- no --> F["Decoder: 16 × DecoderBlock → final RMSNorm"]
-    E --> G["hidden [96, 2048, 1024]"]
-    F --> G
-    G --> H{"return_hidden?"}
-    H -- yes --> I["hidden [96, 2048, 1024] → flatten [196608, 1024]"]
-    I --> J["chunked_head_cross_entropy_with_z × 768 chunks [256, 128000]"]
-    H -- no --> K["output_proj → logits [96, 2048, 128000]"]
-    J --> L["scalar loss (FP32)"]
-    K --> M["chunked_cross_entropy_with_z (reference / eval)"]
-    M --> L
+```
+ids [96, 2048] int64
+   │
+   ▼
+input_embedding
+   │
+   ▼
+hidden [96, 2048, 1024]
+   │
+   ▼
+grad_ckpt AND training?
+   ├─ yes → checkpoint(DecoderBlock) × 16
+   └─ no  → Decoder: 16 × DecoderBlock → final RMSNorm
+   │
+   ▼
+hidden [96, 2048, 1024]
+   │
+   ▼
+return_hidden?
+   ├─ yes → hidden [96, 2048, 1024] → flatten [196608, 1024]
+   │         │
+   │         ▼
+   │      chunked_head_cross_entropy_with_z × 768 chunks [256, 128000]
+   │         │
+   │         ▼
+   │      scalar loss (FP32)
+   │
+   └─ no  → output_proj → logits [96, 2048, 128000]
+              │
+              ▼
+           chunked_cross_entropy_with_z (reference / eval)
+              │
+              ▼
+           scalar loss (FP32)
 ```
 
 One decoder block in detail (per-token shapes after `B=96, S=2048`):
@@ -398,14 +416,14 @@ where $R(\phi) = \begin{bmatrix} \cos\phi & -\sin\phi \\ \sin\phi & \cos\phi \en
 
 Different planes spin at **different frequencies** $\omega_i$, so the rotated vector carries a multi-scale "fingerprint" of position: fast planes encode fine-grained nearby-token offsets, slow planes encode long-range structure.
 
-```mermaid
-flowchart LR
-    subgraph Token["token at position m"]
-        P0["plane 0 — fast<br/>ω0 = 1 rad/token"]
-        P1["plane 1<br/>ω1 ≈ 0.815 rad/token"]
-        P2["plane 2<br/>ω2 ≈ 0.664 rad/token"]
-        Pd["plane D/2-1 — slow<br/>ω_{D/2-1} ≈ 2.5e-6 rad/token"]
-    end
+```
+token at position m
+   │
+   ├── plane 0 — fast       ω0 = 1 rad/token
+   ├── plane 1              ω1 ≈ 0.815 rad/token
+   ├── plane 2              ω2 ≈ 0.664 rad/token
+   ├── ...
+   └── plane D/2−1 — slow   ω_{D/2−1} ≈ 2.5e-6 rad/token
 ```
 
 For `head_dim = 128` the spectrum spans from 1 radian per token (a full turn every $2\pi \approx 6.3$ tokens) down to $2.46\times 10^{-6}$ radians per token (a full turn every ~2.56M tokens) — roughly **six orders of magnitude** of timescales.
@@ -497,11 +515,9 @@ $$\langle \mathrm{RoPE}(q,m), \mathrm{RoPE}(k,n) \rangle = g(q, k, m - n) .$$
 
 **Consequence:** the model has no way to distinguish "token A is at position 7" from "token A is at position 107, exactly 100 tokens after B at position 7" — the attention score is identical in both cases. That is precisely the desired semantics: attention should be a function of **content** plus **relative distance**, not of absolute location.
 
-```mermaid
-flowchart LR
-    Qm["RoPE(q, m)"] --> Dot["⟨ · , · ⟩"]
-    Kn["RoPE(k, n)"] --> Dot
-    Dot --> Score["score depends only on m − n"]
+```
+RoPE(q, m) ──► ⟨ · , · ⟩ ──► score depends only on m − n
+RoPE(k, n) ──►
 ```
 
 The test `tests/test_model.py::TestRoPE.test_relative_position_property` checks a degenerate instance of this: the inner product of a fixed pair of orthogonal unit vectors placed at offsets `(0, 0)` and `(5, 5)` must be identical (both equal the unrotated inner product, since the rotation is applied to both arguments). A stronger, offset-varying version — that `⟨RoPE(q, 0), RoPE(k, d)⟩` equals `⟨RoPE(q, 5), RoPE(k, 5+d)⟩` for any content `q, k` — follows from the same algebra; the orthogonality of every plane is asserted directly by `tests/test_model.py::TestRoPE.test_rotation_is_orthogonal`.
@@ -622,19 +638,22 @@ Concrete run with `head_dim = 8`, `max_seq_len = 5`, `batch = 2`, `heads = 3`, `
 | 8 | `rotated` (stack) | `[2, 3, 4, 4, 2]` |
 | 9 | output (`flatten(-2)`) | `[2, 3, 4, 8]` |
 
-```mermaid
-flowchart TD
-    X["x — [B, H, S, D]"] --> EV["x[..., ::2] — [B, H, S, D/2]"]
-    X --> OD["x[..., 1::2] — [B, H, S, D/2]"]
-    COS["cos — [1, 1, S, D/2]"] --> A["x1·cos − x2·sin — [B, H, S, D/2]"]
-    EV --> A
-    OD --> A
-    COS --> B["x1·sin + x2·cos — [B, H, S, D/2]"]
-    EV --> B
-    OD --> B
-    A --> ST["stack(dim=-1) — [B, H, S, D/2, 2]"]
-    B --> ST
-    ST --> FL["flatten(-2) — [B, H, S, D]"]
+```
+x — [B, H, S, D]
+   │
+   ├──► x[..., ::2] — [B, H, S, D/2] ──┐
+   │                                   │
+   └──► x[..., 1::2] — [B, H, S, D/2] ─┤
+                                        │
+   cos — [1, 1, S, D/2] ────────────────┼──► x1·cos − x2·sin — [B, H, S, D/2] ──┐
+                                        │                                        │
+                                        └──► x1·sin + x2·cos — [B, H, S, D/2] ──┤
+                                                                                 │
+                                                                                 ▼
+                                                          stack(dim=-1) — [B, H, S, D/2, 2]
+                                                                                 │
+                                                                                 ▼
+                                                          flatten(-2) — [B, H, S, D]
 ```
 
 Note that input and output have **identical shape and dtype**: RoPE is a pointwise, shape-preserving transformation. This is one of its nicest properties — it slots into any layer that already produces (or consumes) a `[B, H, S, D]` tensor, which is why `model.py:GroupedQueryAttention.forward` can insert it between the QK-norm transpose and the GQA expansion with no other shape bookkeeping.
@@ -743,24 +762,40 @@ Position has already been baked into the weights via the rotated `q, k`; the val
 
 ### Interaction with GQA and Flash Attention 2
 
-```mermaid
-flowchart TB
-    X["hidden x — [B, S, 1024]"] --> QP["q_proj — [B, S, 8·128]"]
-    X --> KP["k_proj — [B, S, 4·128]"]
-    X --> VP["v_proj — [B, S, 4·128]"]
-    QP --> QV["view + q_norm + transpose — [B, 8, S, 128]"]
-    KP --> KV["view + k_norm + transpose — [B, 4, S, 128]"]
-    VP --> VV["view + transpose — [B, 4, S, 128]"]
-    QV --> RQ["RoPE(q, S) — [B, 8, S, 128]"]
-    KV --> RK["RoPE(k, S) — [B, 4, S, 128]"]
-    VV --> RV["(no RoPE)"]
-    RQ --> EXPQ["q — [B, 8, S, 128]"]
-    RK --> EXPK["expand + reshape — [B, 8, S, 128]"]
-    RV --> EXPV["expand + reshape — [B, 8, S, 128]"]
-    EXPQ --> SDPA["F.scaled_dot_product_attention(q, k, v, is_causal=True)"]
-    EXPK --> SDPA
-    EXPV --> SDPA
-    SDPA --> OUT["transpose + view + out_proj — [B, S, 1024]"]
+```
+hidden x — [B, S, 1024]
+   │
+   ├───────────────► q_proj — [B, S, 8·128]
+   │                  │
+   │                  ▼
+   │               view + q_norm + transpose — [B, 8, S, 128]
+   │                  │
+   │                  ▼
+   │               RoPE(q, S) — [B, 8, S, 128] ──► q — [B, 8, S, 128] ──────────────┐
+   ├───────────────► k_proj — [B, S, 4·128]                                          │
+   │                  │                                                             │
+   │                  ▼                                                             │
+   │               view + k_norm + transpose — [B, 4, S, 128]                       │
+   │                  │                                                             │
+   │                  ▼                                                             │
+   │               RoPE(k, S) — [B, 4, S, 128] ──► expand + reshape                 │
+   │                                                → [B, 8, S, 128] ──────────────┼──┐
+   └───────────────► v_proj — [B, S, 4·128]                                         │  │
+                      │                                                            │  │
+                      ▼                                                            │  │
+                  view + transpose — [B, 4, S, 128]                                 │  │
+                      │                                                            │  │
+                      ▼                                                            │  │
+                  (no RoPE) ──► expand + reshape → [B, 8, S, 128] ─────────────────┼──┼──┐
+                                                                                   │  │  │
+                                                                   ┌───────────────▼──▼──▼──┐
+                                                                   │ F.scaled_dot_product_ │
+                                                                   │ attention(q, k, v,    │
+                                                                   │   is_causal=True)      │
+                                                                   └───────────┬───────────┘
+                                                                               ▼
+                                                          transpose + view + out_proj
+                                                          → [B, S, 1024]
 ```
 
 Three interactions worth spelling out:
@@ -821,12 +856,15 @@ where $(g_1, g_2)$ is the incoming gradient on the rotated pair. The backward ma
 - **No gradient through the schedule.** Because `cos_cached`/`sin_cached`
   are buffers, `theta` and `head_dim` are not (and cannot be) tuned by gradient descent — the schedule is a fixed design choice, asserted as a hard rule rather than a learned quantity.
 
-```mermaid
-flowchart LR
-    L["L (loss)"] --> G1["g1 = ∂L/∂x'_1"] --> B1["∂L/∂x1 = g1·cos + g2·sin"]
-    L --> G2["g2 = ∂L/∂x'_2"] --> B2["∂L/∂x2 = −g1·sin + g2·cos"]
-    B1 --> PQ["∂L/∂q_proj weights"]
-    B2 --> PQ
+```
+L (loss)
+   │
+   ├──► g1 = ∂L/∂x'_1 ──► ∂L/∂x1 = g1·cos + g2·sin ──┐
+   │                                                   │
+   └──► g2 = ∂L/∂x'_2 ──► ∂L/∂x2 = −g1·sin + g2·cos ──┤
+                                                       │
+                                                       ▼
+                                             ∂L/∂q_proj weights
 ```
 
 ### Numerical Properties & Edge Cases
@@ -906,16 +944,16 @@ Code-keyed walkthrough of every key in `config.py:get_config`, grouped by concer
 
 ### How the config flows
 
-```mermaid
-flowchart LR
-    C["config.py:get_config()"] --> T["train.py:train_model"]
-    C --> L["data/shared_data/loader.py"]
-    C --> W["workspace LLM/shared_data pipeline (outside this repo)"]
-    C --> K["tests (tests/test_config.py REQUIRED_KEYS)"]
-    T --> M["model.py:build_transformer"]
-    T --> O["torch.optim.AdamW + SequentialLR"]
-    T --> E["EMA (AveragedModel)"]
-    L --> D["DataLoader (workers, prefetch, pin_memory)"]
+```
+config.py:get_config()
+   │
+   ├──► train.py:train_model ──► model.py:build_transformer
+   │                    │
+   │                    ├──► torch.optim.AdamW + SequentialLR
+   │                    └──► EMA (AveragedModel)
+   ├──► data/shared_data/loader.py ──► DataLoader (workers, prefetch, pin_memory)
+   ├──► workspace LLM/shared_data pipeline (outside this repo)
+   └──► tests (tests/test_config.py REQUIRED_KEYS)
 ```
 
 Consumers mostly read through `config.get(key, default)` rather than `config[key]`, which is what lets tests inject a partial `tiny_config` (`tests/conftest.py`) and have everything fall back to sane values. The values below are the production defaults from `config.py:get_config` unless stated otherwise.
@@ -991,10 +1029,10 @@ Parameter anatomy at these values (derived, consistent with `model.py:Transforme
 
 | Key | Default | Controls | Why | Consumed by |
 |---|---|---|---|---|
-| `use_z_loss` | `True` | **Informational in this repo** | Only read in the startup banner in `train.py:train_model` ("Z-Loss: ON/OFF"). The functional switch is `z_loss_weight` — the loss is `ce + z_loss_weight·z` unconditionally, so `z_loss_weight=0` disables the term | `train.py:train_model` (print only) |
+| `use_z_loss` | `True` | **Load-bearing switch** | `False` zeroes the z term: `train.py:train_model` / `train.py:validate` compute `z_loss_weight = config['z_loss_weight'] if use_z_loss else 0.0`. `z_loss_weight` still scales the term when on | `train.py:train_model`, `train.py:validate` |
 | `z_loss_weight` | `1e-4` | Z-loss strength | Penalizes `(logsumexp logits)²` over non-ignored tokens to stop late-run softmax collapse; passed into every loss call — see [training-and-memory.md](../concepts/training-and-memory.md) | `train.py:train_model`, `train.py:validate` |
 | `qknorm` | `True` | Per-head Q/K RMSNorm | Adds `q_norm`/`k_norm` (`RMSNorm(head_dim)`) after projection, before RoPE; bounds attention-logit growth (Qwen2/Gemma2 refinement). Adds `16 × 2 × 128 = 4,096` params; `False` swaps in `nn.Identity` for a bit-identical A/B — see [architecture-components.md](../concepts/architecture-components.md) | `train.py:train_model` → `model.py:GroupedQueryAttention` |
-| `use_ema` | `True` | Exponential moving-average shadow | `AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))`; validation and generation run on the EMA copy (`train.py:validate`, `train.py:generate_samples`), which is the noise-free center of the recent trajectory; costs one full BF16 copy (~1.03 GB) | `train.py:train_model` |
+| `use_ema` | `True` | Exponential moving-average shadow | `AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))`; validation and generation run on the EMA copy (`train.py:validate`, `train.py:generate_samples`), which is the noise-free center of the recent trajectory; deep-copies the FP32 model, so it costs one full FP32 copy (~2.06 GB) — see [training-and-memory.md](../concepts/training-and-memory.md) | `train.py:train_model` |
 | `ema_decay` | `0.999` | EMA update factor | Right scale for 42K-step runs; 0.9999 suits >100K steps | `train.py:train_model` |
 
 ### Data pipeline group
@@ -1063,25 +1101,25 @@ Every number below is derived from the config values (the architecture, training
 [training-and-memory.md](../concepts/training-and-memory.md) and its summary
 table in [training.md](../training.md).
 
-**Constants.** Batch 96, seq 2048, d_model 1024, vocab 128,000, 16 layers, 513.8M params, BF16 training under `torch.autocast` (FP32 params are never held; Adam moments are FP32).
+**Constants.** Batch 96, seq 2048, d_model 1024, vocab 128,000, 16 layers, 513.8M params, BF16 compute under `torch.autocast`. Parameters stay FP32 in memory (no `.bfloat16()` anywhere in `train.py`), so the *storage* rows below are FP32; the BF16 rows describe the compute-profile (weights as they appear in matmuls), not resident storage.
 
 | Component | Arithmetic | Size |
 |---|---|---|
-| Weights (BF16) | `513.8M × 2 B` | 1.03 GB |
-| Gradients (BF16) | `513.8M × 2 B` | 1.03 GB |
+| Weights (FP32, resident) | `513.8M × 4 B` | 2.06 GB |
+| Gradients (FP32, resident) | `513.8M × 4 B` | 2.06 GB |
 | AdamW moments (FP32) | `2 × 513.8M × 4 B` | 4.11 GB |
-| EMA shadow (BF16) | `513.8M × 2 B` | 1.03 GB |
+| EMA shadow (FP32, deep copy) | `513.8M × 4 B` | 2.06 GB |
 | Stored block inputs (`gradient_checkpointing=True`) | `16 × 96 × 2048 × 1024 × 2 B` | 6.44 GB |
 | Single-block recompute peak (during backward) | `gate_up 3.22 + gate 1.61 + up 1.61 + down-input 1.61 + Q/K/V ≈ 0.8 GB` | ≈ 8.9 GB |
 | LM-head logits, one chunk | `256 rows × 128,000 × 2 B = 65.5 MB` (131 MB FP32 after upcast) | ≈ 0.2 GB |
-| **Peak total** | sum ≈ 22.9 GB, of which ≈ 9 GB is transient | **≈ 23 GB** |
+| **Peak total** | sum ≈ 25.8 GB (10.29 model state + 6.44 stored + 8.9 recompute + 0.2 logits), of which ≈ 9 GB is transient | **≈ 26 GB** |
 
 Two claims in the project docs now check out against this budget:
 
 - **The chunked head is the difference between fitting and not fitting.**
   Full logits for one step are `96 × 2048 = 196,608` rows × 128,000 columns = 25.2B elements: 50.3 GB in BF16, 100.6 GB in FP32 — impossible on 80GB. `model.py:chunked_head_cross_entropy_with_z` instead slices hidden into `ce_chunk_size`-row chunks (768 chunks at 256) and runs each chunk inside `checkpoint`, so only ~0.2 GB of logits is ever alive. This is the single largest line item removed.
 - **The 92 GB → 20 GB headline.** With checkpointing off, all 16 layers'
-  FFN intermediates live simultaneously: `16 × ≈6.4 GB ≈ 100 GB` derived, exceeding 80 GB; the 92 GB figure in AGENTS.md is the measured value for that configuration [measured]. With checkpointing on, the budget above lands at ≈23 GB including the EMA copy [derived] — consistent with the ~20 GB advertised [measured per project docs]. The 78% headline is `(92 − 20) / 92 ≈ 78.3%`.
+  FFN intermediates live simultaneously: `16 × ≈6.4 GB ≈ 100 GB` derived, exceeding 80 GB; the 92 GB figure in AGENTS.md is a stale estimate for that configuration (nothing has been measured — no training run has completed and `.benchmarks/` is empty). With checkpointing on, the FP32-resident budget above lands at ≈26 GB including the EMA copy [derived], i.e. the "~20 GB" headline assumes BF16 parameter storage (the design profile) rather than the FP32 storage this repo actually uses; the docs' own honest accounting gives 20 GB with ~20% variance / 24–26 GB strict. The 78% headline is `(92 − 20) / 92 ≈ 78.3%` against the stale 92 GB figure.
 
 `cuda_alloc_conf='expandable_segments:True'` matters here: the checkpointed loss chunks allocate and free repeatedly, and expandable segments let the caching allocator release that memory back to the OS instead of pinning peak-reserved segments.
 
@@ -1091,10 +1129,10 @@ Two claims in the project docs now check out against this budget:
 
 | Class | Keys | Consequence of changing |
 |---|---|---|
-| Load-bearing (numerics) | `d_model`, `n_layers`, `n_heads`, `n_kv_heads`, `head_dim`, `d_ff`, `vocab_size`, `seq_len`, `rope_theta`, `rms_norm_eps`, `batch_size`, `gradient_accumulation`, `max_steps`, `learning_rate`, `min_lr`, `warmup_steps`, `weight_decay`, `max_grad_norm`, `beta1`, `beta2`, `eps`, `z_loss_weight`, `qknorm`, `use_ema`, `ema_decay` | Changes the loss, memory, or schedule every run |
+| Load-bearing (numerics) | `d_model`, `n_layers`, `n_heads`, `n_kv_heads`, `head_dim`, `d_ff`, `vocab_size`, `seq_len`, `rope_theta`, `rms_norm_eps`, `batch_size`, `gradient_accumulation`, `max_steps`, `learning_rate`, `min_lr`, `warmup_steps`, `weight_decay`, `max_grad_norm`, `beta1`, `beta2`, `eps`, `use_z_loss`, `z_loss_weight`, `qknorm`, `use_ema`, `ema_decay` | Changes the loss, memory, or schedule every run |
 | Load-bearing (memory/perf) | `compile_model`, `compile_mode`, `gradient_checkpointing`, `ce_chunk_size`, `tf32`, `cudnn_benchmark`, `cuda_alloc_conf`, `rmsnorm_impl`, `swiglu_impl`, `cross_entropy_impl` | Changes peak memory, throughput, or kernel selection |
 | Load-bearing (I/O) | `num_workers`, `prefetch_factor`, `pin_memory`, `data_cache_dir`, `data_cache_filename`, `shuffle_seed`, `tokenizer_name`, `tokenizer_cache_dir`, `val_split`, `val_interval`, `val_max_batches`, `generation_*`, `model_folder`, `model_filename`, `checkpoint_interval`, `keep_last_n_checkpoints`, `async_checkpoint`, `preload`, `wandb_*`, `log_interval` | Changes data loading, evaluation, artifacts, or logging |
-| Informational / pass-through | `optimizer`, `use_z_loss` (print-only in this repo), `data_sources`, `target_tokens`, `reuse_data_cache`, `shuffle_documents`, `dedup`, `dedup_hash_bytes`, `min_doc_tokens`, `max_doc_tokens` | No effect on local `train.py` runs; documents the workspace pipeline or W&B intent |
+| Informational / pass-through | `optimizer`, `data_sources`, `target_tokens`, `reuse_data_cache`, `shuffle_documents`, `dedup`, `dedup_hash_bytes`, `min_doc_tokens`, `max_doc_tokens` | No effect on local `train.py` runs; documents the workspace pipeline or W&B intent |
 
 The three most dangerous to change casually: `ce_chunk_size` (raise it and the loss memory grows linearly — 65.5 MB × `chunk/256`), `gradient_checkpointing` (off ⇒ OOM at batch 96), and `rope_theta` (any deviation from 500K changes the positional frequency schedule the whole run is built around).
 
@@ -1109,6 +1147,62 @@ The three most dangerous to change casually: `ce_chunk_size` (raise it and the l
   80GB, 42K steps: per [training-and-memory.md](../concepts/training-and-memory.md) this sits near the Chinchilla-optimal token/param ratio for this budget, and every memory lever is pre-armed so the run fits out of the box.
 - **Honest pass-throughs.** Several data keys describe the workspace
   `LLM/shared_data` pipeline that `data/prepare_data.py:main` invokes; they are documented here as the config contract because the pipeline consumes them from the same conceptual config, but this repo's code never reads them. Treat them as build-parameters for `python data/prepare_data.py`, not as knobs that affect `train.py` in this repo.
+
+## EMA internals — the canonical treatment
+
+The EMA shadow is `torch.optim.swa_utils.AveragedModel` with an
+exponential update function (`train.py:train_model`):
+
+```python
+# illustrative — verbatim excerpt from train.py:train_model
+ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get('ema_decay', 0.999)))
+```
+
+**What `AveragedModel` is.** It wraps the live model and maintains a shadow
+copy under `ema.module` — a deep copy taken at construction — plus an
+internal averaging counter (`n_averaged`). The shadow is **not** a
+`state_dict` or a set of buffers: it is a full `nn.Module` with the same
+named parameters as the live model. That is why resolving the LM head
+through the wrapper needs the `train.py:_head_weight` helper
+(`model.output_proj` if present, else `model.module.output_proj`) — a
+plain attribute access on `ema` returns the *live* model's head, not the
+shadow's.
+
+**The update rule.** `get_ema_multi_avg_fn(decay)` returns an update
+function that `train_model` calls once per optimizer step via
+`ema.update_parameters(model)`. With `decay = 0.999`, each step applies
+
+$$W_{t+1}^{\text{EMA}} = 0.999 \cdot W_t^{\text{EMA}} + 0.001 \cdot W_{t+1}^{\text{model}}$$
+
+i.e. the shadow is an exponentially weighted moving average of the online
+weights, initialized to a copy of the model at `AveragedModel`
+construction (step 0). At decay 0.999, the shadow's effective memory is
+~1/(1−0.999) = 1000 optimizer steps ≈ 196.6M tokens at 196,608
+tokens/step — the right scale for a 42K-step run. The shadow lags the
+online weights by design; that lag is why the LR floor matters (see
+[training-and-memory.md](../concepts/training-and-memory.md)): a zero-LR
+tail freezes the online weights while the EMA keeps blending stale
+snapshots, so the shadow converges to the final weights only if they keep
+moving.
+
+**Why validation and generation use it.** `train.py:validate` and
+`train.py:generate_samples` run on the EMA copy when present. The EMA
+center of the recent weight trajectory is the noise-free estimate of the
+optimizer's target — the online weights oscillate around it at batch 96,
+so the shadow's loss is smoother and its samples are more representative
+than a single noisy step. The `val/loss` vs `train/loss` gap is therefore
+not a pure generalization measurement (train loss is live-weights, val
+loss is EMA-weights).
+
+**The 2.06 GB cost.** `AveragedModel` deep-copies the model at
+construction and `train.py` never casts it (`use_ema` construction happens
+after `.to(device)` with FP32 params), so the shadow is a full FP32 weight
+copy: 513,840,128 × 4 B = **2.06 GB** that nothing else reuses. (The
+older docs' "1.03 GB BF16 shadow" was wrong — there is no `.bfloat16()`
+anywhere in `train.py`.) The same shadow is serialized into every
+checkpoint via `ema.state_dict()` in `train.py:save_checkpoint` and
+restored in `train.py:load_checkpoint`, so a resumed run's validation
+starts from the saved shadow rather than a fresh copy.
 
 ## References
 

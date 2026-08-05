@@ -123,110 +123,95 @@ The training script auto-detects the latest checkpoint and restores full RNG sta
 
 ### End-to-End Forward Pass
 
-```mermaid
-flowchart TD
-    A["Input Token IDs<br/>(B, T=2048)"] --> B["Token Embedding<br/>vocab=128000 → d=1024"]
-    B --> C["× Scaler √d_model"]
-    C --> D["16× Decoder Blocks<br/>(gradient checkpointing)"]
-    D --> E["Final RMSNorm"]
-    E --> F["Output Projection<br/>d=1024 → vocab=128000"]
-    F --> G["Chunked Cross-Entropy<br/>FP32 log_softmax, chunk=256 tokens<br/>logits 50 GB → 0.3 GB"]
-    G --> H["Loss (scalar)"]
-
-    subgraph DEC["16× Decoder Blocks (gradient checkpointing)"]
-        direction TB
-        D1["RMSNorm"] --> D2["GQA<br/>8 Q / 4 KV · head_dim=128<br/>RoPE θ=500K"]
-        D2 --> D3["Residual Add"]
-        D3 --> D4["RMSNorm"]
-        D4 --> D5["Fused SwiGLU<br/>gate ∥ up → down"]
-        D5 --> D6["Residual Add"]
-    end
-
-    classDef matmul fill:#fde68a,stroke:#b45309,color:#000
-    classDef memsave fill:#bbf7d0,stroke:#15803d,color:#000
-    classDef block fill:#dbeafe,stroke:#1d4ed8,color:#000
-    class F matmul
-    class G memsave
-    class D1,D2,D3,D4,D5,D6 block
+```
+Input Token IDs  [B, T=2048]
+      │
+      ▼
+Token Embedding  vocab=128000 → d=1024
+      │
+      ▼
+× Scaler √d_model
+      │
+      ▼
+16× Decoder Blocks (gradient checkpointing):
+  ┌─────────────────────────────────────────────────┐
+  │ RMSNorm                                         │
+  │   │                                             │
+  │   ▼                                             │
+  │ GQA — 8 Q / 4 KV · head_dim=128 · RoPE θ=500K   │
+  │   │                                             │
+  │   ▼                                             │
+  │ Residual Add                                    │
+  │   │                                             │
+  │   ▼                                             │
+  │ RMSNorm                                         │
+  │   │                                             │
+  │   ▼                                             │
+  │ Fused SwiGLU — gate ∥ up → down                 │
+  │   │                                             │
+  │   ▼                                             │
+  │ Residual Add                                    │
+  └─────────────────────────────────────────────────┘
+      │
+      ▼
+Final RMSNorm
+      │
+      ▼
+Output Projection  d=1024 → vocab=128000
+      │
+      ▼
+Chunked Cross-Entropy  FP32 log_softmax · chunk=256 tokens
+                       logits 50 GB → 0.3 GB
+      │
+      ▼
+Loss (scalar)
 ```
 
 ### Grouped Query Attention — 8 Q-heads share 4 KV-heads
 
-```mermaid
-graph LR
-    subgraph QH["Query heads (8) · head_dim=128"]
-        Q1["Q1"]; Q2["Q2"]; Q3["Q3"]; Q4["Q4"]
-        Q5["Q5"]; Q6["Q6"]; Q7["Q7"]; Q8["Q8"]
-    end
-    subgraph KH["KV heads (4) · head_dim=128"]
-        KV1["KV1"]; KV2["KV2"]; KV3["KV3"]; KV4["KV4"]
-    end
-    Q1 --> KV1
-    Q2 --> KV1
-    Q3 --> KV2
-    Q4 --> KV2
-    Q5 --> KV3
-    Q6 --> KV3
-    Q7 --> KV4
-    Q8 --> KV4
-    KV1 -. "serves 2 Q-heads" .-> Q1
+```
+Query heads (8) · head_dim=128        KV heads (4) · head_dim=128
+┌──────────────────────────────┐     ┌──────────────────────────┐
+│ Q1 ──────────────┐           │     │        ┌──► KV1          │
+│ Q2 ────────────┐ │           │     │        │    KV2          │
+│ Q3 ──────────┐ │ │           │     │        │    KV3          │
+│ Q4 ────────┐ │ │ │           │     │        │    KV4          │
+│ Q5 ──────┐ │ │ │ │           │     │        │                 │
+│ Q6 ────┐ │ │ │ │ │           │     │        │                 │
+│ Q7 ──┐ │ │ │ │ │ │           │     │        │                 │
+│ Q8 ─┐ │ │ │ │ │ │ │           │     │        │                 │
+└─────┼─┼─┼─┼─┼─┼─┼───────────┘     └────────┼─┼─┼─┼────────────┘
+      │ │ │ │ │ │ │                          │ │ │ │
+      │ │ │ │ │ │ └──────────────────────────┘ │ │ │   Q8 → KV4
+      │ │ │ │ │ └──────────────────────────────┘ │ │   Q7 → KV4
+      │ │ │ │ └──────────────────────────────────┘ │   Q6 → KV3
+      │ │ │ └──────────────────────────────────────┘   Q5 → KV3
+      │ │ └──────────────────────────────────────────┘ Q4 → KV2
+      │ └────────────────────────────────────────────┘  Q3 → KV2
+      └──────────────────────────────────────────────┘  Q2 → KV1
+                                                         Q1 → KV1
 ```
 
 > KV cache is **2&times; smaller** than Multi-Head Attention at the same model quality &mdash; the headline reason this model fits batch 96 on a single A100.
 
 ### Memory Stack — How 92&nbsp;GB &rarr; 20&nbsp;GB
 
-```mermaid
-flowchart LR
-    subgraph UNOPT["Without Optimizations  ·  ~92 GB"]
-        direction TB
-        U1["Activations<br/>~70 GB"]:::danger
-        U2["Logits<br/>50 GB"]:::danger
-        U3["Model + Optim<br/>7.2 GB"]:::warn
-        U4["Grad + Overhead<br/>2 GB"]:::warn
-    end
-    subgraph OPT["With Optimizations  ·  ~20 GB"]
-        direction TB
-        O1["Checkpointed Activations<br/>3.2 GB"]:::good
-        O2["Chunked CE Logits<br/>0.3 GB"]:::good
-        O3["Model + Optim<br/>7.2 GB"]:::good
-        O4["Grad + Overhead<br/>5.7 GB"]:::good
-    end
-    UNOPT ==>|"78% peak memory cut"| OPT
-
-    classDef danger fill:#fecaca,stroke:#b91c1c,color:#000
-    classDef warn fill:#fde68a,stroke:#b45309,color:#000
-    classDef good fill:#bbf7d0,stroke:#15803d,color:#000
+```
+Without Optimizations · ~92 GB        With Optimizations · ~20 GB
+┌────────────────────────────────┐    ┌────────────────────────────────┐
+│ Activations      ~70 GB        │    │ Checkpointed Activations 3.2 GB│
+│ Logits            50 GB        │    │ Chunked CE Logits      0.3 GB │
+│ Model + Optim    7.2 GB        │    │ Model + Optim         7.2 GB  │
+│ Grad + Overhead    2 GB        │    │ Grad + Overhead       5.7 GB  │
+└────────────────────────────────┘    └────────────────────────────────┘
+          │                                        ╱
+          │   "78% peak memory cut"               ╱
+          └──────────────────────────────────────►
 ```
 
-**Stack (7 memory techniques):** gradient checkpointing &middot; chunked cross-entropy &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; fused AdamW &middot; torch.compile CUDA graphs. `channels_last` is not used — LLMs are 2D matmul-bound, layout tricks don't help. **Plus 3 stability techniques:** QK-norm &middot; z-loss &middot; EMA.
+**Stack (8 memory techniques):** gradient checkpointing &middot; chunked cross-entropy + z-loss &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; GQA &middot; fused SwiGLU + Triton opt-ins &middot; TF32. `channels_last` is not used — LLMs are 2D matmul-bound, layout tricks don't help. **Plus 3 stability techniques:** QK-norm &middot; z-loss &middot; EMA.
 
-### Text Alternative (ASCII)
-
-```
-Input Token IDs
-       │
-       ▼
- InputEmbedding (d_model=1024, scale by √d_model)
-       │
-       ▼
- Decoder × 16 layers (gradient checkpointing):
-   ┌────────────────────────────────────────────────────┐
-   │  RMSNorm → GQA (8Q/4KV, RoPE θ=500K) → Residual    │
-   │  RMSNorm → Fused SwiGLU (gate_up + down) → Residual│
-   └────────────────────────────────────────────────────┘
-       │
-       ▼
-  Final RMSNorm
-       │
-       ▼
-  Output Projection (d_model → vocab_size, no bias)
-       │
-       ▼
-  Chunked LM Head + CE (256 tokens/chunk)
-```
-
-
+### Key Design Decisions
 ### Key Design Decisions
 
 | Decision | Rationale |
@@ -322,18 +307,20 @@ All settings are defined in [`config.py`](config.py). Key configuration groups:
 | `shuffle_documents` | `True` | Within-source diversity |
 | `dedup` | `True` | SHA-256 exact deduplication |
 | `target_tokens` | 8,000,000,000 | Total tokens in the universal corpus |
-| `document_packing` | `True` | Multiple docs per sequence |
 
 ### Data Sources
 
+The canonical mixture (`LLM/shared_data/config/mixture.yaml`, shared by all five LLM projects — the `data_sources` dict in `config.py` is vestigial and consumed by nothing):
+
 | Source | Weight | Description |
 |--------|--------|-------------|
-| FineWeb-Edu | 0.5 | Educational web text |
-| FineWeb-Code | 0.1 | Code-filtered web text |
-| The Stack (Python) | 0.2 | Python source code |
-| The Stack (Multi-lang) | 0.05 | JS, TS, Rust, Go, C, C++, Java, SQL, Shell |
-| Wikipedia | 0.05 | Wikipedia 2023-11 English |
-| StackOverflow-QA | 0.05 | StackOverflow Q&A pairs |
+| FineWeb-Edu | 0.40 | Quality-gated web backbone (`sample-10BT`) |
+| DCLM Baseline | 0.15 | DCLM-curated web (SOTA diet) |
+| The Stack v2 (Python) | 0.15 | Python source code |
+| The Stack v2 (Jupyter) | 0.05 | Notebook code + prose |
+| OpenMathInstruct-2 | 0.10 | Math, problem + generated solution |
+| ArXiv | 0.10 | Long-form scientific prose |
+| Cosmopedia | 0.05 | Synthetic educational prose |
 
 ### W&B Logging
 
@@ -513,7 +500,7 @@ SOFTWARE.
 
 - **LLaMA 3** architecture from Meta AI
 - **Tokenizer**: NousResearch/Meta-Llama-3-8B (public re-upload, no gated access)
-- **Datasets**: FineWeb-Edu, FineWeb-Code, The Stack, Wikipedia, StackOverflow
+- **Datasets**: FineWeb-Edu, DCLM-Baseline, The Stack v2, OpenMathInstruct-2, ArXiv, Cosmopedia (canonical mixture in `LLM/shared_data/config/mixture.yaml`)
 - **Flash Attention 2**: [tri Dao](https://github.com/Dao-AILab/flash-attention)
 - **Weights & Biases**: Experiment tracking and visualization
 
@@ -533,7 +520,7 @@ SOFTWARE.
 1. **A100 80GB SXM GPU**: Default configuration targets this hardware. Other GPUs require adjusting `batch_size` (see GPU sizing table).
 2. **HuggingFace access**: Tokenizer uses `NousResearch/Meta-Llama-3-8B` (public, no gated access). No login required.
 3. **W&B account**: Training initializes a W&B run. Set `WANDB_API_KEY` or run `wandb login`. Set `wandb_entity` in config if needed.
-4. **Data preparation**: Run `python data/prepare_data.py` (delegates to the universal `shared_data` pipeline — download, clean, tokenise, pack, dedup) to produce `data/shards/manifest.json` + `shard_*.bin`. `build_training_data()` then reads those shards. With no prepared corpus it falls back to synthetic data for smoke tests.
+4. **Data preparation**: Run `python data/prepare_data.py` (delegates to the universal `shared_data` pipeline — download, clean, tokenise, pack, dedup) to produce `data/shards/manifest.json` + `shard_*.bin`, byte-compatible with the flat `data_cache/tokens.bin` the loader mmaps. With no prepared corpus it falls back to synthetic data for smoke tests.
 5. **No weight tying**: Output projection is learned independently from input embedding (`tie_embeddings: False`).
 6. **Document packing**: Multiple documents packed per sequence with EOS separators. Cross-document attention is not masked.
 7. **Gradient checkpointing required**: Without it, batch_size=96 requires ~92 GB (OOM on A100 80GB).

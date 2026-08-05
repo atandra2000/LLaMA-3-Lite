@@ -228,20 +228,40 @@ def forward(self, x):
 
 Because pre-norm never rescales the stream, the stream entering the LM head after 16 blocks has an arbitrary magnitude. `model.py:Decoder.forward` applies one last `RMSNorm(d_model, eps=rms_norm_eps)` after the layer stack, immediately before `output_proj` in `model.py:Transformer.forward`. This final norm serves two purposes: it re-pins the stream to unit RMS so the 128,000-way logits are computed at a calibrated scale (the logits inherit the stream's magnitude through the unbiased head projection), and it is the *only* place where the stream's accumulated growth is corrected, which is what keeps the z-loss term (below) from having to fight a runaway input distribution.
 
-```mermaid
-flowchart LR
-    X["x — residual stream [B, S, 1024]"] --> N1["attention_norm (RMSNorm, eps=1e-5)"]
-    N1 --> A["attention (GQA)"]
-    A --> P1["+"]
-    X --> P1
-    P1 --> X2["x' = x + attn(norm(x))"]
-    X2 --> N2["ffn_norm (RMSNorm, eps=1e-5)"]
-    N2 --> F["ffn (SwiGLU)"]
-    F --> P2["+"]
-    X2 --> P2
-    P2 --> X3["x'' = x' + ffn(norm(x'))"]
-    X3 --> FIN["Decoder.norm (RMSNorm)"]
-    FIN --> H["output_proj — [B, S, 128000]"]
+```
+x — residual stream [B, S, 1024]
+   │
+   ├────────────────────────────┐
+   ▼                            │
+attention_norm (RMSNorm, 1e-5)  │
+   │                            │
+   ▼                            │
+attention (GQA)                 │
+   │                            │
+   ▼                            │
+   (+) ◄────────────────────────┘
+   │
+   ▼
+x' = x + attn(norm(x))
+   │
+   ├────────────────────────────┐
+   ▼                            │
+ffn_norm (RMSNorm, 1e-5)        │
+   │                            │
+   ▼                            │
+ffn (SwiGLU)                    │
+   │                            │
+   ▼                            │
+   (+) ◄────────────────────────┘
+   │
+   ▼
+x'' = x' + ffn(norm(x'))
+   │
+   ▼
+Decoder.norm (RMSNorm)
+   │
+   ▼
+output_proj — [B, S, 128000]
 ```
 
 Note what is *not* there: there is no norm right after the input embedding. The raw embedding feeds the first block, and the first `attention_norm` absorbs its ≈ 0.02 RMS. This is standard LLaMA practice and saves one norm on the hot path.
@@ -326,27 +346,42 @@ weighted by `z_loss_weight = 1e-4` (`config.py:get_config`). The two mechanisms 
 
 Neither subsumes the other: attention logits never see the z-loss gradient directly (the loss is computed on the head's output, far downstream), and the head logits are not normalised by any architecture (this repo has no Gemma-2 style logit soft-capping; the z-loss is the designated output-side regulariser — see the loss section below for the full treatment). The `qknorm=True` and `use_z_loss=True` config flags are therefore two independent, complementary levers on the same phenomenon, and the combination is what keeps both softmaxes — positional and vocabular — in their high-entropy, gradient-rich regimes for the full 42,000-step run.
 
-```mermaid
-flowchart LR
-    X["x [B, S, 1024]"] --> QP["q_proj — [B, S, 8, 128]"]
-    QP --> QN["q_norm — RMSNorm(128, 1e-5)"]
-    QN --> QR["RoPE"]
-    X --> KP["k_proj — [B, S, 4, 128]"]
-    KP --> KN["k_norm — RMSNorm(128, 1e-5)"]
-    KN --> KR["RoPE"]
-    QR --> SD["logits = q·k/√128 — std ≈ 1"]
-    KR --> SD
-    SD --> SM["softmax over 2,048 positions"]
-    X --> VP["v_proj — [B, S, 4, 128] (no norm)"]
-    VP --> SD2["weighted sum"]
-    SM --> SD2
+```
+x [B, S, 1024]
+   │
+   ├─────────────────────► q_proj — [B, S, 8, 128]
+   │                         │
+   │                         ▼
+   │                      q_norm — RMSNorm(128, 1e-5)
+   │                         │
+   │                         ▼
+   │                      RoPE
+   │                         │
+   │                         └──────────────┐
+   ├─────────────────────► k_proj — [B, S, 4, 128]
+   │                         │              │
+   │                         ▼              │
+   │                      k_norm — RMSNorm(128, 1e-5)
+   │                         │              │
+   │                         ▼              │
+   │                      RoPE              │
+   │                         │              │
+   │                         └──────────────┼──► logits = q·k/√128 — std ≈ 1
+   │                                        │          │
+   │                                        │          ▼
+   │                                        │      softmax over 2,048 positions
+   │                                        │          │
+   └─────────────────────► v_proj — [B, S, 4, 128]      │
+                             (no norm)                  │
+                               │                        │
+                               └────────────► weighted sum ◄────┘
 ```
 
 ### How the Code Realizes It
 
 #### `RMSNorm` end to end
 
-`model.py:RMSNorm` is minimal: `__init__` creates a single learnable gain `self.weight = nn.Parameter(torch.ones(d_model))` (initialised to 1, i.e. the norm is an exact no-op at init), stores `self.eps` and a dispatch flag `self.impl`, and `forward` implements the RMSNorm formula directly. The `impl="triton"` opt-in routes to `kernels/rmsnorm_triton.py:triton_rmsnorm`, which fuses the eager chain (`pow`, `mean`, `add`, `rsqrt`, multiply) into one row-wise kernel; `RMSNorm.forward` wraps the call in `try/except (ImportError, ValueError)` and falls back to the eager formula — with a one-time warning — if Triton is missing or the hidden size exceeds the kernel's `_MAX_BLOCK_SIZE = 8192` guard (`kernels/rmsnorm_triton.py`). `model.py:build_transformer` selects the implementation through `rmsnorm_impl` (`"pytorch"` default), and `Transformer` threads it into every block norm and the final norm. The eager and Triton paths compute the same formula, and the kernel module ships its own pure-PyTorch reference (`kernels/rmsnorm_triton.py:rmsnorm_pytorch`) as the numeric contract.
+`model.py:RMSNorm` is minimal: `__init__` creates a single learnable gain `self.weight = nn.Parameter(torch.ones(d_model))` (initialised to 1, i.e. the norm is an exact no-op at init), stores `self.eps` and a dispatch flag `self.impl`, and `forward` implements the RMSNorm formula directly. The `impl="triton"` opt-in routes to `kernels/rmsnorm_triton.py:triton_rmsnorm`, which fuses the eager chain (`pow`, `mean`, `add`, `rsqrt`, multiply) into one row-wise kernel; the call is direct (no `try/except` wrapper in `model.py`), so a missing Triton install raises `ImportError` and a hidden size above `kernels/rmsnorm_triton.py:_MAX_BLOCK_SIZE = 8192` raises `ValueError` — both surface as hard errors rather than silent fallbacks (AGENTS.md hard rule 7). `model.py:build_transformer` selects the implementation through `rmsnorm_impl` (`"pytorch"` default), and `Transformer` threads it into every block norm and the final norm. The eager and Triton paths compute the same formula, and the kernel module ships its own pure-PyTorch reference (`kernels/rmsnorm_triton.py:rmsnorm_pytorch`) as the numeric contract.
 
 #### Wiring through the model
 
@@ -411,17 +446,31 @@ $$x' = x + \text{FFN}(\text{RMSNorm}(x))$$
 
 The residual connection guarantees that the FFN only ever has to produce a *correction* to its input, and that gradients always have a direct, un-gated path back to the embedding. The block as a whole is:
 
-```mermaid
-flowchart TD
-    n1["x (residual stream)"] --> an["RMSNorm (attention_norm)"]
-    an --> att["GroupedQueryAttention"]
-    att --> add1["+"]
-    n1 --> add1
-    add1 --> fn["RMSNorm (ffn_norm)"]
-    fn --> ffn["SwiGLUFFN"]
-    ffn --> add2["+"]
-    add1 --> add2
-    add2 --> out["x' (updated stream)"]
+```
+x (residual stream)
+   │
+   ├───────────────────────────────┐
+   ▼                               │
+RMSNorm (attention_norm)           │
+   │                               │
+   ▼                               │
+GroupedQueryAttention              │
+   │                               │
+   ▼                               │
+   (+) ◄───────────────────────────┘
+   │
+   ├───────────────────────────────┐
+   ▼                               │
+RMSNorm (ffn_norm)                 │
+   │                               │
+   ▼                               │
+SwiGLUFFN                          │
+   │                               │
+   ▼                               │
+   (+) ◄───────────────────────────┘
+   │
+   ▼
+x' (updated stream)
 ```
 
 The two RMSNorm applications are what keep the stream well-scaled before each sub-layer; the FFN itself is deliberately *unnormalized internally*. See the normalization section above for why, and
@@ -591,7 +640,7 @@ per layer, plus the `[96, 2048, 4096]` activated tensor (1.61 GB BF16). This is 
 
 #### The module
 
-`model.py:SwiGLUFFN` is 25 lines:
+`model.py:SwiGLUFFN` is short:
 
 ```python
 # illustrative
@@ -603,21 +652,11 @@ class SwiGLUFFN(nn.Module):
         self.down_proj = nn.Linear(d_ff, d_model, bias=False)
         self.d_ff = d_ff
         self.swiglu_impl = swiglu_impl
-        self._triton_fallback_warned = False
 
     def forward(self, x):
         gate_up = self.gate_up_proj(x)
         if self.swiglu_impl == "triton":
-            try:
-                return self.down_proj(triton_swiglu(gate_up, self.d_ff))
-            except (ImportError, ValueError) as exc:
-                if not self._triton_fallback_warned:
-                    print(
-                        f"[SwiGLUFFN] triton path unavailable "
-                        f"({type(exc).__name__}: {exc}); "
-                        f"falling back to 'pytorch'."
-                    )
-                    self._triton_fallback_warned = True
+            return self.down_proj(triton_swiglu(gate_up, self.d_ff))
         gate, up = gate_up.chunk(2, dim=-1)
         return self.down_proj(F.silu(gate) * up)
 ```
@@ -643,14 +682,26 @@ PyTorch convention: an `nn.Linear(in, out)` has weight `[out, in]`, so the *rows
 
 Shape trace at full scale (batch 96, seq 2048):
 
-```mermaid
-flowchart LR
-    A["x · [96, 2048, 1024]"] --> B["gate_up_proj<br/>GEMM [1024 → 8192]"]
-    B --> C["gate_up · [96, 2048, 8192]"]
-    C --> D["chunk(2, dim=-1)<br/>gate, up · [96, 2048, 4096] each"]
-    D --> E["silu(gate) ⊙ up · [96, 2048, 4096]"]
-    E --> F["down_proj<br/>GEMM [4096 → 1024]"]
-    F --> G["out · [96, 2048, 1024]"]
+```
+x · [96, 2048, 1024]
+   │
+   ▼
+gate_up_proj — GEMM [1024 → 8192]
+   │
+   ▼
+gate_up · [96, 2048, 8192]
+   │
+   ▼
+chunk(2, dim=-1) → gate, up · [96, 2048, 4096] each
+   │
+   ▼
+silu(gate) ⊙ up · [96, 2048, 4096]
+   │
+   ▼
+down_proj — GEMM [4096 → 1024]
+   │
+   ▼
+out · [96, 2048, 1024]
 ```
 
 #### The Triton opt-in branch
@@ -679,7 +730,7 @@ Three gates control whether this path ever runs:
 2. The environment variable `ENABLE_TRITON_KERNELS=1` — `train.py:train_model`
    force-restores all three `*_impl` keys to `'pytorch'` and warns if the variable is unset while any key says `'triton'`. Default runs never silently switch to a fused path.
 3. Runtime availability — `triton_swiglu` raises `ImportError` when triton
-   is not installed (CPU/Mac), and `ValueError` when the last dim is not exactly `2·d_ff` or `d_ff` exceeds the kernel's `_MAX_BLOCK_SIZE` (8192). `model.py:SwiGLUFFN.forward` catches both and falls back to the eager path, printing a warning exactly once per module instance (`self._triton_fallback_warned`).
+   is not installed (CPU/Mac), and `ValueError` when the last dim is not exactly `2·d_ff` or `d_ff` exceeds the kernel's `_MAX_BLOCK_SIZE` (8192). `model.py:SwiGLUFFN.forward` makes a direct call with no `try/except`, so either failure surfaces as a hard error (AGENTS.md hard rule 7) — there is no silent fallback to the eager path.
 
 #### Wiring into the block
 
@@ -721,7 +772,7 @@ and asserts the module's output matches to `atol=1e-6`. The same test implicitly
 
 **`tests/test_model.py::TestSwiGLUFFN.test_output_shape`** pins the input/output shape invariance: `[2, 8, 64]` in, `[2, 8, 64]` out.
 
-The Triton path's numerics are checked separately on GPU by `tests/e2e_gpu_smoke.py::check_triton_kernels`, which compares `triton_swiglu(gu, d_ff)` against the FP32 PyTorch reference and tolerates abs diff < 1.0, with a comment that BF16 elementwise on cc-7.5+ can show a ~1e-3 constant bias — the kernel's FP32 internal accumulation keeps it well inside that bound. There is no unit test for the eager→triton fallback in `tests/`; the fallback is exercised only by running without triton (CPU/Mac) or by the opt-in gates.
+The Triton path's numerics are checked separately on GPU by `tests/e2e_gpu_smoke.py::check_triton_kernels`, which compares `triton_swiglu(gu, d_ff)` against the FP32 PyTorch reference and tolerates abs diff < 1.0, with a comment that BF16 elementwise on cc-7.5+ can show a ~1e-3 constant bias — the kernel's FP32 internal accumulation keeps it well inside that bound. There is no unit test for the eager→triton path in `tests/`; that branch is exercised only by the e2e GPU script.
 
 ---
 
@@ -1020,19 +1071,26 @@ peak per chunk ≈ 200 MB transient + 1 MiB saved
 
 The full hidden activation `[196608, 1024]` (402.7 MB BF16) is held by the caller — it is the input to the function — but that is an order of magnitude smaller than the 50.3 GB logits tensor the dense path would require. The trade-off is compute: backward recomputes each chunk's matmul once (the classic checkpoint cost of one extra forward over the head), which is cheap relative to the 16-layer decoder the chunks sit behind. The flow:
 
-```mermaid
-flowchart LR
-    H["hidden [196608, 1024]"] --> S["slice 256 rows"]
-    S --> C1["checkpoint(_chunk) #1"]
-    S --> C2["checkpoint(_chunk) #2"]
-    S --> CK["... 768 chunks ..."]
-    C1 --> A1["pooled sums"]
-    C2 --> A2["pooled sums"]
-    CK --> AK["pooled sums"]
-    A1 --> T["total_ce / total_count + w * z_accum / n_z"]
-    A2 --> T
-    AK --> T
-    T --> L["scalar loss"]
+```
+hidden [196608, 1024]
+   │
+   └──────────┬──────────┬──────────────┐
+              ▼          ▼              ▼
+      slice 256 rows  slice 256 rows  slice 256 rows  ... 768 chunks ...
+              │          │              │
+              ▼          ▼              ▼
+      checkpoint(_chunk) #1  #2   ...  #768
+              │          │              │
+              ▼          ▼              ▼
+          pooled sums  pooled sums  pooled sums
+              │          │              │
+              └──────────┴──────────────┘
+                          │
+                          ▼
+              total_ce / total_count + w * z_accum / n_z
+                          │
+                          ▼
+                       scalar loss
 ```
 
 #### The Triton variant — fused kernel, online softmax, `atomic_add`
@@ -1086,7 +1144,7 @@ This is *not* the pooled expression of the proof: a chunk with 256 valid rows an
 
 #### Gating
 
-The Triton path is opt-in and guarded twice: `train.py:train_model` resets `cross_entropy_impl` to `'pytorch'` unless `ENABLE_TRITON_KERNELS=1` is set (default runs never silently switch to a fused path), and `model.py:chunked_head_cross_entropy_with_z` falls back to the eager chain with a printed warning when `import triton` fails. `chunked_cross_entropy_with_z` has an analogous `ImportError`/`ValueError` fallback around its Triton call. This mirrors the repo-wide convention (AGENTS.md rule 7) that fused kernels are explicit, environment-gated choices, never implicit behavior changes.
+The Triton path is opt-in and guarded twice: `train.py:train_model` resets `cross_entropy_impl` to `'pytorch'` unless `ENABLE_TRITON_KERNELS=1` is set (default runs never silently switch to a fused path), and `model.py:chunked_head_cross_entropy_with_z` raises `ImportError` at function entry when `cross_entropy_impl='triton'` but `import triton` fails. `chunked_cross_entropy_with_z` does the same — the kernel's own `ImportError`/`ValueError` propagates because the function makes a direct call (no `try/except`). This mirrors the repo-wide convention (AGENTS.md rule 7) that fused kernels are explicit, environment-gated choices, and any runtime failure is a hard error rather than an implicit behavior change.
 
 ### What the Tests Guard
 
@@ -1137,15 +1195,15 @@ The contract "chunked == dense, z-loss behaves" is enforced numerically in `test
 
 **RoPE and the norm commute.** Because RoPE is an orthogonal transform (block-diagonal 2×2 rotations; `model.py:RoPE.forward`), it preserves RMS, so applying QK-norm before or after RoPE is mathematically identical. The code normalises before, per the Qwen2/Gemma2 convention — the placement is lineage, not necessity, and any future "optimisation" that moves the norm after RoPE must preserve that the norm still runs per-head on `head_dim`.
 
-**Triton fallback masking.** The fused kernel path is guarded by `try/except (ImportError, ValueError)` in `model.py:RMSNorm.forward`; the `ValueError` arm exists because `kernels/rmsnorm_triton.py` refuses hidden sizes above `_MAX_BLOCK_SIZE = 8192`. At `d_model = 1024` and `head_dim = 128` this never triggers, but a hypothetical 16K-wide model would silently fall back to eager per norm — numerically identical, slower, and warned once. Gradient checkpointing and the Triton path are orthogonal: `RMSNorm` is recomputed inside the block's checkpoint region either way.
+**Triton surface is a hard error.** `model.py:RMSNorm.forward` and `model.py:SwiGLUFFN.forward` make a direct call to the kernel with no `try/except`; a missing triton package raises `ImportError`, and a hidden size above `kernels/rmsnorm_triton.py:_MAX_BLOCK_SIZE = 8192` raises `ValueError`. At `d_model = 1024` and `head_dim = 128` neither can fire, but a hypothetical 16K-wide model would surface a hard `ValueError` at the first forward (per AGENTS.md hard rule 7, no silent fallback). Gradient checkpointing and the Triton path are orthogonal: `RMSNorm` is recomputed inside the block's checkpoint region either way.
 
 ### Feed-Forward Network
 
-**1. The `2·d_ff` invariant.** Everything downstream assumes `gate_up.shape[-1] == 2 * d_ff`. In the eager path this is guaranteed by construction — `gate_up_proj` is the only producer — and `chunk(2, dim=-1)` cannot fail dimensionally even if the invariant broke, it would just produce semantically wrong halves. The Triton path is stricter: `kernels/swiglu_triton.py:triton_swiglu` raises `ValueError` if the last dim is not exactly `2·d_ff`, and `SwiGLUFFN.forward` converts that into a one-time warning + eager fallback. `test_gate_up_proj_has_2x_d_ff_rows` guards the shape contract at test time.
+**1. The `2·d_ff` invariant.** Everything downstream assumes `gate_up.shape[-1] == 2 * d_ff`. In the eager path this is guaranteed by construction — `gate_up_proj` is the only producer — and `chunk(2, dim=-1)` cannot fail dimensionally even if the invariant broke, it would just produce semantically wrong halves. The Triton path is stricter: `kernels/swiglu_triton.py:triton_swiglu` raises `ValueError` if the last dim is not exactly `2·d_ff` or `d_ff` exceeds the kernel's max block size, and `SwiGLUFFN.forward` makes a direct call (no `try/except`), so the `ValueError` propagates. `test_gate_up_proj_has_2x_d_ff_rows` guards the shape contract at test time.
 
-**2. Silent path switching.** A fused kernel and an eager computation that differ by ~1e-3 can silently change training dynamics mid-run. The repo avoids this by defaulting `swiglu_impl` to `'pytorch'` (`config.py:get_config`) and by requiring the explicit `ENABLE_TRITON_KERNELS=1` opt-in (`train.py:train_model`); when triton is missing at runtime the fallback is loud (one warning per module) but safe.
+**2. Silent path switching is forbidden.** A fused kernel and an eager computation that differ by ~1e-3 can silently change training dynamics mid-run. The repo avoids this by defaulting `swiglu_impl` to `'pytorch'` (`config.py:get_config`), by requiring the explicit `ENABLE_TRITON_KERNELS=1` opt-in (`train.py:train_model`), and by raising hard errors when triton is missing at runtime — there is no eager fallback path, so a misconfigured triton run fails loudly instead of running an unmarked variant.
 
-**3. Block-size limits on the fused kernel.** `_MAX_BLOCK_SIZE = 8192` bounds `triton.next_power_of_2(d_ff)`. At the current `d_ff = 4096` the block is exactly 4096 (no masking waste); any `d_ff > 8192` would push the block past the limit and route back to eager via the `ValueError` fallback. Doubling `d_ff` therefore silently disables the fused path unless the kernel is extended.
+**3. Block-size limits on the fused kernel.** `_MAX_BLOCK_SIZE = 8192` bounds `triton.next_power_of_2(d_ff)`. At the current `d_ff = 4096` the block is exactly 4096 (no masking waste); any `d_ff > 8192` would push the block past the limit and raise `ValueError` from the kernel (since `model.py:SwiGLUFFN.forward` does not catch it). Doubling `d_ff` therefore hard-fails the fused path unless the kernel is extended.
 
 **4. BF16 accumulation.** Under autocast the eager path runs `F.silu` and the multiply in BF16; the Triton kernel loads both halves as FP32 and only casts the *product* back to the input dtype. Both are "correct" but not bit-identical — hence the tolerance in `tests/e2e_gpu_smoke.py::check_triton_kernels`. See
 [training-and-memory.md](training-and-memory.md) for the broader numerics

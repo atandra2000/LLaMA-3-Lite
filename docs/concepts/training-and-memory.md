@@ -226,22 +226,22 @@ scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_schedul
 
 `torch.optim.lr_scheduler.SequentialLR` composes the two schedulers: it runs `LinearLR` for the first 2,000 `scheduler.step()` calls, then hands off to `CosineAnnealingLR` for the remaining 40,000, which is exactly `T_max = max_steps - warmup_steps`. Both schedulers act on both param groups identically — the decay/no-decay groups share the same LR trajectory, only the decay differs.
 
-```mermaid
-flowchart TD
-    cfg["config.py:get_config"] --> sf["start_factor = max(min_lr / learning_rate, 1e-4) = 0.1"]
-    cfg --> a["AdamW lr=3e-4, betas=(0.9,0.95), eps=1e-8"]
-    cfg --> wu["warmup_steps = 2000"]
-    cfg --> mx["max_steps = 42000"]
-    cfg --> mn["min_lr = 3e-5"]
-    a --> g0["group 0: 2D params, weight_decay=0.1 (513,802,240)"]
-    a --> g1["group 1: 1D params, weight_decay=0.0 (37,888)"]
-    sf --> lin["LinearLR start_factor=0.1, total_iters=2000"]
-    wu --> lin
-    mx --> cos["CosineAnnealingLR T_max=40000, eta_min=3e-5"]
-    mn --> cos
-    lin --> seq["SequentialLR milestones=[2000]"]
-    cos --> seq
-    seq --> loop["per step: optimizer.step → ema.update_parameters → scheduler.step"]
+```
+config.py:get_config
+   │
+   ├──► start_factor = max(min_lr / learning_rate, 1e-4) = 0.1 ──► LinearLR start_factor=0.1, total_iters=2000 ──┐
+   │                                                                    ▲                                      │
+   ├──► AdamW lr=3e-4, betas=(0.9,0.95), eps=1e-8                       │                                      │
+   │     │                                                              │                                      │
+   │     ├──► group 0: 2D params, weight_decay=0.1 (513,802,240)       │                                      │
+   │     └──► group 1: 1D params, weight_decay=0.0 (37,888)             │                                      │
+   ├──► warmup_steps = 2000 ────────────────────────────────────────────┘                                      │
+   ├──► max_steps = 42000 ──► CosineAnnealingLR T_max=40000, eta_min=3e-5 ────► SequentialLR milestones=[2000] ─┤
+   └──► min_lr = 3e-5 ────────────────────────────────────────────────────────┘                              │
+                                                                                                              ▼
+                                                                                    per step: optimizer.step
+                                                                                    → ema.update_parameters
+                                                                                    → scheduler.step
 ```
 
 The per-step sequence (with `gradient_accumulation = 1`, that is every batch):
@@ -258,13 +258,23 @@ scheduler.step()
 
 Order matters: clip before `optimizer.step()` (so the optimizer never sees an unclipped gradient), EMA update after the step (so the shadow tracks the *new* weights), `zero_grad(set_to_none=True)` after (releases gradient memory), and `scheduler.step()` last (the LR used by step $t$ was set by step $t-1$'s scheduler call — the standard PyTorch ordering). The logged LR comes from `scheduler.get_last_lr()[0]`, and the logged `tokens_seen = step * tokens_per_step` uses the same 196,608 tokens/step accounting. Clipping is inside the grad-accumulation branch too, so with `gradient_accumulation > 1` the norm is taken over the *accumulated* gradient — the correct global norm — and the scheduler steps once per optimizer step, not once per micro-batch.
 
-```mermaid
-flowchart LR
-    b["loss.backward()"] --> c["clip_grad_norm_(max_norm=1.0) global ℓ2"]
-    c --> s["optimizer.step()"]
-    s --> e["ema.update_parameters(model)"]
-    e --> z["zero_grad(set_to_none=True)"]
-    z --> h["scheduler.step()"]
+```
+loss.backward()
+   │
+   ▼
+clip_grad_norm_(max_norm=1.0) — global ℓ2
+   │
+   ▼
+optimizer.step()
+   │
+   ▼
+ema.update_parameters(model)
+   │
+   ▼
+zero_grad(set_to_none=True)
+   │
+   ▼
+scheduler.step()
 ```
 
 The tiny-scheduler mirror in tests replicates the production chain at toy scale (2 warmup steps, 10 total, min/peak $10^{-5}/3\times10^{-4}$), including the exact `start_factor` formula:
@@ -469,31 +479,47 @@ Then, across the loop over `range(0, hidden.shape[0], chunk_size)` (768 iteratio
 
 **The flow, end to end:**
 
-```mermaid
-flowchart TD
-    A["input_ids [96, 2048] int64"] --> B["Embedding lookup<br/>(not downcast by autocast; FP32 out)"]
-    B --> C["16 x DecoderBlock<br/>RMSNorm (FP32-ish) → Linear BF16<br/>→ SDPA BF16 → Linear BF16 → residual add"]
-    C --> D["final RMSNorm + residual add"]
-    D --> E["hidden [196608, 1024]<br/>(BF16/FP32 interleaved by op)"]
-    E --> F["chunked_head_cross_entropy_with_z<br/>loop over 768 chunks of 256"]
-    F --> G["F.linear(hidden_c, w) → logits [256, 128000] BF16"]
-    G --> H["logits.float() → FP32 [256, 128000] = 131 MB"]
-    H --> I["logsumexp + cross_entropy + z-loss<br/>all FP32, masked by ignore_index"]
-    I --> J["FP32 scalar loss<br/>÷ grad_accum_steps"]
-    J --> K["loss.backward()<br/>BF16 GEMM grads, FP32 param grads"]
-    K --> L["AdamW step on FP32 masters<br/>no GradScaler anywhere"]
-
-    subgraph autocast["torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=(device.type=='cuda'))"]
-        B
-        C
-        D
-        E
-        F
-        G
-        H
-        I
-        J
-    end
+```
+torch.autocast(device_type=device.type, dtype=torch.bfloat16,
+               enabled=(device.type=='cuda'))
+┌────────────────────────────────────────────────────────────────────┐
+│ input_ids [96, 2048] int64                                         │
+│   │                                                                │
+│   ▼                                                                │
+│ Embedding lookup (not downcast by autocast; FP32 out)              │
+│   │                                                                │
+│   ▼                                                                │
+│ 16 × DecoderBlock: RMSNorm (FP32-ish) → Linear BF16                │
+│   → SDPA BF16 → Linear BF16 → residual add                         │
+│   │                                                                │
+│   ▼                                                                │
+│ final RMSNorm + residual add                                       │
+│   │                                                                │
+│   ▼                                                                │
+│ hidden [196608, 1024] (BF16/FP32 interleaved by op)                │
+│   │                                                                │
+│   ▼                                                                │
+│ chunked_head_cross_entropy_with_z — loop over 768 chunks of 256    │
+│   │                                                                │
+│   ▼                                                                │
+│ F.linear(hidden_c, w) → logits [256, 128000] BF16                  │
+│   │                                                                │
+│   ▼                                                                │
+│ logits.float() → FP32 [256, 128000] = 131 MB                       │
+│   │                                                                │
+│   ▼                                                                │
+│ logsumexp + cross_entropy + z-loss — all FP32,                     │
+│   masked by ignore_index                                           │
+│   │                                                                │
+│   ▼                                                                │
+│ FP32 scalar loss ÷ grad_accum_steps                                │
+│   │                                                                │
+│   ▼                                                                │
+│ loss.backward() — BF16 GEMM grads, FP32 param grads                │
+│   │                                                                │
+│   ▼                                                                │
+│ AdamW step on FP32 masters — no GradScaler anywhere                │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Gradient Checkpointing
@@ -650,21 +676,25 @@ Two details matter:
 1. **The guard is `and self.training`.** In eval mode (validation, generation) the checkpoint branch is skipped and the plain `model.py:Decoder` path runs. This is desirable — no recompute machinery under `torch.no_grad()` — but see the final-norm fix below for the subtle consequence.
 2. **The unit of recompute is a full `DecoderBlock`** (`model.py:DecoderBlock`, `x = x + self.attention(self.attention_norm(x))` then `x = x + self.ffn(self.ffn_norm(x))`). Each layer's input is saved; its attention + FFN interiors are re-derived during backward.
 
-```mermaid
-flowchart LR
-    subgraph FWD["Forward (training)"]
-        E["embed(ids)"] --> C1["checkpoint(block 1, x0)  ← saves x0 only"]
-        C1 --> C2["checkpoint(block 2, x1)  ← saves x1 only"]
-        C2 --> CL["… 16 blocks …"]
-        CL --> C16["checkpoint(block 16, x15)  ← saves x15 only"]
-        C16 --> H["hidden (return_hidden=True)"]
-    end
-    subgraph BWD["Backward (in reverse)"]
-        H --> R16["re-run block 16 forward from x15 → local grads → free"]
-        R16 --> R15["re-run block 15 forward from x14 → local grads → free"]
-        R15 --> RL["…"]
-    end
-    H --> LOSS["chunked_head_cross_entropy_with_z<br/>768 chunk checkpoints"]
+```
+Forward (training)                                   Backward (in reverse)
+────────────────────                                 ──────────────────────
+embed(ids)                                            chunked_head_cross_entropy_with_z
+   │                                                     — 768 chunk checkpoints
+   ▼                                                     │
+checkpoint(block 1, x0)  ← saves x0 only                 ▼
+   │                                                  re-run block 16 forward
+   ▼                                                     from x15 → local grads → free
+checkpoint(block 2, x1)  ← saves x1 only                 │
+   │                                                     ▼
+   ▼                                                  re-run block 15 forward
+… 16 blocks …                                             from x14 → local grads → free
+   │                                                     │
+   ▼                                                     ▼
+checkpoint(block 16, x15) ← saves x15 only             …
+   │
+   ▼
+hidden (return_hidden=True)
 ```
 
 The gradient flow is standard: `checkpoint(layer, x)` calls the module as a function, so its parameters are captured by the autograd graph and receive gradients exactly as if it had run inline — the only difference is *when* the forward executes.
@@ -899,7 +929,7 @@ $$96 \times 8 \times 2048 \times 128 \times 2\ \mathrm{B} = 0.40\ \mathrm{GB}\ \
 
 which are needed regardless (they are the attention path's activations). One code detail worth noting: because the KV heads are expanded eagerly (`k[:, :, None, :, :].expand(...).reshape(...)` in `model.py:GroupedQueryAttention.forward`), the expanded k and v *are* materialized at 0.40 GB each before the kernel runs; FA2's $O(S)$ win is the score matrix, not the KV activations. GQA still halves the KV *parameters* and the pre-expansion KV tensors ($[B,S,512]$ = 0.20 GB each vs 0.40 GB for full MHA), and it halves the *inference* KV cache — see [attention-and-positional.md](attention-and-positional.md) for the full treatment.
 
-**The corpus: 32 GB on disk, ~1 MB resident.** The training data is a single `uint32` binary, `data_cache/tokens.bin`, produced by `data/prepare_data.py:main` (a thin shim delegating to the workspace `LLM/shared_data` pipeline) and consumed by `data/shared_data/loader.py:build_training_data`:
+**The corpus: 32 GB on disk, ~1 MB resident.** The training data is a single `uint32` binary, `data_cache/tokens.bin`, produced by `data/prepare_data.py:main` (a thin shim that delegates to the workspace `LLM/shared_data` pipeline, then concatenates the pipeline's shards into the flat cache via `data/prepare_data.py:concat_shards_to_cache`) and consumed by `data/shared_data/loader.py:build_training_data`:
 
 $$\text{8B tokens} \times 4\ \mathrm{B} = 32\ \mathrm{GB}\ \text{on disk}$$
 
@@ -944,23 +974,22 @@ $$8.23 + 6.44 + 3.6 + 0.53 + 1.2 \approx 20.0\ \mathrm{GB}$$
 
 The two caveats that keep this honest: (a) the 20 GB uses the saved-input peak of 6.44 GB and the allocator-reused recompute estimate of 3.6 GB; a strict "everything coexists" reading of the first recompute window gives ~24–26 GB. (b) The 78% headline is computed against the *older* 92 GB naive figure: $(92 - 20)/92 = 78.3\%$. Against the derived 130 GB naive total the same optimized footprint is an 85% cut, and against the strict ~212 GB accounting it is 91% — the README's 78% is the *conservative* framing, but the "92" itself cannot be reconstructed from any current table (the README's own naive rows sum to ~130, the old `docs/memory_stack.md`'s to ~180). Treat 92 as a stale headline estimate and 20 as the design estimate this doc derives. With 20 GB on an 80 GB card, headroom is ~60 GB — the README's "2× batch headroom".
 
-```mermaid
-flowchart TB
-    subgraph NAIVE["Naive design — ≈ 130 GB (OOM)"]
-        direction LR
-        N1["Activations<br/>16 × 4.4 GB<br/>≈ 70 GB"]
-        N2["Full logits<br/>[196608, 128000]<br/>50.3 GB BF16"]
-        N3["Model state<br/>8.2 GB"]
-        N4["Workspace<br/>2 GB"]
-    end
-    subgraph OPT["LLaMA-3-Lite — ≈ 20 GB"]
-        direction LR
-        O1["Checkpointed activations<br/>16 × 0.40 GB saved,<br/>avg 3.2 GB resident"]
-        O2["Chunked loss<br/>hidden 0.40 GB +<br/>256 × 128000 × 4 B = 131 MB"]
-        O3["Model state<br/>1.03 + 1.03 + 4.11 + 2.06 GB"]
-        O4["Recompute + workspace<br/>3.6 + 1.2 GB (est.)"]
-    end
-    NAIVE ==>|"grad-ckpt · chunked CE · FA2 · BF16 · memmap · expandable_segments"| OPT
+```
+Naive design — ≈ 130 GB (OOM)           LLaMA-3-Lite — ≈ 20 GB
+┌─────────────────────────────────┐     ┌─────────────────────────────────────┐
+│ Activations                     │     │ Checkpointed activations            │
+│   16 × 4.4 GB ≈ 70 GB           │     │   16 × 0.40 GB saved,               │
+│ Full logits [196608, 128000]    │     │   avg 3.2 GB resident               │
+│   50.3 GB BF16                  │     │ Chunked loss                        │
+│ Model state 8.2 GB              │     │   hidden 0.40 GB +                  │
+│ Workspace 2 GB                  │     │   256 × 128000 × 4 B = 131 MB       │
+│                                 │     │ Model state                         │
+│                                 │     │   1.03 + 1.03 + 4.11 + 2.06 GB      │
+│                                 │     │ Recompute + workspace               │
+│                                 │     │   3.6 + 1.2 GB (est.)               │
+└─────────────────────────────────┘     └─────────────────────────────────────┘
+        │  grad-ckpt · chunked CE · FA2 · BF16 · memmap · expandable_segments │
+        └─────────────────────────────────────────────────────────────────────►
 ```
 
 **Sizing guide: B=48 and B=16.** Model state is batch-independent, so only the activation and loss rows scale. Using the same accounting at $B=48$ (unit tensor $48 \times 2048 \times 1024 \times 2 = 201.3\ \mathrm{MB}$):
@@ -995,7 +1024,7 @@ Every technique above maps to a symbol in the source. In file order:
 
 **`data/shared_data/loader.py:build_training_data`** — `np.memmap(path, dtype=np.uint32, mode="r")`; **`data/shared_data/loader.py:PackedDataset`** — the zero-copy `seq_len+1` window slicing; **`data/shared_data/loader.py:collate_fn`** — stacks windows into the `[96, 2049]` int64 batch. The tokenizer's `pad_token`/`eos_token` surface is used by the packing pipeline; the synthetic fallback (`data/shared_data/loader.py:build_synthetic_data`) exercises the same path in RAM for smoke tests.
 
-**`data/prepare_data.py:main`** — produces the 32 GB `tokens.bin` by delegating to the workspace `LLM/shared_data` pipeline (the vendored `data/shared_data/` package is only the loader). The workspace pipeline's 8B-token corpus, dedup, and packing are documented in [data-and-kernels.md](data-and-kernels.md).
+**`data/prepare_data.py:main`** — produces the 32 GB `tokens.bin` by delegating to the workspace `LLM/shared_data` pipeline and then concatenating the packed shards into the flat cache (`data/prepare_data.py:concat_shards_to_cache`); the vendored `data/shared_data/` package is only the loader. The workspace pipeline's 8B-token corpus, dedup, and packing are documented in [data-and-kernels.md](data-and-kernels.md).
 
 ### Measured vs. estimated
 
@@ -1099,12 +1128,19 @@ $$\Rightarrow L_{\text{asymptote}} = \left(\frac{1}{2.50} + \frac{1}{2.31}\right
 
 Real runs converge toward, but rarely reach, the fitted asymptote within a fixed budget. A defensible *expectation band* for a 515M-parameter model after 8B tokens, based on published small-model curves, is a final validation loss of roughly **2.2–2.8 nats (PPL ≈ 9–16)** `[INFERENCE]` — i.e., far above the 3.3 floor, with the gap being "not enough parameters/data."
 
-```mermaid
-flowchart LR
-    A["step 0<br/>loss = ln(128000) = 11.76 nats<br/>PPL = 128,000"] --> B["early: steep power-law drop<br/>first ~20% of tokens<br/>loss → ~3–5 nats [INFERENCE]"]
-    B --> C["mid: near-log-linear decay on log-log axes<br/>slope ≈ −α_D [INFERENCE]"]
-    C --> D["end of run (8.26B tokens)<br/>val loss ≈ 2.2–2.8 nats<br/>PPL ≈ 9–16 [INFERENCE]"]
-    D -. asymptotic floor L ≈ 1.2 nats, PPL ≈ 3.3 .-> E["would need more params/data"]
+```
+step 0                                     end of run (8.26B tokens)
+loss = ln(128000) = 11.76 nats             val loss ≈ 2.2–2.8 nats [INFERENCE]
+PPL = 128,000                              PPL ≈ 9–16 [INFERENCE]
+   │                                           │
+   ▼                                           ▼
+early: steep power-law drop               would need more params/data
+first ~20% of tokens                      (asymptotic floor L ≈ 1.2 nats,
+loss → ~3–5 nats [INFERENCE]               PPL ≈ 3.3)
+   │                                           ▲
+   ▼                                           │
+mid: near-log-linear decay                 ────┘
+on log-log axes, slope ≈ −α_D [INFERENCE]
 ```
 
 **What a healthy W&B curve looks like.** A steep drop through warmup (steps 0–2,000, LR ramping 0 → 3e-4), then a long logarithmic grind; `val/loss` tracking `train/loss` with a small, roughly constant gap; `train/tokens_per_sec` flat or slowly rising as CUDA graphs amortize. Red flags: val loss rising while train falls (overfitting or distribution shift between the train slice and the held-out tail), loss stalling far above the band (LR/optimizer issue), or step time growing with step index (memory fragmentation, `gpu/memory_peak_mb` climbing).
@@ -1159,14 +1195,13 @@ def _next_batch(step_iterator, train_dataloader, epoch_state):
 
 The timeline, from config:
 
-```mermaid
-flowchart LR
-    A["step 0"] --> W["warmup 0–2,000<br/>LR 0 → 3e-4"]
-    W --> C["cosine decay 2,000–42,000<br/>3e-4 → 3e-5"]
-    C --> D["step 42,000"]
-    V1["val @ 2,000"] -. every 2,000 steps .-> V21["val @ 42,000"]
-    G1["gen @ 20,000"] -. every 20,000 steps .-> G2["gen @ 40,000"]
-    K1["ckpt @ 5,000"] -. every 5,000 steps .-> K9["ckpt @ 42,000"]
+```
+step 0 ──► warmup 0–2,000 ──► cosine decay 2,000–42,000 ──► step 42,000
+            LR 0 → 3e-4        3e-4 → 3e-5
+
+val @ 2,000 ───── every 2,000 steps ───── val @ 42,000
+gen @ 20,000 ───── every 20,000 steps ──── gen @ 40,000
+ckpt @ 5,000 ───── every 5,000 steps ───── ckpt @ 42,000
 ```
 
 The LR schedule (warmup `LinearLR` then `CosineAnnealingLR` inside `SequentialLR`, constructed in `train.py:train_model`) is documented in theory in [Optimization](#optimization-adamw-and-the-learning-rate-schedule); its only role here is that it shapes the expected loss curve — expect the steepest loss improvement while LR is high (first ~20% of the run), and a shallower, noisier decay as LR approaches `min_lr = 3e-5`.
@@ -1326,18 +1361,41 @@ The dataset side is equally deterministic: `data/shared_data/loader.py:PackedDat
 
 ### How the code realizes it
 
-```mermaid
-flowchart LR
-    A["Training loop at step N<br/>(train.py:train_model)"] --> B["save_checkpoint<br/>(train.py:save_checkpoint)"]
-    B --> C["checkpoint dict: model / optimizer / scheduler state,<br/>step, tokens_seen, best_val_loss,<br/>rng_torch, rng_numpy, rng_python, rng_cuda,<br/>config snapshot, ema_state_dict"]
-    C -->|"async daemon thread, or sync when async_save=False"| D["llama3-515M_step_N.pt"]
-    D --> E["load_checkpoint<br/>(train.py:load_checkpoint)<br/>glob * _step_ * .pt, take newest"]
-    E --> F["torch.load(..., map_location=device,<br/>weights_only=False)"]
-    F --> G["restore model, optimizer, scheduler"]
-    G --> H["restore RNG streams, each moved<br/>via .cpu().to(torch.uint8)"]
-    H --> I["restore EMA shadow<br/>if ema given and present"]
-    I --> J["train_model resumes<br/>at step N with best_val_loss"]
-    J --> A
+```
+Training loop at step N (train.py:train_model)
+   │
+   ▼
+save_checkpoint (train.py:save_checkpoint)
+   │
+   ▼
+checkpoint dict: model / optimizer / scheduler state,
+   step, tokens_seen, best_val_loss,
+   rng_torch, rng_numpy, rng_python, rng_cuda,
+   config snapshot, ema_state_dict
+   │
+   ▼
+llama3-515M_step_N.pt  (async daemon thread, or sync when async_save=False)
+   │
+   ▼
+load_checkpoint (train.py:load_checkpoint)
+   glob *_step_*.pt, take newest
+   │
+   ▼
+torch.load(..., map_location=device, weights_only=False)
+   │
+   ▼
+restore model, optimizer, scheduler
+   │
+   ▼
+restore RNG streams, each moved via .cpu().to(torch.uint8)
+   │
+   ▼
+restore EMA shadow if ema given and present
+   │
+   ▼
+train_model resumes at step N with best_val_loss
+   │
+   └──► (loop back to the training loop)
 ```
 
 **The save path: `train.py:save_checkpoint`.**

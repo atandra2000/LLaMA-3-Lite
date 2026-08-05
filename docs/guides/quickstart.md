@@ -13,7 +13,7 @@
 | Python | 3.10+ |
 | PyTorch | 2.x (CUDA 12.1 build on a GPU host: `pip install torch --index-url https://download.pytorch.org/whl/cu121`) |
 | GPU | NVIDIA A100 80GB for the full 42,000-step run at batch 96; anything with ≥20 GB VRAM with the memory stack on (see [memory-stack.md](../training.md)) |
-| `wandb` | imported unconditionally by `train.py` — install even for offline runs |
+| `wandb` | imported unconditionally by `train.py` — install even for offline runs (`WANDB_MODE=offline`). The pytest suite does not need it: `tests/conftest.py` injects a stub when the package is missing, but that stub is conftest-only — a *manual* `python train.py` on a bare checkout without wandb installed fails at `import wandb` |
 | `transformers` / `datasets` | only needed for the real tokenizer (`data/shared_data/loader.py:build_tokenizer`) and the real-data pipeline; the synthetic path never touches them |
 | Workspace package | `LLM/shared_data` (the universal pipeline) — required only for Mode 2, real data |
 
@@ -21,15 +21,31 @@ Model scale for reference: 16 layers, `d_model` 1024, GQA 8Q/4KV, SwiGLU `d_ff` 
 
 ## 2. The three ways to run
 
-```mermaid
-flowchart LR
-    A["python train.py"] --> B{build_training_data: cache exists?}
-    B -- "no: FileNotFoundError" --> C["WARN + build_synthetic_data"]
-    B -- "yes" --> D["mmap data_cache/tokens.bin"]
-    C --> E["loop runs on random ids"]
-    D --> F["loop runs on real corpus"]
-    G["python3 data/prepare_data.py --stage pretrain"] --> H["LLM/shared_data pipeline"] --> I["data_cache/tokens.bin"]
-    I -.-> B
+```
+python train.py
+   │
+   ▼
+build_training_data: cache exists?
+   ├─ no: FileNotFoundError ──► WARN + build_synthetic_data
+   │                              │
+   │                              ▼
+   │                          loop runs on random ids
+   └─ yes ──► mmap data_cache/tokens.bin
+                │
+                ▼
+            loop runs on real corpus
+                ▲
+                │
+python3 data/prepare_data.py --stage pretrain
+   │
+   ▼
+LLM/shared_data pipeline (download → clean → tokenize → pack)
+   │
+   ▼
+shards/ + manifest.json ──► concat_shards_to_cache
+   │
+   ▼
+data_cache/tokens.bin ─────────────────┘
 ```
 
 ### 2.1 Mode 1 — `python train.py` (what actually happens right now)
@@ -80,7 +96,7 @@ The `--stage pretrain` choice is currently the only stage. Other flags mirror th
 | `--skip-clean` / `--skip-tokenize` | reuse cleaned / tokenized artifacts |
 | `--skip-pack` | stop before the packing stage |
 
-The packing stage produces `data_cache/tokens.bin` (the name comes from `config['data_cache_dir']` / `config['data_cache_filename']`): a single little-endian uint32 file with no header, EOS-separated documents. At the full 8B-token budget that is ~32 GB on disk. `build_training_data` then opens it with `np.memmap(path, dtype=np.uint32, mode="r")` — resident RAM stays near zero because pages are faulted in on access — holds out the last `val_split` (5%) on chunk boundaries, and hands you train/val loaders plus a tokenizer.
+After the pipeline stages finish, the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) concatenates the shards in manifest order into `data_cache/tokens.bin` (the name comes from `config['data_cache_dir']` / `config['data_cache_filename']`): a single little-endian uint32 file with no header, EOS-separated documents. At the full 8B-token budget that is ~32 GB on disk. `build_training_data` then opens it with `np.memmap(path, dtype=np.uint32, mode="r")` — resident RAM stays near zero because pages are faulted in on access — holds out the last `val_split` (5%) on chunk boundaries, and hands you train/val loaders plus a tokenizer.
 
 **Tokenizer caveat.** The real path tries `data/shared_data/loader.py:build_tokenizer` (`transformers.AutoTokenizer` on `tokenizer_name: NousResearch/Meta-Llama-3-8B`; requires a one-time download; pad falls back to EOS). If that fails, the loader prints `[data] tokenizer load failed (...); using the byte stub. Generation samples will be meaningless until a real tokenizer is available.` and trains on the mmap cache with the stub — the loss is real, only the sample text is meaningless. With the real tokenizer (vocab 128,256) the model is built at 128,256 via `max(config['vocab_size'], len(tokenizer))`.
 

@@ -6,18 +6,18 @@ stack, and data pipeline. Every citation to code uses symbol anchors (`<module>.
 
 ## Corpus size
 
-Measured 2026-08-05 (`wc -w` over the working tree).
+Measured 2026-08-05 (`wc -w` over the working tree; refreshed after the audit follow-up: new `workspace-data.md` reference, the benchmark reference section, and the EMA-internals canonical section).
 
 | Track | Files | Words |
 |-------|------:|------:|
-| `docs/concepts/` | 4 | 69,884 |
-| `docs/references/` | 3 | 26,552 |
-| `docs/guides/` | 4 | 8,676 |
-| `docs/training.md` | 1 | 7,835 |
-| `docs/README.md` | 1 | 648 |
-| **`docs/` total** | **13** | **113,595** |
-| Top-level (`README.md`, `AGENTS.md`, `SKILLS.md`) | 3 | 4,908 |
-| **Repo-wide total** | **16** | **118,503** |
+| `docs/concepts/` | 4 | 70,397 |
+| `docs/references/` | 4 | 28,880 |
+| `docs/guides/` | 4 | 8,767 |
+| `docs/training.md` | 1 | 7,850 |
+| `docs/README.md` | 1 | 658 |
+| **`docs/` total** | **14** | **116,552** |
+| Top-level (`README.md`, `AGENTS.md`, `SKILLS.md`) | 3 | 5,259 |
+| **Repo-wide total** | **17** | **121,811** |
 
 ## Learning paths
 
@@ -57,6 +57,7 @@ Measured 2026-08-05 (`wc -w` over the working tree).
 | [model-reference.md](references/model-reference.md) | `model.py` — every block, tensor-shape trace, param budget; `model.py:RoPE` implementation deep dive; every key in `config.py:get_config` |
 | [training-reference.md](references/training-reference.md) | test strategy, fixtures (`tests/conftest.py`), markers, per-file walkthroughs, the e2e GPU script, running the suites |
 | [data-reference.md](references/data-reference.md) | `data/shared_data/loader.py` + `data/prepare_data.py` shim; `build_tokenizer`, stub, vocab/special-token contract; `kernels/*.py` — signatures, launch configs, fallbacks |
+| [workspace-data.md](references/workspace-data.md) | the universal `LLM/shared_data` pipeline (stages, mixture, shard format, manifest schema, data-root rules) that produces the corpus |
 
 ## Guides (`docs/guides/`)
 
@@ -80,6 +81,7 @@ The old `CODE_MAP.md` was replaced by this hand-maintained map (the generator sc
 | `config.py` | [model-reference.md](references/model-reference.md) (config section), [glossary.md](guides/glossary.md) (config-key glossary) |
 | `train.py` | [training.md](training.md) (full walkthrough), [quickstart.md](guides/quickstart.md), [troubleshooting.md](guides/troubleshooting.md) |
 | `data/prepare_data.py`, `data/shared_data/loader.py` | [data-reference.md](references/data-reference.md) (code tour), [training.md](training.md) (data-pipeline section), [data-and-kernels.md](concepts/data-and-kernels.md) (theory) |
+| `LLM/shared_data` (workspace pipeline) | [workspace-data.md](references/workspace-data.md) (stages, manifest, shards), [data-reference.md](references/data-reference.md) (the shim + bridge stage) |
 | `dataset.py` | [data-reference.md](references/data-reference.md) (re-export shim note) |
 | `kernels/*.py` | [data-reference.md](references/data-reference.md) (kernel reference), [data-and-kernels.md](concepts/data-and-kernels.md) (kernel programming theory) |
 | `tests/*` | [training-reference.md](references/training-reference.md) (strategy, fixtures, markers), plus per-doc test citations |

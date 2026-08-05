@@ -8,7 +8,7 @@ This consolidated concept doc covers the two ends of the training pipeline that 
 
 **The data half.** LLaMA-3-Lite consumes an **8.0-billion-token** pretraining corpus shared by the whole CoreProjects LLM suite. Preparation happens in a **workspace-level pipeline** (`LLM/shared_data/`) that downloads five web/code/math/arxiv sources (seven rows in the mixture), quality-filters them, removes exact duplicates, tokenizes them with the LLaMA-3 BPE, and packs the result into a flat stream of `uint32` token ids with an EOS separator after every document. This repo vendors only the **loader** half (`data/shared_data/loader.py`, two files): a `PackedDataset` that memory-maps the token stream and slices `seq_len+1`-token windows with a free next-token shift, a deterministic `ShuffledRangeSampler`, and the `build_training_data`/`build_synthetic_data` factory functions that `train.py:train_model` calls. Because the corpus is read through `np.memmap`, a 32 GB corpus costs only a few megabytes of resident RAM — the page-fault argument that anchors the project's headline memory reduction. The 42,000-step plan consumes ~8.26B tokens, which slightly exceeds the 8B corpus, so `train.py:_next_batch` wraps the epoch with a fresh sampler permutation instead of crashing.
 
-**The kernel half.** Triton is a Python-embedded DSL that lets you write CUDA kernels with a single language model: you launch a **grid** of *programs*, each program is assigned an ID (`tl.program_id(0)`), and each program operates on **blocks** of a tensor declared with `tl.arange`, masked against the real tensor shape, with the compiler deciding how to map the block onto warps and threads. LLaMA-3-Lite ships three such kernels in `kernels/` — one per "pattern": a **row-wise reduction** (RMSNorm), an **elementwise fusion** (SwiGLU), and a **fused reduction + cross-program accumulation** (chunked cross-entropy + z-loss, which uses `tl.atomic_add` on three scalar accumulators). Each kernel is wrapped in a `torch.autograd.Function` whose backward is not a Triton kernel at all: it **re-computes** the forward through the pure-PyTorch reference and lets autograd differentiate it. The kernels are strictly opt-in: they only run when the config keys `rmsnorm_impl` / `swiglu_impl` / `cross_entropy_impl` are set to `'triton'` **and** `ENABLE_TRITON_KERNELS=1` is in the environment; otherwise `train.py:train_model` force-restores all three to `'pytorch'`. At runtime, a missing Triton install or a tripped shape guard makes `model.py` print a one-time warning and fall back to the eager path — never silently — while any *other* kernel failure propagates as a hard error.
+**The kernel half.** Triton is a Python-embedded DSL that lets you write CUDA kernels with a single language model: you launch a **grid** of *programs*, each program is assigned an ID (`tl.program_id(0)`), and each program operates on **blocks** of a tensor declared with `tl.arange`, masked against the real tensor shape, with the compiler deciding how to map the block onto warps and threads. LLaMA-3-Lite ships three such kernels in `kernels/` — one per "pattern": a **row-wise reduction** (RMSNorm), an **elementwise fusion** (SwiGLU), and a **fused reduction + cross-program accumulation** (chunked cross-entropy + z-loss, which uses `tl.atomic_add` on three scalar accumulators). Each kernel is wrapped in a `torch.autograd.Function` whose backward is not a Triton kernel at all: it **re-computes** the forward through the pure-PyTorch reference and lets autograd differentiate it. The kernels are strictly opt-in: they only run when the config keys `rmsnorm_impl` / `swiglu_impl` / `cross_entropy_impl` are set to `'triton'` **and** `ENABLE_TRITON_KERNELS=1` is in the environment; otherwise `train.py:train_model` force-restores all three to `'pytorch'`. At runtime, a missing Triton install or a tripped shape guard surfaces as a hard `ImportError`/`ValueError` from `model.py` — there is no silent fallback (AGENTS.md hard rule 7).
 
 ## Data Engineering: Mixture, Packing, Dedup, and Layout
 
@@ -43,26 +43,56 @@ Shuffling happens at the **window level**, not the document level. Each epoch, t
 
 There are **two distinct codebases** involved:
 
-```mermaid
-flowchart LR
-    subgraph ws["Workspace: LLM/shared_data (preparation)"]
-        HF["HuggingFace sources"] --> DL["download_raw — streaming JSONL"]
-        DL --> CL["clean — quality filter + SHA-256 dedup"]
-        CL --> TK["tokenize — LLaMA-3 BPE, EOS appended per doc"]
-        TK --> PK["pack_shards — round-robin, 50M-token shards, docs never split"]
-        PK --> MAN["manifest.json"]
-    end
-    subgraph pr["This repo (consumption)"]
-        SH["data/prepare_data.py — shim, delegates via sys.path"]
-        SH --> WS2["shared_data.prepare_data.run_pipeline"]
-        WS2 -.->|"produces data/shards/*.bin + manifest (not tokens.bin)"| GAP["data_cache/tokens.bin — flat uint32"]
-        GAP --> BT["data/shared_data/loader.py:build_training_data — np.memmap"]
-        BT --> PD["PackedDataset — seq_len+1 windows"]
-        PD --> SR["ShuffledRangeSampler — seed+epoch permutation"]
-        SR --> DL2["DataLoader — num_workers=6, prefetch 16"]
-        DL2 --> NB["train.py:_next_batch — epoch wrap on StopIteration"]
-        NB --> TR["train_model"]
-    end
+```
+┌─ Workspace: LLM/shared_data (preparation) ──────────────────────────┐
+│ HuggingFace sources                                                  │
+│   │                                                                  │
+│   ▼                                                                  │
+│ download_raw — streaming JSONL                                       │
+│   │                                                                  │
+│   ▼                                                                  │
+│ clean — quality filter + SHA-256 dedup                               │
+│   │                                                                  │
+│   ▼                                                                  │
+│ tokenize — LLaMA-3 BPE, EOS appended per doc                         │
+│   │                                                                  │
+│   ▼                                                                  │
+│ pack_shards — round-robin, 50M-token shards, docs never split        │
+│   │                                                                  │
+│   ▼                                                                  │
+│ manifest.json                                                        │
+└──────────────────────────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─ This repo (consumption) ─────────────────────────────────────────────────┐
+│ data/prepare_data.py — shim, delegates via sys.path                       │
+│   │                                                                       │
+│   ▼                                                                       │
+│ shared_data.prepare_data.run_pipeline                                     │
+│   │   produces data/shards/*.bin + manifest                               │
+│   ▼                                                                       │
+│ data/prepare_data.py:concat_shards_to_cache (bridge stage)                │
+│   ▼                                                                       │
+│ data_cache/tokens.bin — flat uint32                                       │
+│   │                                                                       │
+│   ▼                                                                       │
+│ data/shared_data/loader.py:build_training_data — np.memmap                │
+│   │                                                                       │
+│   ▼                                                                       │
+│ PackedDataset — seq_len+1 windows                                         │
+│   │                                                                       │
+│   ▼                                                                       │
+│ ShuffledRangeSampler — seed+epoch permutation                             │
+│   │                                                                       │
+│   ▼                                                                       │
+│ DataLoader — num_workers=6, prefetch 16                                   │
+│   │                                                                       │
+│   ▼                                                                       │
+│ train.py:_next_batch — epoch wrap on StopIteration                        │
+│   │                                                                       │
+│   ▼                                                                       │
+│ train_model                                                               │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 **The preparation side (workspace).** The canonical pipeline lives at `LLM/shared_data/` — one level up from this repo, in the workspace. It is shared by Mamba-2-Lite, GPT-OSS-Lite, HyMo, DeepSeek-v3-Lite, and LLaMA-3-Lite ("one corpus, five models"). Its stages run as subprocesses from `shared_data.prepare_data.run_pipeline`:
@@ -91,27 +121,24 @@ The workspace pipeline resolves its data root as `$LLM_DATA_ROOT` if set, else `
 
 **The consumption side (vendored).** `data/shared_data/` is the **only** data code in this repo, and it is a **loader only** — two files (`__init__.py` re-exporting the public surface, `loader.py` with the implementations). `dataset.py` at the repo root is a 32-line re-export shim that puts `data/` on `sys.path` and re-exports `PackedDataset`, `ShuffledRangeSampler`, `collate_fn`, `build_training_data`, `build_synthetic_data` — so `train.py`'s `from dataset import build_training_data, build_synthetic_data` keeps working regardless of how the package is laid out.
 
-`data/shared_data/loader.py:build_training_data` expects a **single flat file** `data_cache/tokens.bin` (config keys `data_cache_dir` / `data_cache_filename`): raw `uint32` little-endian, no header. It is this file that gets mmap'd. The shard files the workspace pipeline produces are byte-compatible with it — concatenating `shard_*.bin` in manifest order yields exactly the flat stream the loader wants — but note that the current workspace code does not itself emit `tokens.bin` (see Pitfalls: the missing cache).
+`data/shared_data/loader.py:build_training_data` expects a **single flat file** `data_cache/tokens.bin` (config keys `data_cache_dir` / `data_cache_filename`): raw `uint32` little-endian, no header. It is this file that gets mmap'd. The shard files the workspace pipeline produces are byte-compatible with it — concatenating `shard_*.bin` in manifest order yields exactly the flat stream the loader wants — and the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) performs exactly that concatenation after the pipeline stages finish (see Pitfalls: the missing cache).
 
 The full consumption path in the order a training run touches it:
 
-```mermaid
-flowchart LR
-    subgraph stream["tokens.bin — flat uint32, ~8.0e9 tokens, 32 GB"]
-        A["doc A tokens"]
-        E1["EOS"]
-        B["doc B tokens"]
-        E2["EOS"]
-        C["..."]
-    end
-    W0["window 0 = tokens 0..2048"]
-    W1["window 1 = tokens 2049..4097"]
-    W2["window 2 = tokens 4098..6146"]
-    stream --> W0 & W1 & W2
-    W0 --> I0["input = window[:-1]  [2048]"]
-    W0 --> T0["target = window[1:]  [2048]"]
-    W1 --> I1["input = window[:-1]"]
-    W1 --> T1["target = window[1:]"]
+```
+tokens.bin — flat uint32, ~8.0e9 tokens, 32 GB:
+┌──────────┬─────┬──────────┬─────┬───────┐
+│ doc A    │EOS  │ doc B    │EOS  │ ...   │
+│ tokens   │     │ tokens   │     │       │
+└──────────┴─────┴──────────┴─────┴───────┘
+   ▲           ▲           ▲
+   │           │           │
+window 0 = tokens 0..2048   │
+window 1 = tokens 2049..4097│
+window 2 = tokens 4098..6146
+   │
+   ├── input  = window[:-1]  [2048]
+   └── target = window[1:]   [2048]
 ```
 
 ### The mixture and the Chinchilla budget
@@ -134,8 +161,14 @@ Total: 8,000,000,000 tokens. The design notes in the YAML spell out the rational
 
 Two honest caveats about this table, both verified:
 
-- The workspace `README.md` §5 still shows an **older five-source recipe**
-  (fineweb-edu 0.50 / fineweb 0.20 / the-stack-python 0.15 / openmath 0.10 / arxiv 0.05). The YAML is authoritative; the README is stale doc-rot — exactly the disease this doc set is being purged of. `[INFERENCE]` the README predates the current mixture.
+- The root `CoreProjects/README.md` §4 LLaMA-3-Lite entry still shows an
+  **older six-source recipe** (FineWeb-Edu 0.5 / FineWeb-Code 0.1 / Stack
+  Python 0.2 / Stack multi-lang 0.05 / Wikipedia 0.05 /
+  StackOverflow-QA 0.05) plus stale claims (`channels_last`, "fused
+  AdamW", `GradScaler`, a 1,234-line `architecture.md`, a ~16 GB cache).
+  The YAML is authoritative; the portfolio README is stale doc-rot —
+  exactly the disease this doc set is being purged of. `[INFERENCE]` the
+  README predates the current mixture.
 - This project's `config.py:get_config` carries its own `data_sources` dict
   (six entries: fineweb_edu 0.5, fineweb_code 0.1, the_stack_python 0.2, the_stack_multilang 0.05, wikipedia 0.05, stackoverflow_qa 0.05 — summing to 0.95). **Nothing reads it**: the vendored loader consults only the cache-path and loader keys, and `data/prepare_data.py:main` never passes the project config to the workspace. It survives because `tests/test_config.py:REQUIRED_KEYS` pins the config surface and the weight-positivity test keeps it sane. Treat it as a legacy documentation surface, not the mixture.
 
@@ -340,23 +373,25 @@ Two corollaries worth stating:
 
 #### The layout in one picture
 
-```mermaid
-flowchart TB
-    subgraph disk["data_cache/tokens.bin — 32 GB, uint32 LE, no header"]
-        P0["byte 0x00000000 — token 0"]
-        P1["byte 0x00000004 — token 1"]
-        PN["byte 0x7FFFFFFC — token 7,999,999,999"]
-    end
-    subgraph virt["np.memmap view"]
-        V0["shape (8e9,), dtype uint32 — no bytes resident yet"]
-    end
-    subgraph hot["resident (page cache)"]
-        H0["~0.79 MB of hot pages per batch in flight"]
-        H1["~76 MB worst case with 6 workers × prefetch 16"]
-    end
-    disk --> V0
-    V0 -->|"demand paging on random window access"| H0
-    V0 -->|"first touch faults a 4 KB page"| H1
+```
+┌─ data_cache/tokens.bin — 32 GB, uint32 LE, no header ─┐
+│ byte 0x00000000 — token 0                             │
+│ byte 0x00000004 — token 1                             │
+│ ...                                                   │
+│ byte 0x7FFFFFFC — token 7,999,999,999                 │
+└───────────────────────────────────────────────────────┘
+              │  np.memmap view
+              ▼
+┌─ np.memmap view ──────────────────────────────────────┐
+│ shape (8e9,), dtype uint32 — no bytes resident yet    │
+└───────────────────────────────────────────────────────┘
+              │
+      ┌───────┴──────────┐
+      ▼                  ▼
+┌─ resident (page cache) ─────────────────────────┐
+│ ~0.79 MB of hot pages per batch in flight       │   demand paging on random
+│ ~76 MB worst case with 6 workers × prefetch 16  │   window access · first
+└─────────────────────────────────────────────────┘   touch faults a 4 KB page
 ```
 
 ### Train/val split alignment
@@ -419,7 +454,7 @@ The project's performance contract (AGENTS.md hard rule 2) is that a sanctioned 
 
 There is also a **correctness** argument that predates the speedup one: each kernel ships with a pure-PyTorch reference (`kernels/rmsnorm_triton.py:rmsnorm_pytorch`, `kernels/swiglu_triton.py:swiglu_pytorch`, `kernels/cross_entropy_triton.py:cross_entropy_with_z_pytorch`) that runs on CPU without Triton, and the backward passes are *implemented* as re-runs of those references. The autograd graph you get from a Triton forward is therefore numerically identical to the eager graph in both directions — gradient checks cannot drift from the reference implementation even if the forward kernel has subtle rounding.
 
-One caveat about the 1.5× rule: AGENTS.md names `scripts/microbench_a100.py` as the measurement harness, but that script is not in the working tree. No in-repo microbenchmark exists, so the speedup contract is currently enforced by rule, not by measurement — treat any throughput claim below as an estimate, not a benchmark.
+One caveat about the 1.5× rule: AGENTS.md names `scripts/microbench_a100.py` as the measurement harness, and that script now ships (it compares each Triton path against its PyTorch reference at project scale and gates on the 1.5× bar). It requires CUDA + triton — on CPU/Mac it exits with "unmeasurable", so the contract is enforced on the A100, not on dev boxes. Until a measured run clears the bar, treat any throughput claim in this doc as an estimate, not a benchmark.
 
 ### The Triton model of computation
 
@@ -473,26 +508,46 @@ These are the only two scheduling knobs the repo exposes; everything else about 
 
 At project scale, `M = batch × seq = 96 × 2048 = 196,608` for all three kernels in the training forward (the CE kernel is invoked per chunk of 256 rows inside `model.py:chunked_head_cross_entropy_with_z`), `N = d_model = 1024`, `D = d_ff = 4096`, and `V = vocab_size = 128,000` (or 128,256 with `model.py:build_transformer`'s default). Note that `next_power_of_2(1024) = 1024` and `next_power_of_2(4096) = 4096` — the two "small" kernels launch exactly-sized blocks — while `next_power_of_2(128000) = 131072 = _MAX_VOCAB_BLOCK`, so the CE kernel's block is a full 2¹⁷-wide.
 
-```mermaid
-flowchart LR
-    subgraph Host["Python host (train.py:train_model)"]
-        A["config *_impl keys + ENABLE_TRITON_KERNELS=1"]
-        B["model.py:RMSNorm.forward / SwiGLUFFN.forward / chunked_head_cross_entropy_with_z"]
-    end
-    A --> B
-    B -->|"impl == 'triton'"| C["kernels/*.py public entry points"]
-    B -->|"impl == 'pytorch' or fallback"| D["eager PyTorch reference"]
-    C --> E["_rmsnorm_fwd_kernel[(196608,)]"]
-    C --> F["_swiglu_fwd_kernel[(196608,)]"]
-    C --> G["_ce_z_fwd_kernel[(256,) x 768 chunks]"]
-    E --> H["row reduce: sum(x*x) -> rstd -> y = (x*rstd)*w"]
-    F --> I["elementwise fuse: y = silu(gate)*up"]
-    G --> J["per-row max-shift logsumexp -> nll, log_z^2"]
-    J --> K["tl.atomic_add -> CE_SUM / CE_CNT / Z_SUM (1-elem FP32)"]
-    K --> L["host: ce_sum/ce_cnt.clamp_min(1) + z_weight * z_sum/M"]
-    H --> M["autograd.Function wraps each fwd; backward re-runs the pytorch reference"]
-    I --> M
-    L --> M
+```
+┌─ Python host (train.py:train_model) ────────────────────────────────┐
+│ config *_impl keys + ENABLE_TRITON_KERNELS=1                        │
+│   │                                                                 │
+│   ▼                                                                 │
+│ model.py:RMSNorm.forward / SwiGLUFFN.forward /                      │
+│ chunked_head_cross_entropy_with_z                                   │
+└─────────────────────────────────────────────────────────────────────┘
+   │
+   ├── impl == 'triton' ────────────────► kernels/*.py public entry points
+   │                                       (kernel ImportError/ValueError
+   │                                        propagates — no silent fallback)
+   └── impl == 'pytorch' ──────────────► eager PyTorch reference
+                                              │
+                                              └── autograd.Function wraps each fwd;
+                                                  backward re-runs the pytorch reference
+                    │
+                    ▼
+   _rmsnorm_fwd_kernel[(196608,)]        _swiglu_fwd_kernel[(196608,)]
+                    │                                  │
+                    ▼                                  ▼
+   row reduce: sum(x*x) → rstd              elementwise fuse: y = silu(gate)*up
+   → y = (x*rstd)*w                                      │
+                    │                                  │
+                    └──────────────┬───────────────────┘
+                                   ▼
+              _ce_z_fwd_kernel[(256,) × 768 chunks]
+                                   │
+                                   ▼
+              per-row max-shift logsumexp → nll, log_z²
+                                   │
+                                   ▼
+              tl.atomic_add → CE_SUM / CE_CNT / Z_SUM (1-elem FP32)
+                                   │
+                                   ▼
+              host: ce_sum/ce_cnt.clamp_min(1) + z_weight * z_sum/M
+                                   │
+                                   ▼
+              autograd.Function wraps each fwd;
+              backward re-runs the pytorch reference
 ```
 
 ### Pattern 1 — row-wise RMSNorm
@@ -547,7 +602,7 @@ if block > _MAX_BLOCK_SIZE:
     raise ValueError(...)
 ```
 
-exists because `N` is not a trusted constant at the call site: it comes from whatever tensor is passed to `RMSNorm.forward`, and a shape bug (a non-flattened tensor, a wrong head_dim, a 2-D input where 3-D was expected) could produce a width whose power-of-two block explodes the register budget and the JIT cache. `_MAX_BLOCK_SIZE = 8192` is the repo's line in the sand: anything wider than 8192 raises a `ValueError` that the module-level dispatch catches (see "Fallback semantics" below). At this project's scale the guard is inert — `d_model = 1024` and even the widest per-row axis in the model (`2 · d_ff = 8192`, which is SwiGLU's fused gate-up row) are at or below the cap.
+exists because `N` is not a trusted constant at the call site: it comes from whatever tensor is passed to `RMSNorm.forward`, and a shape bug (a non-flattened tensor, a wrong head_dim, a 2-D input where 3-D was expected) could produce a width whose power-of-two block explodes the register budget and the JIT cache. `_MAX_BLOCK_SIZE = 8192` is the repo's line in the sand: anything wider than 8192 raises a `ValueError` that `model.py:RMSNorm.forward` propagates (per AGENTS.md hard rule 7 — no silent fallback). At this project's scale the guard is inert — `d_model = 1024` and even the widest per-row axis in the model (`2 · d_ff = 8192`, which is SwiGLU's fused gate-up row) are at or below the cap.
 
 The `ValueError` (not an assertion, not a silent pass) is the important design choice: the kernel is *refusing* to compile something pathological, and it does so in a way that the dispatch layer can catch and downgrade to the eager path.
 
@@ -645,7 +700,7 @@ The atomic pattern is a deliberate simplicity trade: `M` programs hammering thre
 
 #### Why the vocab axis must fit one program: `_MAX_VOCAB_BLOCK`
 
-The max and the exp-sum are block reductions *within* one program. If the vocab axis were split across two programs, each would see only half the row: the partial maxes would need a second pass to combine, and the partial exp-sums would need the online-softmax rescale $\ell_{AB} = \ell_A + e^{m_A - m_B} \ell_B$ across program boundaries — a cross-program protocol with its own atomics or a second kernel. The module comment states the constraint directly: *"Vocab is the per-block reduction axis; 128k fits, 256k would need 2 programs/row."* The guard `_MAX_VOCAB_BLOCK = 131072` is that constraint in code — `next_power_of_2(128000) = 131072`, so the current vocab fits with zero waste; a 256k vocab would trip the guard with a `ValueError` (dispatch-caught, falls back to eager) rather than silently producing a wrong split-reduction.
+The max and the exp-sum are block reductions *within* one program. If the vocab axis were split across two programs, each would see only half the row: the partial maxes would need a second pass to combine, and the partial exp-sums would need the online-softmax rescale $\ell_{AB} = \ell_A + e^{m_A - m_B} \ell_B$ across program boundaries — a cross-program protocol with its own atomics or a second kernel. The module comment states the constraint directly: *"Vocab is the per-block reduction axis; 128k fits, 256k would need 2 programs/row."* The guard `_MAX_VOCAB_BLOCK = 131072` is that constraint in code — `next_power_of_2(128000) = 131072`, so the current vocab fits with zero waste; a 256k vocab would trip the guard with a `ValueError` (which `model.py:chunked_cross_entropy_with_z` and `chunked_head_cross_entropy_with_z` propagate per AGENTS.md hard rule 7) rather than silently producing a wrong split-reduction.
 
 The cost of "whole vocab in one program" is register pressure, and it is worth being explicit about: with `num_warps = 8` (256 threads) and `BLOCK_V = 131072`, each thread's share of the block is $131072 / 256 = 512$ FP32 values, and the kernel must keep the *entire row live* between the max-reduction and the exp-sum (it needs `x - m` after `m` is known). 512 live FP32 values per thread exceeds the register file by an order of magnitude, so Triton will spill to local memory (or re-load)
 [INFERENCE — the compiler's exact choice is not observable from this repo;
@@ -727,40 +782,46 @@ The three gates are deliberately redundant, and the redundancy is the point (AGE
 
 When `impl='triton'` is requested and the model is built, `model.py:build_transformer` prints which paths are active ("Triton kernels active: rmsnorm, swiglu") so the run's own logs document what actually executed.
 
-### Fallback semantics: one-time warning vs the hard-fail rule
+### Fallback semantics: hard error per AGENTS.md rule 7
 
-AGENTS.md hard rule 7 is strict: *"Never let a Triton kernel silently fall back to the raw-PyTorch path during a default-config training run... If the kernel fails to compile or throws at runtime, the run must surface a clear error, not a silent fallback."* The dispatch code in `model.py` implements a *loud* fallback rather than a hard error, and the distinction is the design:
+AGENTS.md hard rule 7 is strict: *"Never let a Triton kernel silently fall back to the raw-PyTorch path during a default-config training run... If the kernel fails to compile or throws at runtime, the run must surface a clear error, not a silent fallback."* The dispatch code in `model.py` implements that rule as a literal hard error:
 
-- `model.py:RMSNorm.forward` and `model.py:SwiGLUFFN.forward` wrap the
-  kernel call in `try/except (ImportError, ValueError)` and, on failure, `print` a message naming the module, the exception type, and the reason ("[RMSNorm] triton path unavailable (ValueError: ...); falling back to 'pytorch'.") — **once per module instance**, guarded by the `self._triton_fallback_warned` flag, then run the eager math.
-- `model.py:chunked_cross_entropy_with_z` (the dense variant) catches the
-  same pair and prints the same message (without the one-time guard — it prints per call).
-- `model.py:chunked_head_cross_entropy_with_z` checks `HAS_TRITON` *before*
-  the chunk loop, prints a one-line fallback notice, and sets `use_triton = False` for the whole loop.
+- `model.py:RMSNorm.forward` and `model.py:SwiGLUFFN.forward` call the
+  kernel directly with no `try/except`; a missing Triton install raises `ImportError` with a remediation message ("Install with `pip install triton` (Linux + CUDA only). Use `rmsnorm_impl='pytorch'` for CPU/Mac."), and a tripped shape guard raises `ValueError`. The eager path is the *else* of the `if self.impl == "triton":` branch, never the catch arm.
+- `model.py:chunked_cross_entropy_with_z` (the dense variant) is a direct
+  call too — the kernel's own `ImportError`/`ValueError` propagates.
+- `model.py:chunked_head_cross_entropy_with_z` raises `ImportError` at
+  function entry when `cross_entropy_impl='triton'` but `kernels/cross_entropy_triton.py:HAS_TRITON` is false. The per-chunk call inside `checkpoint(_chunk, ...)` is then a direct kernel call, so any size-tripped `ValueError` from the kernel propagates through the autograd graph.
 
-Why fall back at all instead of raising? Because the two failure classes are qualitatively different:
+The opt-in discipline is what makes the hard-error design safe:
 
-- **`ImportError`** means "Triton is not installed" — a *capability*
-  problem, not a kernel problem. On a CPU/Mac dev box or a CI runner without Triton, hard-failing would make `impl='triton'` configurations untestable and un-runnable; the config would be a brick. The repo's own contract (AGENTS.md rule 8) requires every kernel path to have a CPU-runnable pure-PyTorch reference, and the fallback is what makes `impl='triton'` gracefully degrade to that reference. The one-time warning converts the silent fallback the rule forbids into an *announced* one: the run's stdout names exactly which module fell back, why, and when.
-- **`ValueError`** means "your tensor shape is outside the kernel's
-  contract" — the `_MAX_BLOCK_SIZE` / `_MAX_VOCAB_BLOCK` guards. This is the near-pathological case the guards exist for, and downgrading to eager keeps a single bad width from killing a run that would otherwise be fine.
+- The **default-config** run can never hit a triton path, because
+  `config.py:get_config` ships the three `*_impl` keys as `'pytorch'`.
+- An **explicit** `'triton'` request is force-restored to `'pytorch'` by
+  `train.py:train_model` unless `ENABLE_TRITON_KERNELS=1` is in the environment. The opt-in is therefore two keystrokes of intent: per-kernel `*_impl='triton'` *and* the env var. A run that reaches the kernel has been explicitly asked to.
+- Outside the training path (tests, ad-hoc scripts, model construction
+  with `*_impl='triton'`), the kernel's `ImportError` makes the misconfiguration loud — the user sees the triton install hint and the suggestion to switch the impl key.
 
-The hard-fail rule's real teeth are elsewhere: the **default-config** run can never hit a fallback, because defaults are `'pytorch'` and the trainer force-backs explicit requests without the env var — rule 7's "silent" clause is about a kernel that *claims* to be active and isn't. And when the run *has* opted in and a kernel genuinely miscompiles (a `TritonError` at JIT time — *not* one of the two caught exception types), the `except` clause does not match and the exception propagates: the run fails loudly, exactly as the rule demands. The fallback net catches only the two *anticipated* failure classes; everything else is an error. That is the boundary, and it is encoded in the exception tuple of the `try/except`.
+Rule 7's "clear error" requirement is satisfied by design: the `ImportError` from the kernel names the missing package, and the `ValueError` from the kernel's `_MAX_BLOCK_SIZE` / `_MAX_VOCAB_BLOCK` guard names the offending dimension. Both messages include the remediation. Any other failure mode (`TritonError` at JIT time, OOM, illegal memory access) is *not* caught by anything in `model.py` and therefore propagates as a hard error — the same loud-failure property the rule asks for, but unconditional.
 
-One alignment note, verified against the working tree: AGENTS.md's "Sanctioned Triton paths" list still reads "(none yet)" even though `kernels/` contains the three kernels described here. The rule's *structure* (gate on `import triton`, set `HAS_TRITON`, wrap in `torch.autograd.Function`, ship a CPU-runnable reference) is exactly what the three kernel files do, but the list itself and the `models/<name>_triton.py` placement convention were not updated when the kernels landed — treat AGENTS.md's sanctioned list as stale [verified: `kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, `kernels/cross_entropy_triton.py` exist; the AGENTS.md list does not mention them]. Rule 8's test obligation is likewise only partially satisfied: the GPU-only numeric checks live in `tests/e2e_gpu_smoke.py:check_triton_kernels` (rmsnorm tolerance 5e-2, swiglu 1.0, CE against the reference), and `tests/test_config.py:REQUIRED_KEYS` pins the config keys, but no test in `tests/test_model.py` constructs `RMSNorm(impl="triton")` or exercises the fallback path [verified via search]. The fallback semantics are enforced by code review and by the e2e script, not by a unit test.
+One alignment note, verified against the working tree: AGENTS.md's "Sanctioned Triton paths" list is current — it names all three kernels (`kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, `kernels/cross_entropy_triton.py`) with their config keys, and the files implement exactly the structure the rule describes (gate on `import triton`, set `HAS_TRITON`, wrap in `torch.autograd.Function`, ship a CPU-runnable reference). Rule 7's hard-fail semantics are enforced in code: the four `model.py` dispatch sites call the kernel directly with no eager fallback, and `model.py:chunked_head_cross_entropy_with_z` additionally pre-validates `HAS_TRITON` and raises `ImportError` at entry. Rule 8's CPU-runnable-reference obligation is satisfied by the `*_pytorch` reference functions (exercised on CPU by `tests/test_model.py`); the GPU-side numerics live in `tests/e2e_gpu_smoke.py:check_triton_kernels` (rmsnorm tolerance 5e-2, swiglu 1.0, CE against the reference), and `tests/test_config.py:REQUIRED_KEYS` pins the config keys. Note there is no `tests/test_<name>_triton.py` per kernel in this tree — the CPU contract is enforced through the reference functions and the e2e script, not through per-kernel test files.
 
 ## Edge Cases and Pitfalls
 
 ### Data-path pitfalls
 
 1. **The missing cache (the big one).** `build_training_data` raises
-   `FileNotFoundError` if `data_cache/tokens.bin` does not exist, and `train.py` silently falls back to synthetic data. Today that fallback *always* fires: there is no `data_cache/` in the tree, and — verified by grepping the workspace for `tokens.bin` — the current pack stage emits `data/shards/shard_*.bin` + `manifest.json`, **not** `tokens.bin`. The statement in [training.md](../training.md) (data-pipeline section, merged from the retired `data/DATA_PIPELINE.md`) that "the packing stage produces `data_cache/tokens.bin`" is not backed by workspace code. Concatenating shards in manifest order yields exactly the flat stream the loader expects (byte-compatible `uint32`), so the wiring is a small missing step, but it is *missing*: as of this writing, `python train.py` on a fresh checkout trains on synthetic data even after `python data/prepare_data.py` succeeds. `[INFERENCE]` the shard→single-file concatenation is the intended bridge.
+   `FileNotFoundError` if `data_cache/tokens.bin` does not exist, and `train.py` falls back to synthetic data with a loud warning. The cache is produced by a full `python data/prepare_data.py --stage pretrain` run: the workspace pipeline emits `data/shards/shard_*.bin` + `manifest.json`, and the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) concatenates them in manifest order into `data_cache/tokens.bin` — byte-compatible `uint32`, exactly the flat stream the loader expects. On a fresh checkout with no cache, `python train.py` trains on synthetic data until `data/prepare_data.py` has been run to completion.
 2. **The vendored loader is a snapshot.** Diffing
    `data/shared_data/loader.py` against `LLM/shared_data/loader.py` shows the workspace canonical loader has moved on (it now reads shards via the manifest). The `rsync` refresh command in
    [training.md](../training.md) (merged from the retired
    `data/DATA_PIPELINE.md`) would replace the vendored file and *change the input contract* from `tokens.bin` to the shards — a real behavioral change, not a cosmetic update.
-3. **Doc rot in the mixture docs.** The workspace README §5 and this
-   project's `data_sources` config both describe mixtures that differ from the canonical `mixture.yaml`. When reading any data doc, the YAML wins. (And `SKILLS.md` still teaches adding sources to `config.py:get_config`, which nothing consumes — a trap for anyone extending the mixture.)
+3. **Doc rot in the mixture docs.** The root `CoreProjects/README.md` §4
+   LLaMA-3-Lite entry and this project's `data_sources` config both
+   describe mixtures that differ from the canonical `mixture.yaml`. When
+   reading any data doc, the YAML wins. (Extending the mixture means
+   editing the **canonical mixture**, not `config.py` — nothing consumes
+   the project's `data_sources` dict.)
 4. **Resume does not restore the epoch counter.** `save_checkpoint` stores
    model/optimizer/scheduler/EMA/RNG states but **not** the sampler offset or epoch count; `epoch_state` restarts at `{'epoch': 0}` on every run. A run resumed at step 20k does not see the same window order as a never-stopped run at step 20k (the first StopIteration after resume bumps to epoch 1, replaying epoch-1 order from its start). The RNG state *is* restored, so the *sampler's* epoch-1 permutation is bit-identical to the original run's — the divergence is in *where* in the permutation the resumed iterator starts. See [training-and-memory.md](training-and-memory.md) for the full analysis.
 5. **EOS 128,009 vs vocab 128,000.** The corpus contains token 128,009, but
@@ -787,17 +848,20 @@ One alignment note, verified against the working tree: AGENTS.md's "Sanctioned T
 4. **Register pressure on the 131072-wide CE block.** 512 FP32 values per
    thread (8 warps) cannot live in registers; Triton spills to local memory or re-loads [INFERENCE]. The 256-row chunked invocation bounds the blast radius; a direct call on full logits (`chunked_cross_entropy_with_z` with `impl='triton'`) still materializes 50.3 GB of logits *and* pays the spill — the docstring of `model.py:chunked_cross_entropy_with_z` explicitly warns to prefer the head-chunked variant.
 5. **`_MAX_BLOCK_SIZE` and `_MAX_VOCAB_BLOCK` are the only shape guards.**
-   d_ff = 4096 and vocab 128k are at/below the caps today; a config change (e.g. d_ff = 16384, or a 256k vocab) trips the `ValueError` and silently (well, loudly) downgrades to eager — the guard fires *before* the JIT attempts a pathological compile. Nothing in `config.py` validates the caps up front, so the failure mode is the runtime warning, not a config error.
+   d_ff = 4096 and vocab 128k are at/below the caps today; a config change (e.g. d_ff = 16384, or a 256k vocab) trips the `ValueError` from the kernel, which propagates through the `model.py` dispatch and **fails the run** (per AGENTS.md rule 7 there is no downgrade to eager). Nothing in `config.py` validates the caps up front, so the failure mode is the runtime error, not a config error.
 6. **Saving `gate_up` pins 3.2 GB per layer.** `_TritonSwiGLU`'s
    `ctx.save_for_backward` holds the full fused projection; only the gradient-checkpointing stack keeps 16 of them from coexisting. Disabling `gradient_checkpointing` with `swiglu_impl='triton'` needs a fresh memory budget.
 7. **Contiguity is forced, not assumed.** Both `_triton_rmsnorm_forward` and
    `_triton_ce_z_forward` call `.contiguous()` on the reshaped input — a defensive copy on strided views. Non-contiguous inputs (e.g. a transposed `[S, B, d_model]` layout) pay a copy before the kernel runs; the kernels themselves accept a `stride_row` argument but the wrappers always pass the contiguous stride.
 8. **`eps` as `tl.constexpr` means a JIT specialization per eps value.** The
    RMSNorm kernel bakes `eps` into the binary; distinct eps values (e.g. 1e-5 for pre-norms vs any future variant) mean distinct compiled kernels in the Triton cache. Harmless at this scale, worth knowing if the config surface grows eps knobs.
-9. **The dense-variant fallback prints on every call.**
-   `model.py:chunked_cross_entropy_with_z` lacks the `_triton_fallback_warned` one-time guard the module classes have; in a loop that calls it with `impl='triton'` on a Triton-less box, the warning repeats per call. Cosmetic, but the asymmetry is real.
-10. **The 1.5× rule is currently unmeasured.** No microbenchmark harness
-    ships in the repo (AGENTS.md names `scripts/microbench_a100.py`, which does not exist [verified]). Launch-count savings are real (RMSNorm: ~4–5 eager launches → 1, per application, 33 applications/forward; SwiGLU: 2 → 1 per layer, 16 layers), and elementwise traffic drops (SwiGLU intermediate eliminated, RMSNorm rows read once), but whether the aggregate clears 1.5× is an open empirical question until a harness lands.
+9. **`_triton_fallback_warned` is gone.** Earlier code in `model.py` carried a per-instance flag of this name to gate a one-time warning when triton was missing; that whole fallback path is now removed (per AGENTS.md hard rule 7), and with it the flag. If a new test or doc mentions the flag, it is stale.
+10. **The 1.5× rule is measured by `scripts/microbench_a100.py`, not yet
+    satisfied by a run.** The harness now ships (launch-count savings are
+    real: RMSNorm ~4–5 eager launches → 1, 33 applications/forward;
+    SwiGLU 2 → 1 per layer, 16 layers; elementwise traffic drops), but it
+    requires CUDA + triton and no measured run has cleared the 1.5× bar
+    yet — the contract is enforced on the A100, not on dev boxes.
 
 ## References
 
@@ -829,8 +893,9 @@ Related docs (all links relative to `docs/concepts/`):
   the retired `docs/CODE_MAP.md` and `docs/docs_expansion_plan.md`).
 - [../../AGENTS.md](../../AGENTS.md) — hard rules 2 (1.5× speedup), 6
   (EOS-separated packing), 7 (no silent Triton fallback), 8 (CPU-runnable references).
-- [../../SKILLS.md](../../SKILLS.md) — note: its mixture-extension advice
-  points at `config.py:get_config`, which nothing consumes.
+- [../../SKILLS.md](../../SKILLS.md) — Skill 3: extend the mixture by
+  editing the canonical `LLM/shared_data/config/mixture.yaml`, not
+  `config.py`.
 
 Key source files:
 

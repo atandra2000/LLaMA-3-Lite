@@ -125,7 +125,7 @@ def validate(model, val_dataloader, ignore_index, device, step, config):
     num_batches = 0
 
     val_max_batches = config.get('val_max_batches', 200)
-    z_loss_weight = config.get('z_loss_weight', 1e-4)
+    z_loss_weight = config.get('z_loss_weight', 1e-4) if config.get('use_z_loss', True) else 0.0
     cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
     ce_chunk_size = config.get('ce_chunk_size', 256)
 
@@ -291,7 +291,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     gradient_checkpointing = config.get('gradient_checkpointing', True)
     real_vocab_size = max(config['vocab_size'], len(tokenizer))
     qknorm = config.get('qknorm', True)
-    z_loss_weight = config.get('z_loss_weight', 1e-4)
+    # use_z_loss is the functional switch; z_loss_weight scales the term when on.
+    z_loss_weight = config.get('z_loss_weight', 1e-4) if config.get('use_z_loss', True) else 0.0
     cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
     # Per-kernel '*_impl='triton'' keys only fire when ENABLE_TRITON_KERNELS=1;
     # default runs never silently switch to a fused path.

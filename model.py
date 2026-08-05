@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
+from kernels.cross_entropy_triton import triton_chunked_cross_entropy_with_z
 from kernels.rmsnorm_triton import triton_rmsnorm
 from kernels.swiglu_triton import triton_swiglu
-from kernels.cross_entropy_triton import triton_chunked_cross_entropy_with_z
 
 
 class RoPE(nn.Module):
@@ -32,26 +32,21 @@ class RoPE(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    """RMSNorm with optional Triton fused-path opt-in."""
+    """RMSNorm with optional Triton fused-path opt-in.
+
+    The ``triton`` path is reached only when ``train.py`` has already gated on
+    ``ENABLE_TRITON_KERNELS=1``; failures surface as the kernel's own
+    ImportError/ValueError (no silent fallback — see AGENTS.md hard rule 7).
+    """
     def __init__(self, d_model: int, eps: float = 1e-5, impl: str = "pytorch"):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(d_model))
         self.eps = eps
         self.impl = impl
-        self._triton_fallback_warned = False
 
     def forward(self, x):
         if self.impl == "triton":
-            try:
-                return triton_rmsnorm(x, self.weight, self.eps)
-            except (ImportError, ValueError) as exc:
-                if not self._triton_fallback_warned:
-                    print(
-                        f"[RMSNorm] triton path unavailable "
-                        f"({type(exc).__name__}: {exc}); "
-                        f"falling back to 'pytorch'."
-                    )
-                    self._triton_fallback_warned = True
+            return triton_rmsnorm(x, self.weight, self.eps)
         return x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps) * self.weight
 
 
@@ -65,7 +60,6 @@ class GroupedQueryAttention(nn.Module):
         self.n_kv_heads = n_kv_heads
         self.head_dim = head_dim
         self.n_rep = n_heads // n_kv_heads
-        self.qknorm = qknorm
 
         self.q_proj = nn.Linear(d_model, n_heads * head_dim, bias=False)
         self.k_proj = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
@@ -110,28 +104,23 @@ class GroupedQueryAttention(nn.Module):
 
 
 class SwiGLUFFN(nn.Module):
-    """SwiGLU FFN with fused gate+up projection."""
+    """SwiGLU FFN with fused gate+up projection.
+
+    The ``triton`` path is reached only when ``train.py`` has already gated on
+    ``ENABLE_TRITON_KERNELS=1``; failures surface as the kernel's own
+    ImportError/ValueError (no silent fallback — see AGENTS.md hard rule 7).
+    """
     def __init__(self, d_model: int, d_ff: int, swiglu_impl: str = "pytorch"):
         super().__init__()
         self.gate_up_proj = nn.Linear(d_model, 2 * d_ff, bias=False)
         self.down_proj = nn.Linear(d_ff, d_model, bias=False)
         self.d_ff = d_ff
         self.swiglu_impl = swiglu_impl
-        self._triton_fallback_warned = False
 
     def forward(self, x):
         gate_up = self.gate_up_proj(x)
         if self.swiglu_impl == "triton":
-            try:
-                return self.down_proj(triton_swiglu(gate_up, self.d_ff))
-            except (ImportError, ValueError) as exc:
-                if not self._triton_fallback_warned:
-                    print(
-                        f"[SwiGLUFFN] triton path unavailable "
-                        f"({type(exc).__name__}: {exc}); "
-                        f"falling back to 'pytorch'."
-                    )
-                    self._triton_fallback_warned = True
+            return self.down_proj(triton_swiglu(gate_up, self.d_ff))
         gate, up = gate_up.chunk(2, dim=-1)
         return self.down_proj(F.silu(gate) * up)
 
@@ -235,22 +224,18 @@ def chunked_cross_entropy_with_z(
     Chunks along the token axis so the FP32 loss chain never sees more than
     ``chunk_size`` rows at once; z-loss is averaged over non-ignored tokens
     only. ``cross_entropy_impl='triton'`` swaps the per-chunk FP32 chain for
-    the fused kernel (falls back to PyTorch when triton is unavailable).
-    Prefer :func:`chunked_head_cross_entropy_with_z` when the logits tensor
-    itself would not fit in memory — this function still receives full logits.
+    the fused kernel; the kernel raises ImportError/ValueError if triton is
+    unavailable or the vocab is too large, so opt-in is explicit (no silent
+    fallback — see AGENTS.md hard rule 7). Prefer
+    :func:`chunked_head_cross_entropy_with_z` when the logits tensor itself
+    would not fit in memory — this function still receives full logits.
     """
     if cross_entropy_impl == "triton":
-        try:
-            return triton_chunked_cross_entropy_with_z(
-                logits, targets,
-                ignore_index=ignore_index,
-                z_loss_weight=z_loss_weight,
-            )
-        except (ImportError, ValueError) as exc:
-            print(
-                f"[chunked_cross_entropy_with_z] triton path unavailable "
-                f"({type(exc).__name__}: {exc}); falling back to 'pytorch'."
-            )
+        return triton_chunked_cross_entropy_with_z(
+            logits, targets,
+            ignore_index=ignore_index,
+            z_loss_weight=z_loss_weight,
+        )
 
     total_ce = torch.tensor(0.0, device=logits.device)
     total_count = torch.tensor(0, device=logits.device, dtype=torch.long)
@@ -288,21 +273,21 @@ def chunked_head_cross_entropy_with_z(
     ``checkpoint`` so only one chunk's logits are alive at a time — this is
     what bounds the loss memory to ~0.3 GB at ``chunk_size=256`` instead of
     the ~50 GB a full ``[N, V]`` logits tensor would need. Gradients flow to
-    both ``hidden`` and ``head_weight``. ``cross_entropy_impl='triton'``
-    swaps the per-chunk loss for the fused kernel; per-chunk losses are then
-    averaged (equal-size chunks ⇒ exact).
+    both ``hidden`` and ``head_weight``. ``cross_entropy_impl='triton'`` swaps
+    the per-chunk loss for the fused kernel; per-chunk losses are then
+    averaged (equal-size chunks ⇒ exact). When ``cross_entropy_impl='triton'``
+    but triton is unavailable, a clear ImportError is raised at function
+    entry (no silent fallback — see AGENTS.md hard rule 7).
     """
     from kernels.cross_entropy_triton import HAS_TRITON
 
-    use_triton = False
-    if cross_entropy_impl == "triton":
-        if HAS_TRITON:
-            use_triton = True
-        else:
-            print(
-                "[chunked_head_cross_entropy_with_z] triton unavailable "
-                "(`import triton` failed); falling back to 'pytorch'."
-            )
+    if cross_entropy_impl == "triton" and not HAS_TRITON:
+        raise ImportError(
+            "cross_entropy_impl='triton' requires the `triton` package. "
+            "Install with `pip install triton` (Linux + CUDA only) and set "
+            "ENABLE_TRITON_KERNELS=1, or use cross_entropy_impl='pytorch'."
+        )
+    use_triton = cross_entropy_impl == "triton"
 
     def _chunk(hidden_c, w, targets_c):
         logits = F.linear(hidden_c, w)

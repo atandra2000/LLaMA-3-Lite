@@ -101,20 +101,36 @@ The two sub-blocks inside each `model.py:DecoderBlock` do two different kinds of
 
 The alternation is deliberate and repeated 16 times: communicate, compute; communicate, compute. Each round of communication+computation is one "refinement step" of the board, and each block's delta is small enough (in practice) that the board evolves smoothly across the depth of the network rather than being overwritten.
 
-```mermaid
-flowchart LR
-    subgraph block["one DecoderBlock (x 16)"]
-        direction TB
-        A["x — residual stream<br/>[96, 2048, 1024]"] --> N1["attention_norm<br/>RMSNorm"]
-        N1 --> ATT["attention<br/>token-to-token<br/>communication"]
-        ATT --> R1["+  (add back)"]
-        A --> R1
-        R1 --> N2["ffn_norm<br/>RMSNorm"]
-        N2 --> FFN["SwiGLU FFN<br/>per-token computation"]
-        FFN --> R2["+  (add back)"]
-        R1 --> R2
-    end
-    R2 --> B["x' — same shape<br/>[96, 2048, 1024]"]
+```
+one DecoderBlock (×16)
+┌──────────────────────────────────────────────┐
+│ x — residual stream [96, 2048, 1024]          │
+│   │                                           │
+│   ├───────────────────────────────┐           │
+│   ▼                               │           │
+│ attention_norm — RMSNorm          │           │
+│   │                               │           │
+│   ▼                               │           │
+│ attention — token-to-token        │           │
+│   communication                   │           │
+│   │                               │           │
+│   ▼                               │           │
+│   (+) ◄ (add back) ───────────────┘           │
+│   │                                           │
+│   ├───────────────────────────────┐           │
+│   ▼                               │           │
+│ ffn_norm — RMSNorm                │           │
+│   │                               │           │
+│   ▼                               │           │
+│ SwiGLU FFN — per-token            │           │
+│   computation                     │           │
+│   │                               │           │
+│   ▼                               │           │
+│   (+) ◄ (add back) ───────────────┘           │
+└──────────────────────────────────────────────┘
+   │
+   ▼
+x' — same shape [96, 2048, 1024]
 ```
 
 ### A worked toy example
@@ -402,15 +418,18 @@ $$o_i = \sum_{j \le i} \alpha_{ij} v_j, \qquad
 
 with $M_{ij} = 0$ for $j \le i$ and $M_{ij} = -\infty$ for $j > i$. Masked entries also receive no gradient through the softmax, which is exactly right: a future token is not allowed to influence an earlier prediction, so it should not influence the parameters through that prediction either.
 
-```mermaid
-flowchart LR
-    subgraph scores["score matrix S x S (query i, key j)"]
-        direction LR
-        A["below diagonal: allowed<br/>j <= i"]
-        B["above diagonal: masked<br/>-inf (j > i)"]
-    end
-    scores --> softmax["row-wise softmax<br/>normalizes over prefix only"]
-    softmax --> out["o_i = sum over j <= i of alpha_ij v_j"]
+```
+score matrix S x S (query i, key j):
+  ┌─────────────────────────────────────┐
+  │ below diagonal: allowed  (j ≤ i)    │
+  │ above diagonal: masked   (−∞, j > i)│
+  └─────────────────────────────────────┘
+              │
+              ▼
+  row-wise softmax — normalizes over prefix only
+              │
+              ▼
+  o_i = sum over j ≤ i of α_ij · v_j
 ```
 
 **The flag in the code.** The mask is not built by hand anywhere in `model.py`. The attention module requests it declaratively:
@@ -877,18 +896,27 @@ Concrete numbers for this model: $D = 128$ (64 planes), $\theta_{\text{base}} = 
 
 Derivation shown for the slowest plane: $\theta_{63} = 500000^{-63/64} = e^{-0.984375 \times 13.1224} = e^{-12.9176} \approx 2.45\times10^{-6}$, so $\lambda_{63} = 2\pi / 2.45\times10^{-6} \approx 2.56\times10^{6}$ tokens. The fastest plane spins 326 full turns inside one training sequence; the slowest one moves a fifth of a degree. The spectrum spans roughly **six orders of magnitude in wavelength** — that is the multi-scale odometer.
 
-```mermaid
-flowchart LR
-    subgraph fast["planes 0-28: wavelength < 2048 (phase wraps inside one training sequence)"]
-        A["p = 0<br/>freq 1.000 rad/tok<br/>lambda ~= 6 tok<br/>326 turns per 2048"] --> B["p = 10<br/>freq ~= 0.129<br/>lambda ~= 49 tok<br/>42 turns per 2048"]
-    end
-    subgraph mid["planes 29-48: 2048 < wavelength < 131072 (unambiguous in training; wraps only at 128k context)"]
-        C["p = 29<br/>lambda ~= 2.4e3 tok"] --> D["p = 43<br/>lambda ~= 4.2e4 tok"]
-    end
-    subgraph slow["planes 49-63: wavelength >= 131072 (never wraps, even at 128k context)"]
-        E["p = 49<br/>lambda ~= 1.4e5 tok"] --> F["p = 63<br/>freq ~= 2.5e-6<br/>lambda ~= 2.6e6 tok<br/>0.29 deg over 2048"]
-    end
-    fast --> mid --> slow
+```
+planes 0–28: wavelength < 2048                  planes 29–48: 2048 < wavelength < 131072
+(phase wraps inside one training sequence)      (unambiguous in training; wraps only at 128k context)
+┌────────────────────────────────────────┐      ┌────────────────────────────────────────┐
+│ p = 0     freq 1.000 rad/tok           │      │ p = 29   lambda ~= 2.4e3 tok           │
+│           lambda ~= 6 tok              │      │   │                                     │
+│           326 turns per 2048           │      │   ▼                                     │
+│   │                                     │      │ p = 43   lambda ~= 4.2e4 tok           │
+│   ▼                                     │      └────────────────────────────────────────┘
+│ p = 10    freq ~= 0.129                 │                 │
+│           lambda ~= 49 tok              │                 ▼
+│           42 turns per 2048             │      planes 49–63: wavelength >= 131072
+└────────────────────────────────────────┘      (never wraps, even at 128k context)
+                 │                              ┌────────────────────────────────────────┐
+                 ▼                              │ p = 49   lambda ~= 1.4e5 tok           │
+                                                │   │                                     │
+                                                │   ▼                                     │
+                                                │ p = 63   freq ~= 2.5e-6                 │
+                                                │          lambda ~= 2.6e6 tok            │
+                                                │          0.29 deg over 2048             │
+                                                └────────────────────────────────────────┘
 ```
 
 The boundary between the fast and mid bands is where the phase first survives a full 2048-token sequence. Solving $\lambda_p \ge 2048$:
@@ -951,23 +979,23 @@ This project does none of this at training time: it uses plain RoPE with the 500
 
 The whole model is built by one function call: `model.py:build_transformer` takes the hyperparameters (with defaults matching the config) and constructs a `model.py:Transformer`. The composition is:
 
-```mermaid
-flowchart TD
-    T["Transformer"] --> IE["input_embedding<br/>nn.Embedding(128000, 1024)"]
-    T --> D["decoder: Decoder"]
-    D --> FN["norm: RMSNorm(1024)  (final norm)"]
-    D --> LAYERS["layers: ModuleList of 16 x DecoderBlock"]
-    LAYERS --> B["DecoderBlock"]
-    B --> ATT["attention: GroupedQueryAttention"]
-    ATT --> Q["q_proj / k_proj / v_proj / out_proj"]
-    ATT --> QN["q_norm / k_norm: RMSNorm(128)"]
-    ATT --> R["rope: RoPE(head_dim=128)"]
-    B --> FFN["ffn: SwiGLUFFN"]
-    FFN --> GU["gate_up_proj: Linear(1024, 8192)"]
-    FFN --> DP["down_proj: Linear(4096, 1024)"]
-    B --> AN["attention_norm: RMSNorm(1024)"]
-    B --> FNN["ffn_norm: RMSNorm(1024)"]
-    T --> OP["output_proj: Linear(1024, 128000)"]
+```
+Transformer
+   ├── input_embedding: nn.Embedding(128000, 1024)
+   ├── decoder: Decoder
+   │    ├── norm: RMSNorm(1024)   (final norm)
+   │    └── layers: ModuleList of 16 × DecoderBlock
+   │         └── DecoderBlock
+   │              ├── attention: GroupedQueryAttention
+   │              │    ├── q_proj / k_proj / v_proj / out_proj
+   │              │    ├── q_norm / k_norm: RMSNorm(128)
+   │              │    └── rope: RoPE(head_dim=128)
+   │              ├── ffn: SwiGLUFFN
+   │              │    ├── gate_up_proj: Linear(1024, 8192)
+   │              │    └── down_proj: Linear(4096, 1024)
+   │              ├── attention_norm: RMSNorm(1024)
+   │              └── ffn_norm: RMSNorm(1024)
+   └── output_proj: Linear(1024, 128000)
 ```
 
 `model.py:Transformer.__init__` does exactly this: creates the embedding, builds the 16 blocks in a list comprehension over `range(n_layers)`, wraps them in a `model.py:Decoder`, creates the `output_proj` head, and calls `model.py:Transformer._init_weights`, which initializes every `nn.Linear` and `nn.Embedding` weight from $\mathcal{N}(0, 0.02)$. Note there are **no bias parameters anywhere** — every `Linear` is created with `bias=False`, and the norms have only a gain vector. (The 0.02 init standard deviation is a deliberate small-value choice: with $d = 1024$ and 16 residual adds, keeping early activations small keeps the first blocks' deltas small relative to the stream, and it is a well-tested GPT-era default.)
@@ -976,16 +1004,34 @@ flowchart TD
 
 The complete forward data flow with real shapes (training configuration: `batch_size = 96`, `seq_len = 2048`, `vocab_size = 128000` from `config.py:get_config`):
 
-```mermaid
-flowchart LR
-    ID["input_ids [96, 2048] int64"] --> EMB["input_embedding lookup"]
-    EMB --> X0["x [96, 2048, 1024]"]
-    X0 --> S["16 x DecoderBlock<br/>(pre-norm attention add + pre-norm SwiGLU add)"]
-    S --> FIN["final RMSNorm(1024)"]
-    FIN --> H["hidden [96, 2048, 1024]"]
-    H --> FLAT["view(-1, 1024) → [196608, 1024]"]
-    FLAT --> LOSS["chunked_head_cross_entropy_with_z<br/>F.linear per 256-row chunk → [256, 128000]<br/>FP32 CE + z-loss, masked sums"]
-    LOSS --> L["scalar loss"]
+```
+input_ids [96, 2048] int64
+   │
+   ▼
+input_embedding lookup
+   │
+   ▼
+x [96, 2048, 1024]
+   │
+   ▼
+16 × DecoderBlock (pre-norm attention add + pre-norm SwiGLU add)
+   │
+   ▼
+final RMSNorm(1024)
+   │
+   ▼
+hidden [96, 2048, 1024]
+   │
+   ▼
+view(-1, 1024) → [196608, 1024]
+   │
+   ▼
+chunked_head_cross_entropy_with_z
+   F.linear per 256-row chunk → [256, 128000]
+   FP32 CE + z-loss, masked sums
+   │
+   ▼
+scalar loss
 ```
 
 At generation time (see `train.py:generate_samples` in
@@ -1100,28 +1146,58 @@ def forward(self, x):
 
 The attention-flow diagram, at the head level:
 
-```mermaid
-flowchart LR
-    X["x<br/>[B, S, d] = [96, 2048, 1024]"] --> QP["q_proj<br/>d → 8·128"]
-    X --> KP["k_proj<br/>d → 4·128"]
-    X --> VP["v_proj<br/>d → 4·128"]
-    QP --> QN["q_norm (per-head RMSNorm)"]
-    KP --> KN["k_norm (per-head RMSNorm)"]
-    QN --> QT["view + transpose<br/>[B, 8, S, 128]"]
-    KN --> KT["view + transpose<br/>[B, 4, S, 128]"]
-    VP --> VT["view + transpose<br/>[B, 4, S, 128]"]
-    QT --> QR["RoPE(q)"]
-    KT --> KR["RoPE(k)"]
-    QR --> QF["q<br/>[B, 8, S, 128]"]
-    KR --> KE["expand × n_rep = 2<br/>[B, 8, S, 128]"]
-    VT --> VE["expand × n_rep = 2<br/>[B, 8, S, 128]"]
-    QF --> SDPA["F.scaled_dot_product_attention<br/>(q, k, v, is_causal=True)"]
-    KE --> SDPA
-    VE --> SDPA
-    SDPA --> OT["[B, 8, S, 128]<br/>one row per head"]
-    OT --> OC["transpose + contiguous + view<br/>[B, S, 1024]"]
-    OC --> OP["out_proj<br/>1024 → 1024"]
-    OP --> Y["[B, S, 1024] → residual add"]
+```
+x [B, S, d] = [96, 2048, 1024]
+   │
+   ├───────────────► q_proj  d → 8·128
+   │                  │
+   │                  ▼
+   │               q_norm (per-head RMSNorm)
+   │                  │
+   │                  ▼
+   │               view + transpose → [B, 8, S, 128]
+   │                  │
+   │                  ▼
+   │               RoPE(q) → q [B, 8, S, 128] ─────────────────┐
+   │                                                           │
+   ├───────────────► k_proj  d → 4·128                         │
+   │                  │                                        │
+   │                  ▼                                        │
+   │               k_norm (per-head RMSNorm)                   │
+   │                  │                                        │
+   │                  ▼                                        │
+   │               view + transpose → [B, 4, S, 128]           │
+   │                  │                                        │
+   │                  ▼                                        │
+   │               RoPE(k) → expand × n_rep = 2                │
+   │                           → [B, 8, S, 128] ───────────────┼──┐
+   │                                                           │  │
+   └───────────────► v_proj  d → 4·128                         │  │
+                      │                                        │  │
+                      ▼                                        │  │
+                  view + transpose → [B, 4, S, 128]            │  │
+                      │                                        │  │
+                      ▼                                        │  │
+                  expand × n_rep = 2 → [B, 8, S, 128] ────────┼──┼──┐
+                                                               │  │  │
+                                               ┌───────────────▼──▼──▼──┐
+                                               │ F.scaled_dot_product_ │
+                                               │ attention(q, k, v,    │
+                                               │   is_causal=True)      │
+                                               └───────────┬───────────┘
+                                                           ▼
+                                               out [B, 8, S, 128]
+                                               — one row per head
+                                                           │
+                                                           ▼
+                                               transpose + contiguous
+                                               + view → [B, S, 1024]
+                                                           │
+                                                           ▼
+                                               out_proj  1024 → 1024
+                                                           │
+                                                           ▼
+                                               [B, S, 1024] → residual add
 ```
 
 **Points of interest in the walkthrough**

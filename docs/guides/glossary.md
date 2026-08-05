@@ -44,14 +44,26 @@ Conventions: a bare `d` means `d_model`; `N` is always the *flattened* token axi
 
 ### Tensor-shape conventions
 
-```mermaid
-flowchart LR
-    A["ids [B, S]"] --> B["embed [B, S, d]"]
-    B --> C["16 × DecoderBlock [B, S, d]"]
-    C --> D["final norm [B, S, d]"]
-    D --> E["hidden [B, S, d] (return_hidden=True)"]
-    E --> F["LM head: hidden @ W_headᵀ, chunked [N, V]→[c, V]"]
-    F --> G["loss: CE + z-loss (scalar)"]
+```
+ids [B, S]
+   │
+   ▼
+embed [B, S, d]
+   │
+   ▼
+16 × DecoderBlock [B, S, d]
+   │
+   ▼
+final norm [B, S, d]
+   │
+   ▼
+hidden [B, S, d] (return_hidden=True)
+   │
+   ▼
+LM head: hidden @ W_headᵀ, chunked [N, V] → [c, V]
+   │
+   ▼
+loss: CE + z-loss (scalar)
 ```
 
 - `[B, S]` — token-id tensors (`input` / `target` from
@@ -138,7 +150,7 @@ Every key below lives in `config.py:get_config`; defaults are the current values
 | `gradient_checkpointing` | True | Recompute activations per layer |
 | `ce_chunk_size` | 256 | Rows of logits per loss chunk (~131 MB FP32) |
 | `rmsnorm_impl` / `swiglu_impl` / `cross_entropy_impl` | pytorch | Per-op Triton opt-in, gated on `ENABLE_TRITON_KERNELS=1` |
-| `use_z_loss` | True | Informational toggle (behavior follows `z_loss_weight`) |
+| `use_z_loss` | True | Functional switch: `False` zeroes the z term (`z_loss_weight` is then ignored); `z_loss_weight` scales it when on |
 | `z_loss_weight` | 1e-4 | z-loss coefficient |
 | `qknorm` | True | Per-head QK RMSNorm |
 | `use_ema` | True | Enable EMA shadow |
@@ -151,7 +163,7 @@ Every key below lives in `config.py:get_config`; defaults are the current values
 
 | Key | Default | Meaning |
 |---|---|---|
-| `data_sources` | 6 mixtures | Workspace corpus mixture + weights (50% fineweb-edu, 10% code, 20% the-stack-Python, 5% each others) |
+| `data_sources` | 6 entries | Vestigial mixture dict in `config.py` (fineweb_edu 0.5 / fineweb_code 0.1 / the_stack_python 0.2 / the_stack_multilang 0.05 / wikipedia 0.05 / stackoverflow_qa 0.05, sums to 0.95). **Nothing consumes it** — the canonical mixture is `LLM/shared_data/config/mixture.yaml` |
 | `num_workers` | 6 | DataLoader workers |
 | `prefetch_factor` | 16 | Batches prefetched per worker |
 | `pin_memory` | True | Page-locked host buffers for async H2D |

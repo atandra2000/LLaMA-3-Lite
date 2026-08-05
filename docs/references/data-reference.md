@@ -6,9 +6,9 @@ This document consolidates the three reference docs for the data path, the token
 
 **Data.** LLaMA-3-Lite reads training data from exactly three files. The runtime loader is `data/shared_data/loader.py` (210 lines): a memory-mapped `uint32` token buffer wrapped in a `Dataset`, a deterministic `Sampler`, a stacking `collate_fn`, and three builders that assemble train/val `DataLoader`s. `data/prepare_data.py` is a thin CLI shim that delegates corpus construction to the workspace-level `LLM/shared_data` pipeline; `dataset.py` is a 32-line re-export shim so `train.py` and `benchmark_data.py` keep importing from the old path. The corpus on disk is one file, `data_cache/tokens.bin`: raw little-endian `uint32` tokens, no header, EOS-separated documents, about 32 GB at the 8B-token target. Because the loader memory-maps it, GPU-resident data cost is ~0 bytes — the headline enabler of the project's 78% memory reduction.
 
-**Tokenizer.** LLaMA-3-Lite never tokenizes text at training time. The corpus is pretokenized to `uint32` ids by the workspace `LLM/shared_data` pipeline (invoked through the `data/prepare_data.py` shim) and stored in `data_cache/tokens.bin`; the project's own data code only *loads* a tokenizer and consumes ids. That load happens in `data/shared_data/loader.py:build_tokenizer`, which calls `AutoTokenizer.from_pretrained(config["tokenizer_name"])` and patches `pad_token` to `eos_token` when the checkpoint declares no pad token (the LLaMA-3 tokenizer does not ship one). The tokenizer's real vocabulary is 128,256 ids (128,000 ordinary subword symbols plus 256 special tokens at the top of the range), while `config.py:get_config` sets `vocab_size` to 128,000 — so `train.py:train_model` computes `real_vocab_size = max(config['vocab_size'], len(tokenizer))` and builds the model's embedding and LM head at that width. Because the pipeline never pads, `train.py:train_model` sets `ignore_index = -100` (a sentinel that matches no real token id), which keeps the EOS document separator learnable — critical, since the pad fallback makes `pad_token_id == eos_token_id`. Generation (`train.py:generate_samples`) encodes a prompt, samples autoregressively, stops on `tokenizer.eos_token_id`, and decodes the result. Offline or synthetic runs use a byte-level stub, `data/shared_data/loader.py:_SyntheticTokenizerStub`, which maps each UTF-8 byte to one id.
+**Tokenizer.** LLaMA-3-Lite never tokenizes text at training time. The corpus is pretokenized to `uint32` ids by the workspace `LLM/shared_data` pipeline (invoked through the `data/prepare_data.py` shim, which then concatenates the pipeline's shards into `data_cache/tokens.bin` — see the bridge-stage section below); the project's own data code only *loads* a tokenizer and consumes ids. That load happens in `data/shared_data/loader.py:build_tokenizer`, which calls `AutoTokenizer.from_pretrained(config["tokenizer_name"])` and patches `pad_token` to `eos_token` when the checkpoint declares no pad token (the LLaMA-3 tokenizer does not ship one). The tokenizer's real vocabulary is 128,256 ids (128,000 ordinary subword symbols plus 256 special tokens at the top of the range), while `config.py:get_config` sets `vocab_size` to 128,000 — so `train.py:train_model` computes `real_vocab_size = max(config['vocab_size'], len(tokenizer))` and builds the model's embedding and LM head at that width. Because the pipeline never pads, `train.py:train_model` sets `ignore_index = -100` (a sentinel that matches no real token id), which keeps the EOS document separator learnable — critical, since the pad fallback makes `pad_token_id == eos_token_id`. Generation (`train.py:generate_samples`) encodes a prompt, samples autoregressively, stops on `tokenizer.eos_token_id`, and decodes the result. Offline or synthetic runs use a byte-level stub, `data/shared_data/loader.py:_SyntheticTokenizerStub`, which maps each UTF-8 byte to one id.
 
-**Kernels.** `kernels/` holds three optional Triton kernels — fused RMSNorm (`kernels/rmsnorm_triton.py`), fused SwiGLU activation (`kernels/swiglu_triton.py`), and fused chunked cross-entropy + z-loss (`kernels/cross_entropy_triton.py`) — each shipped with a pure-PyTorch reference implementation that runs on CPU without Triton installed. Every kernel is **opt-in**: `config.get_config()` defaults all three `*_impl` keys to `'pytorch'`, and the trainer refuses to honor `'triton'` unless the environment variable `ENABLE_TRITON_KERNELS=1` is set. Each kernel is wrapped in a `torch.autograd.Function` whose forward launches one Triton program and whose backward **re-computes** the reference implementation instead of launching a second kernel. If Triton is missing (`ImportError`) or the tensor shape violates a kernel guard (`ValueError`), the model layer prints a warning and falls back to the PyTorch path; any *other* runtime failure propagates and kills the run. AGENTS.md requires ≥ 1.5× speedup for a sanctioned kernel before it may be enabled by default, but the benchmark script it names (`scripts/microbench_a100.py`) does not exist in this repo yet.
+**Kernels.** `kernels/` holds three optional Triton kernels — fused RMSNorm (`kernels/rmsnorm_triton.py`), fused SwiGLU activation (`kernels/swiglu_triton.py`), and fused chunked cross-entropy + z-loss (`kernels/cross_entropy_triton.py`) — each shipped with a pure-PyTorch reference implementation that runs on CPU without Triton installed. Every kernel is **opt-in**: `config.get_config()` defaults all three `*_impl` keys to `'pytorch'`, and the trainer refuses to honor `'triton'` unless the environment variable `ENABLE_TRITON_KERNELS=1` is set. Each kernel is wrapped in a `torch.autograd.Function` whose forward launches one Triton program and whose backward **re-computes** the reference implementation instead of launching a second kernel. If Triton is missing (`ImportError`) or the tensor shape violates a kernel guard (`ValueError`), the model layer raises the kernel's exception out of the forward pass — there is no silent fallback (AGENTS.md hard rule 7). AGENTS.md requires ≥ 1.5× speedup for a sanctioned kernel before it may be enabled by default, but the benchmark script it names (`scripts/microbench_a100.py`) does not exist in this repo yet.
 
 ---
 
@@ -39,6 +39,7 @@ There is **no** `_stream_to_disk`, `_doc_hash`, `_build_source_streams`, or `int
 | `data/shared_data/loader.py:build_training_data` | function | mmap `tokens.bin` → real train/val loaders |
 | `data/shared_data/loader.py:_SyntheticTokenizerStub` | class | Byte⇄id tokenizer stand-in |
 | `data/prepare_data.py:main` | function | CLI → `run_pipeline` in the workspace package |
+| `data/prepare_data.py:concat_shards_to_cache` | function | Bridge stage: concatenates packed shards (manifest order) into the flat `tokens.bin` cache |
 | `dataset.py:PackedDataset` … | re-exports | 5 symbols re-exported for `train.py` |
 
 ## The corpus layout
@@ -228,7 +229,7 @@ This is the *only* place the real tokenizer is loaded in this repo. It uses `con
 
 ## data/prepare_data.py — the shim
 
-`data/prepare_data.py:main` is a CLI entry point (`python data/prepare_data.py --stage pretrain …`) that produces `tokens.bin`. It does **not** implement any pipeline itself.
+`data/prepare_data.py:main` is a CLI entry point (`python data/prepare_data.py --stage pretrain …`) that produces `tokens.bin` in two stages: it delegates corpus construction to the workspace pipeline, then concatenates the pipeline's shards into the flat cache (see below). It does **not** implement any pipeline itself.
 
 ### Path resolution
 
@@ -269,7 +270,13 @@ return run_pipeline(
 )
 ```
 
-The CLI flags (`--mixture`, `--data-config`, `--data-root`, `--source`, `--skip-download/clean/tokenize/pack`) pass straight through to the workspace pipeline, which does the downloading, dedup, tokenization, and packing that produce the EOS-separated `uint32` stream.
+The CLI flags (`--mixture`, `--data-config`, `--data-root`, `--source`, `--skip-download/clean/tokenize/pack`) pass straight through to the workspace pipeline, which does the downloading, dedup, tokenization, and packing that produce the EOS-separated `uint32` shards.
+
+### The bridge stage: shards → `tokens.bin`
+
+The workspace pipeline writes `shards/shard_*.bin` + `shards/manifest.json` (see [workspace-data.md](workspace-data.md)), but the vendored loader mmaps a single flat `uint32` file. After `run_pipeline` returns, `data/prepare_data.py:concat_shards_to_cache` bridges the two layouts: it reads the manifest, concatenates every `shard_*.bin` in index order into `data_cache/tokens.bin` (honoring `data_cache_dir` / `data_cache_filename` from `config.py:get_config`), and atomically renames the result into place. Concatenating shards in manifest order yields exactly the byte stream `data/shared_data/loader.py:build_training_data` expects — the shards were already EOS-separated at pack time, so no separator logic is needed at the seam.
+
+The concat streams shard-by-shard in 256 MB reads, so RAM stays flat regardless of corpus size, and writes via a sibling `.tmp` + `os.replace` so a crash never leaves a truncated `tokens.bin` for the loader to mmap. When `reuse_data_cache` is `True` (the default) and the cache already exists, the stage skips the concat entirely.
 
 ## dataset.py — the re-export shim
 
@@ -307,28 +314,53 @@ The train/val asymmetry is deliberate: the train loader drops the final incomple
 
 ## Loader construction, end to end
 
-```mermaid
-flowchart TD
-    subgraph RUNTIME["runtime (python train.py)"]
-        A["train_model(config)"] --> B{"data_cache/tokens.bin exists?"}
-        B -- "no (FileNotFoundError)" --> C["build_synthetic_data(config)"]
-        B -- "yes" --> D["build_training_data(config)"]
-        C --> E["rng.integers(2, vocab, uint32) → 1.57M tokens"]
-        D --> F["np.memmap(tokens.bin, uint32, 'r') → 32 GB view"]
-        E --> G["truncate to whole windows + 5% chunk-aligned val split"]
-        F --> G
-        G --> H["PackedDataset(train) + PackedDataset(val)"]
-        H --> I["ShuffledRangeSampler(n_chunks, seed=shuffle_seed)"]
-        I --> J["DataLoader batch=96, num_workers=6, drop_last=True, collate_fn"]
-        H --> K["DataLoader(val, shuffle=False, drop_last=False)"]
-        J --> L["_next_batch → StopIteration → set_epoch(epoch+1)"]
-    end
-    subgraph PREP["data prep (python data/prepare_data.py)"]
-        P["main(): sys.path → LLM/ first"] --> Q["import shared_data.config / prepare_data"]
-        Q -- "ModuleNotFoundError" --> R["SystemExit: workspace package missing"]
-        Q --> S["run_pipeline(mixture, data_config, skip_* flags)"]
-        S --> F
-    end
+```
+┌─ runtime (python train.py) ─────────────────────────────────────────────┐
+│ train_model(config)                                                     │
+│   │                                                                     │
+│   ▼                                                                     │
+│ data_cache/tokens.bin exists?                                           │
+│   ├─ no (FileNotFoundError) → build_synthetic_data(config)              │
+│   │                              │                                      │
+│   │                              ▼                                      │
+│   │                        rng.integers(2, vocab, uint32)               │
+│   │                        → 1.57M tokens                               │
+│   └─ yes → build_training_data(config)                                  │
+│              │                                                          │
+│              ▼                                                          │
+│         np.memmap(tokens.bin, uint32, 'r') → 32 GB view                 │
+│              │                                                          │
+│              └──────────────┬───────────────────────────┐               │
+│                             ▼                           ▼               │
+│        truncate to whole windows + 5% chunk-aligned val split           │
+│                             │                                           │
+│                             ▼                                           │
+│        PackedDataset(train) + PackedDataset(val)                        │
+│                             │                                           │
+│        ┌────────────────────┴───────────────────┐                       │
+│        ▼                                        ▼                       │
+│ ShuffledRangeSampler(n_chunks,             DataLoader(val,              │
+│   seed=shuffle_seed)                        shuffle=False,              │
+│        │                                     drop_last=False)           │
+│        ▼                                                                │
+│ DataLoader batch=96, num_workers=6,                                     │
+│   drop_last=True, collate_fn                                            │
+│        │                                                                │
+│        ▼                                                                │
+│ _next_batch → StopIteration → set_epoch(epoch+1)                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─ data prep (python data/prepare_data.py) ───────────────────────────────┐
+│ main(): sys.path → LLM/ first                                           │
+│   │                                                                     │
+│   ▼                                                                     │
+│ import shared_data.config / prepare_data                                │
+│   ├─ ModuleNotFoundError → SystemExit: workspace package missing        │
+│   └─ ok → run_pipeline(mixture, data_config, skip_* flags)             │
+│           │                                                            │
+│           ▼                                                            │
+│      concat_shards_to_cache(shards → tokens.bin) ──► data_cache/tokens.bin
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## How the training loop consumes it
@@ -344,6 +376,63 @@ flowchart TD
 - `generate_samples` (`train.py:generate_samples`) calls
   `tokenizer.encode(prompt)` and `tokenizer.decode(ids)` and compares `next_token.item()` to `tokenizer.eos_token_id` — the three-member API the stub provides.
 
+## The benchmark harness — `benchmark_data.py`
+
+`benchmark_data.py` (repo root, standalone script) measures the **data
+pipeline** — buffer build, `PackedDataset` windowing, sampler shuffle,
+`DataLoader` prefetch, H2D copy, and optionally a tiny model forward — so
+the loader's throughput claims can be checked without launching a training
+run. It never touches HuggingFace: it synthesizes a BOS..EOS document
+buffer in RAM via `benchmark_data.py:build_benchmark_buffer` and feeds it
+through the same `data/shared_data/loader.py:PackedDataset` /
+`ShuffledRangeSampler` / `collate_fn` stack `train.py` uses.
+
+```bash
+# Small CPU run (what the test suite does, `tests/test_data_pipeline.py`)
+python3 benchmark_data.py --steps 2 --batch_size 4 --seq_len 64 --num_workers 0
+
+# Realistic shape on a dev box: batch 96, seq 2048, 50 steps
+python3 benchmark_data.py --steps 50 --batch_size 96 --seq_len 2048
+
+# Include a tiny end-to-end model forward (build_transformer, d_model=128)
+python3 benchmark_data.py --steps 50 --with_model_forward
+
+# Machine-readable
+python3 benchmark_data.py --steps 50 --json
+```
+
+The flags map 1:1 onto `benchmark_data.py:benchmark`'s parameters:
+`--steps`, `--batch_size`, `--seq_len`, `--vocab_size`, `--num_workers`,
+`--prefetch_factor`, `--pin_memory`, `--device` (auto/cpu/cuda),
+`--with_model_forward`, `--json`. With `--with_model_forward` it builds a
+tiny 2-layer transformer (`build_transformer` with `d_model=128`,
+`n_layers=2`) so the reported step time includes a forward pass, not just
+data movement.
+
+The metrics dict (`benchmark_data.py:benchmark` return value) covers the
+loader contract end to end:
+
+| Metric | What it verifies |
+|---|---|
+| `tokens_per_step` | `batch_size × seq_len` — the 196,608 tokens/step headline |
+| `tokens_per_sec` | end-to-end pipeline throughput |
+| `mean_step_ms` / `p50_step_ms` / `p99_step_ms` | step-time distribution; p99 matters because `num_workers × prefetch_factor` buffers only absorb bounded jitter |
+| `with_model_forward` / `device` | what was measured |
+
+Notes:
+
+- The benchmark does **not** use `np.memmap` — the buffer lives in RAM, so
+  it measures worker/prefetch/transfer costs, not page-fault behavior.
+  `--num_workers 0` removes the prefetch pipeline entirely for a
+  single-threaded baseline.
+- A `StopIteration` mid-run is handled by re-iterating the loader
+  (mirroring `train.py:_next_batch`), so `--steps` can exceed one epoch
+  without crashing.
+- This is the command the docs' memory-stack claims point at; it is also
+  what `tests/test_data_pipeline.py:TestBenchmarkData` runs in CI to keep
+  the script from rotting (it once crashed on a stale `eos_id` kwarg —
+  audit finding C1).
+
 ## The test suite's view
 
 `tests/test_smoke.py:tiny_dataloaders` builds loaders by hand, exercising `PackedDataset` and `ShuffledRangeSampler` exactly as the builders do but with `tiny_config` values (`seq_len=32`, `vocab=256`, `batch=4`, `val_split` from the tiny config). It synthesizes `n_tokens = (seq_len + 1) * 32 + 10` tokens — deliberately **not** a multiple of the chunk size, so the floor-to-whole-windows truncation is part of what the fixture covers — then splits chunk-aligned, constructs `PackedDataset` (no `eos_id` — windowing is position-only), seeds the sampler with `seed=42, offset=0`, and wires `ds.collate_fn` into both loaders. The `TestEndToEndSmoke` class then runs real forward/backward steps, chunked-vs-dense loss equivalence, and validation on these loaders.
@@ -351,7 +440,7 @@ flowchart TD
 ## Edge cases & pitfalls
 
 1. **Missing cache.** `build_training_data` raises `FileNotFoundError`
-   when `tokens.bin` is absent; `train.py` catches it and silently switches to random synthetic tokens. Training "works" but learns nothing — the warning is the only signal. Check `data_cache/` before drawing conclusions from a run.
+   when `tokens.bin` is absent; `train.py` catches it and silently switches to random synthetic tokens. Training "works" but learns nothing — the warning is the only signal. Check `data_cache/` before drawing conclusions from a run. Note the cache is produced by the full `python data/prepare_data.py --stage pretrain` run only (workspace pipeline **plus** the shard-concat bridge stage); `--skip-pack` leaves nothing to concatenate.
 2. **Existence-only check.** The guard never validates size or contents.
    A truncated `tokens.bin` yields fewer windows; a corrupt one yields garbage ids without any error.
 3. **Stub decode is lossy.** `_SyntheticTokenizerStub.encode` maps each
@@ -516,18 +605,27 @@ except Exception as exc:
 
 `build_synthetic_data` does **not** call `build_tokenizer` at all — it always returns `_SyntheticTokenizerStub(vocab=vocab, eos_id=0, pad_id=0)` so tests and offline runs never touch the network. And in `train.py:train_model`, a missing `data_cache/tokens.bin` (`FileNotFoundError`) drops the whole real path and falls back to `build_synthetic_data(config)` with a warning.
 
-```mermaid
-flowchart TD
-    C["config.py:get_config<br/>tokenizer_name, vocab_size 128000"] --> BTD["data/shared_data/loader.py:build_training_data"]
-    BTD -->|"tokens.bin missing"| SYN["data/shared_data/loader.py:build_synthetic_data<br/>(random ids)"]
-    SYN --> STUB1["_SyntheticTokenizerStub<br/>vocab 128000, eos/pad 0"]
-    BTD --> BK["data/shared_data/loader.py:build_tokenizer<br/>AutoTokenizer.from_pretrained"]
-    BK -->|"success"| REAL["real tokenizer<br/>len 128256"]
-    BK -->|"any exception"| STUB2["_SyntheticTokenizerStub<br/>vocab 128000, eos/pad 0"]
-    REAL --> TM["train.py:train_model<br/>real_vocab_size = max(128000, len(tok))"]
-    STUB1 --> TM
-    STUB2 --> TM
-    TM --> H["model.py:Transformer<br/>Embedding + LM head at real_vocab_size"]
+```
+config.py:get_config (tokenizer_name, vocab_size 128000)
+   │
+   ▼
+data/shared_data/loader.py:build_training_data
+   ├─ tokens.bin missing ──► build_synthetic_data (random ids)
+   │                           │
+   │                           ▼
+   │                        _SyntheticTokenizerStub (vocab 128000, eos/pad 0)
+   │
+   └─ ok ──► build_tokenizer — AutoTokenizer.from_pretrained
+               ├─ success ──► real tokenizer (len 128256)
+               └─ any exception ──► _SyntheticTokenizerStub (vocab 128000, eos/pad 0)
+                                     │
+                                     ▼
+               real tokenizer ───────┼──────► train.py:train_model
+                                          real_vocab_size = max(128000, len(tok))
+                                          │
+                                          ▼
+                                      model.py:Transformer
+                                      Embedding + LM head at real_vocab_size
 ```
 
 ## The vocab contract: 128,000 vs 128,256 vs the stub
@@ -691,23 +789,29 @@ Step by step, with the real signatures:
 
 ### The flow
 
-```mermaid
-sequenceDiagram
-    participant P as Prompt (str)
-    participant TK as tokenizer.encode
-    participant M as model (EMA)
-    participant S as top_k_top_p_sampling
-    participant D as tokenizer.decode
-    P->>TK: "The history of ..."
-    TK-->>M: input_ids [1, T0]
-    loop until eos or generation_max_tokens (128)
-        M->>S: logits[:, -1, :]
-        S-->>M: next_token [1, 1]
-        M->>M: cat([generated, next_token])
-        Note over M: next == tokenizer.eos_token_id → break
-    end
-    M->>D: generated[0].tolist()
-    D-->>P: decoded text (may end with special token)
+```
+Prompt (str)          tokenizer.encode      model (EMA)            top_k_top_p_sampling      tokenizer.decode
+    │                       │                   │                          │                        │
+    │  "The history of ..."  │                   │                          │                        │
+    ├───────────────────────►│                   │                          │                        │
+    │                       │  input_ids [1, T0] │                          │                        │
+    │                       ├───────────────────►│                          │                        │
+    │                       │                   │  loop until eos or        │                        │
+    │                       │                   │  generation_max_tokens(128)│                        │
+    │                       │                   │                          │                        │
+    │                       │                   │  logits[:, -1, :]         │                        │
+    │                       │                   ├─────────────────────────►  │                        │
+    │                       │                   │  next_token [1, 1]         │                        │
+    │                       │                   │◄─────────────────────────  │                        │
+    │                       │                   │  cat([generated, next])    │                        │
+    │                       │                   │  next == eos_token_id →    │                        │
+    │                       │                   │  break                     │                        │
+    │                       │                   │                          │                        │
+    │                       │                   │  generated[0].tolist()     │                        │
+    │                       │                   ├───────────────────────────────────────────────────►  │
+    │                       │                   │                          │                        │
+    │  decoded text (may end with special token)│                          │                        │
+    │◄──────────────────────────────────────────│                          │                        │
 ```
 
 Sampling knobs (`config.py:get_config`): `generation_max_tokens` 128, `generation_temperature` 0.8, `generation_top_k` 50, `top_p` 0.9 hardcoded in the call. The full loop mechanics live in
@@ -775,18 +879,28 @@ Training is unaffected by the stub: the model consumes ids, and synthetic ids ar
 
 The old `docs/tokenizer.md` described a "streaming tokenization" pipeline with `_stream_to_disk`, `_doc_hash`, and per-document BOS/EOS wrapping in `dataset.py`. None of that exists in this repo — `dataset.py` is a 32-line re-export shim, and those functions belong to the workspace `LLM/shared_data` package. The real division of labor:
 
-```mermaid
-flowchart LR
-    SRC["text corpora"] --> WP["workspace LLM/shared_data pipeline<br/>(tokenize, filter, dedup, pack)"]
-    WP -->|"uint32 ids, EOS 128009 separators"| BIN["data_cache/tokens.bin<br/>~32 GB at 8B tokens"]
-    BIN --> PD["data/shared_data/loader.py:PackedDataset (mmap)"]
-    PD --> DL["DataLoader → train.py"]
-    CFG["config.py tokenizer_name"] --> BT["data/shared_data/loader.py:build_tokenizer"]
-    BT --> GEN["train.py:generate_samples (text in/out)"]
+```
+text corpora ──► workspace LLM/shared_data pipeline
+                 (tokenize, filter, dedup, pack)
+                    │
+                    │ uint32 ids, EOS 128009 separators
+                    ▼
+                 data_cache/tokens.bin (~32 GB at 8B tokens)
+                    │
+                    ▼
+                 data/shared_data/loader.py:PackedDataset (mmap)
+                    │
+                    ▼
+                 DataLoader → train.py
+
+config.py tokenizer_name ──► data/shared_data/loader.py:build_tokenizer
+                                  │
+                                  ▼
+                              train.py:generate_samples (text in/out)
 ```
 
 - **Corpus side.** `data/prepare_data.py:main` prints the pipeline
-  contract via `data/prepare_data.py:_apply_llama3_defaults` (universal corpus size, tokenizer, shard size) and delegates to `shared_data.prepare_data.run_pipeline` in the workspace package; if that package is not importable it exits with guidance (`ModuleNotFoundError` → "This project vendors only the loader (data/shared_data/)"). The workspace pipeline is what actually runs the tokenizer over documents, filters/dedups, wraps documents with separators, and writes `tokens.bin`.
+  contract via `data/prepare_data.py:_apply_llama3_defaults` (universal corpus size, tokenizer, shard size) and delegates to `shared_data.prepare_data.run_pipeline` in the workspace package; if that package is not importable it exits with guidance (`ModuleNotFoundError` → "This project vendors only the loader (data/shared_data/)"). The workspace pipeline is what actually runs the tokenizer over documents, filters/dedups, wraps documents with separators, and writes the packed shards; `data/prepare_data.py:concat_shards_to_cache` then concatenates those shards into `tokens.bin`.
 - **Runtime side.** This repo's loader (`PackedDataset`,
   `ShuffledRangeSampler`, `collate_fn`) never inspects token semantics: it slices `seq_len+1` windows of `uint32` and shifts by one. The tokenizer is loaded only for its *metadata* (`len`, ids) and for *generation* (encode/decode).
 - **Consistency requirement.** The ids in `tokens.bin` are produced by the
@@ -837,44 +951,37 @@ Three layers of control decide whether a fused kernel ever runs:
    `rmsnorm_impl`, `swiglu_impl`, and `cross_entropy_impl` to `'pytorch'` (see [model-reference.md](model-reference.md) for the full surface).
 2. **The env-var gate.** `train.py:train_model` reads
    `ENABLE_TRITON_KERNELS`; if it is not exactly `"1"` and any `*_impl` key is `'triton'`, it prints a warning and force-restores all three keys to `'pytorch'`. A default-config run can therefore never accidentally enter a fused path — the opt-in is explicit twice over (AGENTS.md rule 7).
-3. **Per-module dispatch with warned fallback.** When an `*_impl` key is
-   `'triton'`, the model layer calls the Triton entry point and catches `(ImportError, ValueError)`:
+3. **Per-module dispatch with hard error.** When an `*_impl` key is `'triton'`,
+   the model layer calls the Triton entry point directly; there is no `try/except` in `model.py` (per AGENTS.md rule 7):
 
 ```python
 # illustrative — the exact pattern in model.py:RMSNorm.forward
 if self.impl == "triton":
-    try:
-        return triton_rmsnorm(x, self.weight, self.eps)
-    except (ImportError, ValueError) as exc:
-        if not self._triton_fallback_warned:
-            print(f"[RMSNorm] triton path unavailable "
-                  f"({type(exc).__name__}: {exc}); "
-                  f"falling back to 'pytorch'.")
-            self._triton_fallback_warned = True
+    return triton_rmsnorm(x, self.weight, self.eps)
 return x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps) * self.weight
 ```
 
-The two `nn.Module` sites (`model.py:RMSNorm.forward`, `model.py:SwiGLUFFN.forward`) guard the warning with a `self._triton_fallback_warned` flag, so the message prints **once per module instance**, not once per forward. The two function sites (`model.py:chunked_cross_entropy_with_z`, `model.py:chunked_head_cross_entropy_with_z`) have no such flag and print on every call.
+The kernel's own `ImportError` (Triton absent) or `ValueError` (shape exceeds the kernel's block guard) propagates out of the forward pass. `model.py:chunked_head_cross_entropy_with_z` is the only one of the four that pre-validates: it raises `ImportError` at function entry when `cross_entropy_impl='triton'` and `HAS_TRITON` is `False`, so a misconfigured run fails before the chunked loop even starts. The other three sites (`RMSNorm.forward`, `SwiGLUFFN.forward`, `chunked_cross_entropy_with_z`) make a direct call and let the kernel raise on first use.
 
-```mermaid
-flowchart TD
-    A[config *_impl = triton?] -->|no| P[PyTorch path]
-    A -->|yes| B{ENABLE_TRITON_KERNELS = 1?}
-    B -->|no| W[WARN: forcing all to pytorch]
-    W --> P
-    B -->|yes| C{import triton / HAS_TRITON?}
-    C -->|no| F1[WARN: falling back to pytorch]
-    F1 --> P
-    C -->|yes| D[launch fused kernel]
-    D -->|ImportError / ValueError| F1
-    D -->|any other error| E[exception propagates - run fails]
+```
+config *_impl = triton?
+   ├─ no ────────────────► PyTorch path
+   └─ yes ──► ENABLE_TRITON_KERNELS = 1?
+                ├─ no ──► WARN: forcing all to pytorch ──► PyTorch path
+                └─ yes ──► import triton / HAS_TRITON?
+                             ├─ no ──► ImportError from kernel ──► run fails
+                             └─ yes ──► launch fused kernel
+                                          ├─ ValueError (size guard) ──► run fails
+                                          └─ any other error ──► exception
+                                                                  propagates —
+                                                                  run fails
 ```
 
 ## Fallback vs hard-fail, precisely
 
-The caught exception classes are `ImportError` (Triton absent; the public entry points raise it explicitly) and `ValueError` (a shape exceeds the kernel's block guard — see each kernel below). Anything else — a Triton compile failure, an illegal-memory access, a CUDA OOM — is *not* caught and propagates out of the forward pass, surfacing as a clear error per AGENTS.md rule 7. Note also that the kernel modules never raise `ImportError` at import time: they use `try: import triton / except ImportError: HAS_TRITON = False`, so importing `kernels.*` works on any machine, CPU or GPU, with or without Triton.
+There is no fallback path in `model.py`. Per AGENTS.md rule 7, a Triton kernel that fails at runtime must surface a clear error rather than silently degrade to the eager path, and the four dispatch sites in `model.py` (`RMSNorm.forward`, `SwiGLUFFN.forward`, `chunked_cross_entropy_with_z`, `chunked_head_cross_entropy_with_z`) implement that rule as a literal hard error: three make a direct call so the kernel's own `ImportError`/`ValueError` propagates, and `chunked_head_cross_entropy_with_z` raises an `ImportError` at entry. The kernel modules never raise `ImportError` at import time: they use `try: import triton / except ImportError: HAS_TRITON = False`, so importing `kernels.*` works on any machine, CPU or GPU, with or without Triton.
 
-AGENTS.md rule 2 sets the performance bar: a sanctioned Triton path must show **≥ 1.5× speedup over the raw-PyTorch path in `scripts/microbench_a100.py`**; below that it must not be enabled by default. That script is referenced by the rule but **does not exist in this repo** (no `scripts/` directory — verified by glob). The `'pytorch'` defaults mean the kernels are never enabled by default today; the 1.5× bar is therefore unenforced until a benchmark lands.
+AGENTS.md rule 2 sets the performance bar: a sanctioned Triton path must show **≥ 1.5× speedup over the raw-PyTorch path in `scripts/microbench_a100.py`**; below that it must not be enabled by default. That script now ships (`scripts/microbench_a100.py` — compares each kernel against its PyTorch reference at project scale and gates on the 1.5× bar; requires CUDA + triton, and exits "unmeasurable" on CPU/Mac). The `'pytorch'` defaults mean the kernels are never enabled by default today; the 1.5× bar is enforced by the harness on the A100.
 
 ## Kernel 1 — fused RMSNorm
 
@@ -893,7 +1000,7 @@ At this project's scale: `N = d_model = 1024` (a power of two already, so `BLOCK
 
 **Launch params:** `num_warps=4, num_stages=1`. There is no inner loop to pipeline, so `num_stages=1` is correct; `num_warps=4` is enough to saturate the 1,024-wide row.
 
-**Guard:** `kernels/rmsnorm_triton.py:_MAX_BLOCK_SIZE = 8192`; if `next_power_of_2(N) > 8192` the forward raises `ValueError` (d_model ≤ 8192 for the Triton path), which the dispatch layer converts into a warned fallback.
+**Guard:** `kernels/rmsnorm_triton.py:_MAX_BLOCK_SIZE = 8192`; if `next_power_of_2(N) > 8192` the forward raises `ValueError` (d_model ≤ 8192 for the Triton path), which `model.py:RMSNorm.forward` propagates — there is no fallback.
 
 ## Kernel 2 — fused SwiGLU
 
@@ -911,7 +1018,7 @@ At this project's scale: `d_ff = 4096` (already a power of two → `BLOCK_SIZE =
 
 **Launch params:** `num_warps=8, num_stages=2`. The wider row (4,096 columns) justifies 8 warps; `num_stages=2` is the Triton default pipelining for the two loads.
 
-**Guard:** the same `_MAX_BLOCK_SIZE = 8192`; `d_ff > 8192` raises `ValueError` → warned fallback in `model.py:SwiGLUFFN.forward`.
+**Guard:** the same `_MAX_BLOCK_SIZE = 8192`; `d_ff > 8192` raises `ValueError` which `model.py:SwiGLUFFN.forward` propagates — no fallback.
 
 ## Kernel 3 — fused chunked CE + z-loss
 
@@ -960,11 +1067,11 @@ Because the wrapper is a `torch.autograd.Function`, the Triton forward participa
 
 ## Launch / fallback table
 
-| Kernel | Entry point | Grid | Block | warps / stages | Guard (→ `ValueError`) | Fallback on `ImportError`/`ValueError` |
+| Kernel | Entry point | Grid | Block | warps / stages | Guard (→ `ValueError`) | On `ImportError` / `ValueError` |
 |---|---|---|---|---|---|---|
-| RMSNorm | `kernels/rmsnorm_triton.py:triton_rmsnorm` | `(M,)`, M = B·S rows | `next_pow2(d_model)` = 1024 | 4 / 1 | `d_model > 8192` | one-time print + PyTorch (`model.py:RMSNorm.forward`) |
-| SwiGLU | `kernels/swiglu_triton.py:triton_swiglu` | `(M,)`, M = B·S rows | `next_pow2(d_ff)` = 4096 | 8 / 2 | `d_ff > 8192` or `last != 2·d_ff` | one-time print + PyTorch (`model.py:SwiGLUFFN.forward`) |
-| CE + z | `kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z` | `(M,)`, M = chunk rows | `next_pow2(V)` = 131072 | 8 / 2 | `V > 131072` (`_MAX_VOCAB_BLOCK`) | print + PyTorch (`model.py:chunked_cross_entropy_with_z`, `model.py:chunked_head_cross_entropy_with_z`) |
+| RMSNorm | `kernels/rmsnorm_triton.py:triton_rmsnorm` | `(M,)`, M = B·S rows | `next_pow2(d_model)` = 1024 | 4 / 1 | `d_model > 8192` | hard error (no fallback) — `model.py:RMSNorm.forward` propagates |
+| SwiGLU | `kernels/swiglu_triton.py:triton_swiglu` | `(M,)`, M = B·S rows | `next_pow2(d_ff)` = 4096 | 8 / 2 | `d_ff > 8192` or `last != 2·d_ff` | hard error (no fallback) — `model.py:SwiGLUFFN.forward` propagates |
+| CE + z | `kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z` | `(M,)`, M = chunk rows | `next_pow2(V)` = 131072 | 8 / 2 | `V > 131072` (`_MAX_VOCAB_BLOCK`) | hard error (no fallback) — `model.py:chunked_cross_entropy_with_z` and `model.py:chunked_head_cross_entropy_with_z` propagate |
 
 All three `ImportError` messages are uniform: install `triton` (Linux + CUDA only) or use `*_impl='pytorch'` on CPU/Mac.
 
@@ -981,7 +1088,7 @@ AGENTS.md rule 8 requires every kernel to ship a unit test that runs **on CPU wi
   < 5e-2, SwiGLU < 1.0, CE loss finite), skipping cleanly when Triton or a
   GPU is absent.
 
-One caveat worth knowing: the fallback *warnings* themselves are not unit-tested — no test in `tests/` asserts the one-time-warning behavior of `model.py:RMSNorm.forward`; the dispatch path is covered indirectly by the model tests (which run the PyTorch branch) and by the e2e script (which runs the Triton branch). And `tests/e2e_gpu_smoke.py:check_triton_kernels` passes `chunk_size=4096` to the CE entry point, which does not accept that keyword — that call raises `TypeError` (verified) if stage 8 is reached on a CUDA box, so the CE segment of the e2e script is currently broken.
+One caveat worth knowing: the hard-error path itself is not unit-tested as a branch in `tests/` — no test asserts that `RMSNorm(impl="triton")` raises on a Triton-less box; the dispatch path is covered indirectly by the model tests (which run the PyTorch branch) and by the e2e script (which runs the Triton branch). And `tests/e2e_gpu_smoke.py:check_triton_kernels` passes `chunk_size=4096` to the CE entry point, which does not accept that keyword — that call raises `TypeError` (verified) if stage 8 is reached on a CUDA box, so the CE segment of the e2e script is currently broken.
 
 ## Microbenchmark rule
 
@@ -989,15 +1096,20 @@ AGENTS.md rule 2: for any sanctioned Triton path, target **≥ 1.5× speedup ove
 
 - The three kernels exist and are wired through dispatch, but all
   `*_impl` defaults are `'pytorch'` — they are **not** enabled by default.
-- No benchmark exists: `scripts/microbench_a100.py` is absent from the repo
-  (the rule references a file that has not landed). Until one does, the 1.5× bar is untested and no claim of speedup is made anywhere in this repo.
+- The benchmark exists: `scripts/microbench_a100.py` compares each kernel
+  against its PyTorch reference at project scale and exits non-zero below
+  the 1.5× bar (CUDA + triton required; "unmeasurable" on CPU/Mac). No
+  measured run has cleared the bar yet, so no claim of speedup is made
+  anywhere in this repo.
 - AGENTS.md rule 1 requires sanctioned Triton paths to be listed in the
-  contract; the current AGENTS.md text predates `kernels/` and still says "no custom Triton kernels exist" — the sanctioned-list entry is a doc-debt item, not a code fact.
+  contract; the current AGENTS.md text is current — it names all three
+  kernels with their config keys. The remaining gap is a measured pass on
+  the A100, not the contract.
 
 ## Edge cases & pitfalls
 
 - **Block-size guards.** All three kernels validate their reduction axis
-  before launch. `d_model` and `d_ff` must be ≤ 8192 (`_MAX_BLOCK_SIZE`); vocab must be ≤ 131,072 (`_MAX_VOCAB_BLOCK`). This project's 1024 / 4096 / 128,256 all fit; a 256K-vocab model would trip the CE guard with a warned fallback, not a silent wrong answer.
+  before launch. `d_model` and `d_ff` must be ≤ 8192 (`_MAX_BLOCK_SIZE`); vocab must be ≤ 131,072 (`_MAX_VOCAB_BLOCK`). This project's 1024 / 4096 / 128,256 all fit; a 256K-vocab model would trip the CE guard with a hard `ValueError` propagated out of the model layer (no silent wrong answer, no eager fallback).
 - **`ignore_index` and the target-logit load.** Inside the CE kernel, the
   target logit is loaded *unconditionally* — the `valid` flag only guards the two CE `atomic_add`s. For an ignored row the computed `nll` is garbage (the load can even be out of bounds for `ignore_index = -100` on row 0) but is discarded. In practice training targets contain no `-100` (there is no padding; EOS separators stay learnable), so the path is not exercised — but the "protect against ignore_index" comment overstates what the mask does.
 - **z-loss averaging differs between paths.** The Triton kernel accumulates

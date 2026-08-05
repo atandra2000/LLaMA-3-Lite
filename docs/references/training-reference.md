@@ -61,14 +61,13 @@ At import time it sets `TOKENIZERS_PARALLELISM=false`, `WANDB_MODE=offline`, `WA
 
 Dependencies among fixtures:
 
-```mermaid
-graph TD
-    device --> dtype
-    tiny_config --> tiny_model
-    device --> tiny_model
-    dtype --> tiny_model
-    seed_everything --> tiny_model
-    full_config
+```
+device ──► dtype
+tiny_config ──► tiny_model
+device ──► tiny_model
+dtype ──► tiny_model
+seed_everything ──► tiny_model
+full_config   (standalone, no dependencies)
 ```
 
 ### Module-level helpers
@@ -83,8 +82,9 @@ Registered markers:
 
 - `slow` — tests taking more than a few seconds (reserved; currently unused).
 - `gpu` — requires a CUDA GPU; auto-skipped unless `--run-gpu` is passed. Currently one test: `tests/test_train.py::TestCheckpointRoundTrip.test_load_restores_rng_state_cross_device`.
-- `smoke` — fast end-to-end pipeline tests. CI selects it with `-m smoke`. Note: as of this writing no test carries `@pytest.mark.smoke` — the end-to-end tests live in `tests/test_smoke.py::TestEndToEndSmoke` without the marker, so the CI selection is currently empty (see [Running the Suites](#running-the-suites)). This is the first thing to fix when wiring a test into the CI smoke job.
 - `numeric` — numerical-equivalence assertions. Currently one test: `tests/test_model.py::TestChunkedCrossEntropyWithZ.test_matches_ce_plus_zpen_reference`.
+
+The `smoke` marker is **not registered** (despite the e2e smoke module's name): `tests/test_smoke.py::TestEndToEndSmoke` carries no marker, and CI runs the full CPU suite rather than a `-m smoke` selection.
 
 ## Per-File Walkthroughs
 
@@ -168,11 +168,10 @@ Nine test classes, each pinned to a `model.py` symbol:
 
 A standalone script (not collected by pytest) that drives the **real pipeline** end to end in 8 asserted stages. Run it with `python tests/e2e_gpu_smoke.py` (the module docstring suggests the project venv: `~/.venv/bin/python tests/e2e_gpu_smoke.py`).
 
-```mermaid
-graph LR
-    A[check_environment] --> B[check_data_pipeline] --> C[build_model]
-    C --> D[train_steps] --> E[check_chunked_ce] --> F[check_validate]
-    F --> G[check_checkpoint_roundtrip] --> H[check_triton_kernels]
+```
+check_environment → check_data_pipeline → build_model → train_steps
+    → check_chunked_ce → check_validate → check_checkpoint_roundtrip
+    → check_triton_kernels
 ```
 
 - `tests/e2e_gpu_smoke.py:check_environment` — prints torch version, CUDA
@@ -211,7 +210,7 @@ graph LR
 | E2E GPU script (quick, 2 steps) | `python tests/e2e_gpu_smoke.py --steps 2` |
 | Doc↔code anchor checker | `python -m pytest tests/test_doc_refs.py -q` |
 
-The CPU suite needs no data, no tokenizer download, and no wandb: the `tiny_config`/`tiny_model` fixtures and the conftest wandb stub make it hermetic. On a Mac M1 the full suite runs in roughly a minute (verified 2026-08-03: 59 passed / 1 skipped, the skip being the `gpu`-marked test).
+The CPU suite needs no data, no tokenizer download, and no wandb: the `tiny_config`/`tiny_model` fixtures and the conftest wandb stub make it hermetic. On a Mac M1 the full suite runs in roughly 20 seconds (verified 2026-08-05: 70 passed / 1 skipped, the skip being the `gpu`-marked test).
 
 ### CI workflow (`.github/workflows/ci.yml`)
 
@@ -219,8 +218,9 @@ On every push/PR to `main`, the `smoke` job runs on `ubuntu-latest` with Python 
 
 1. **Import checks** — `python -c "import model; import dataset; import train"`,
    the cheapest smoke: the three entry modules must import cleanly.
-2. **CPU smoke test** — `python -m pytest tests/ -m smoke --no-header -q`.
-   As noted in [Markers](#markers), the `smoke` marker is currently unused by any test, so this selection collects nothing until the marker is applied to `TestEndToEndSmoke` (the natural home). This is a known gap, not a failure mode of the suite itself — the full CPU suite is what actually runs locally.
+2. **CPU test suite** — `python -m pytest tests/ --no-header -q` (the full
+   CPU suite; there is no `-m smoke` selection — the `smoke` marker is not
+   registered).
 3. **Doc reference checker** — `python -m pytest tests/test_doc_refs.py
    --no-header -q`, enforcing that every symbol citation in these docs resolves to a real module attribute and that no line-number anchors exist.
 

@@ -640,39 +640,67 @@ After the loop: throughput is reported, the last async checkpoint thread is join
 
 ### Loop state machine
 
-```mermaid
-flowchart TD
-    A["train_model(config)"] --> B{"data/tokenizer injected?"}
-    B -- "no" --> C["build_training_data (memmap tokens.bin)"]
-    C -- "FileNotFoundError" --> D["build_synthetic_data + WARN"]
-    C -- "ok" --> E["ignore_index = -100; triton gate; build_transformer"]
-    D --> E
-    B -- "yes" --> E
-    E --> F["torch.compile + warmup fwd/bwd (real batch, CUDA graphs)"]
-    F --> G["AdamW (decay 2D+ / no-decay 1D) + SequentialLR + EMA"]
-    G --> H["load_checkpoint if preload; wandb.init"]
-    H --> I["prefetch batch i+1 (non_blocking H2D)"]
-    I --> J{"step < max_steps?"}
-    J -- "no" --> K["join ckpt thread; final dual-file save; wandb.finish"]
-    J -- "yes" --> L["autocast BF16: hidden = model(x, return_hidden=True)"]
-    L --> M["chunked_head_cross_entropy_with_z / grad_accum"]
-    M --> N["loss.backward()"]
-    N --> O{"(step+1) % grad_accum == 0?"}
-    O -- "no" --> P
-    O -- "yes" --> Q["clip_grad_norm_ → optimizer.step → ema.update → zero_grad → scheduler.step"]
-    Q --> P{"step % log_interval == 0 and step > initial_step?"}
-    P -- "yes" --> R["wandb.log train + gpu metrics; reset data_wait"]
-    R --> S{"step % val_interval == 0?"}
-    P -- "no" --> S
-    S -- "yes" --> T["validate(EMA); save _best.pt if improved"]
-    T --> U{"step % generation_interval == 0?"}
-    S -- "no" --> U
-    U -- "yes" --> V["generate_samples(EMA) → wandb gen/samples table"]
-    V --> W{"step % checkpoint_interval == 0?"}
-    U -- "no" --> W
-    W -- "yes" --> X["save_checkpoint async thread; prune stale steps"]
-    X --> I
-    W -- "no" --> I
+```
+train_model(config)
+   │
+   ▼
+data/tokenizer injected?
+   ├─ no  → build_training_data (memmap tokens.bin)
+   │        ├─ FileNotFoundError → build_synthetic_data + WARN ──┐
+   │        └─ ok → ignore_index=-100; triton gate;              │
+   │               build_transformer                             │
+   └─ yes ───────────────────────────────────────────────────────┘
+   │
+   ▼
+torch.compile + warmup fwd/bwd (real batch, CUDA graphs)
+   │
+   ▼
+AdamW (decay 2D+ / no-decay 1D) + SequentialLR + EMA
+   │
+   ▼
+load_checkpoint if preload; wandb.init
+   │
+   ▼
+prefetch batch i+1 (non_blocking H2D)
+   │
+   ▼
+step < max_steps?
+   ├─ no  → join ckpt thread; final dual-file save; wandb.finish
+   └─ yes → autocast BF16: hidden = model(x, return_hidden=True)
+              │
+              ▼
+            chunked_head_cross_entropy_with_z / grad_accum
+              │
+              ▼
+            loss.backward()
+              │
+              ▼
+            (step+1) % grad_accum == 0?
+              ├─ no ────────────────────────────────────┐
+              └─ yes → clip_grad_norm_ → optimizer.step │
+                       → ema.update → zero_grad         │
+                       → scheduler.step                 │
+                                                        ▼
+            step % log_interval == 0 and step > initial_step?
+              ├─ yes → wandb.log train + gpu metrics; reset data_wait
+              └─ no
+              │
+              ▼
+            step % val_interval == 0?
+              ├─ yes → validate(EMA); save _best.pt if improved
+              └─ no
+              │
+              ▼
+            step % generation_interval == 0?
+              ├─ yes → generate_samples(EMA) → wandb gen/samples table
+              └─ no
+              │
+              ▼
+            step % checkpoint_interval == 0?
+              ├─ yes → save_checkpoint async thread; prune stale steps
+              └─ no
+              │
+              └── every path loops back to "prefetch batch i+1"
 ```
 
 ## The memory stack
@@ -704,9 +732,9 @@ Without the stack, none of these fit; with it, the derived peak is ~20 GB, leavi
 | 7 | Fused SwiGLU + Triton opt-ins | One fused `gate_up_proj` GEMM instead of two; elementwise fusions in SRAM | `model.py:SwiGLUFFN`, `kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, `kernels/cross_entropy_triton.py` | [concepts/architecture-components.md](concepts/architecture-components.md) · [concepts/data-and-kernels.md](concepts/data-and-kernels.md) · [references/data-reference.md](references/data-reference.md) |
 | 8 | TF32 matmul acceleration | No memory — ~3× Tensor-Core matmul throughput on A100 | `train.py:setup_gpu_optimizations` (`allow_tf32=True`, `torch.set_float32_matmul_precision('high')`) | [concepts/training-and-memory.md](concepts/training-and-memory.md) |
 
-### Why "7 techniques" in AGENTS.md but 8 rows here
+### Why AGENTS.md lists the same 8 rows
 
-AGENTS.md's "7-technique memory stack" table actually lists **8 rows**, and two of them are not load-bearing here: it includes `channels_last` (a layout hint that does not appear anywhere in `model.py` or `train.py`) and "Fused AdamW" (this repo uses a stock `torch.optim.AdamW` with parameter grouping — no custom fused kernel). This page replaces those two rows with the techniques the code actually implements — **GQA** and the **fused SwiGLU + Triton opt-ins** — keeping the count at eight. So: the label is stale in both directions, the table below is the ground truth, and the "78% / 92 → 20 GB" headline is independent of how you count the rows.
+AGENTS.md's "8-technique memory stack" table and this page's table below are the same eight rows (gradient checkpointing, chunked CE + z-loss, disk cache, BF16, FA2, GQA, fused SwiGLU + Triton opt-ins, TF32) with the same numbering. The older docs once swapped two of the rows for `channels_last` and "Fused AdamW" — neither appears anywhere in `model.py` or `train.py` (no layout hint, and this repo uses a stock `torch.optim.AdamW` with parameter grouping). That framing is gone; the table below is the ground truth, and the "78% / 92 → 20 GB" headline is independent of how you count the rows.
 
 ### Technique by technique
 
@@ -807,17 +835,30 @@ The 78% headline is internally consistent: the baseline 92 GB is the unoptimized
 
 ### How the pieces interact
 
-```mermaid
-flowchart LR
-    subgraph Host
-        A["tokens.bin · uint32 · 32 GB"] -->|"np.memmap · demand paging (~1 MB resident)"| B["PackedDataset · windows [96, 2049]"]
-    end
-    subgraph GPU
-        B -->|"non_blocking H2D · pin_memory"| C["BF16 autocast forward<br/>hidden [96, 2048, 1024]"]
-        C --> D["DecoderBlock ×16 · grad-ckpt<br/>FA2 + GQA + fused SwiGLU (TF32 GEMMs)"]
-        D --> E["chunked_head_cross_entropy_with_z<br/>256-row FP32 slices · 131 MB"]
-        E --> F["loss · BF16 backward<br/>no GradScaler · AdamW FP32 moments"]
-    end
+```
+┌─ Host ─────────────────────────────────────────────┐
+│ tokens.bin · uint32 · 32 GB                        │
+│    │ np.memmap · demand paging (~1 MB resident)    │
+│    ▼                                               │
+│ PackedDataset · windows [96, 2049]                 │
+└────┼───────────────────────────────────────────────┘
+     │ non_blocking H2D · pin_memory
+     ▼
+┌─ GPU ──────────────────────────────────────────────────────┐
+│ BF16 autocast forward                                       │
+│ hidden [96, 2048, 1024]                                     │
+│    │                                                        │
+│    ▼                                                        │
+│ DecoderBlock ×16 · grad-ckpt                                │
+│ FA2 + GQA + fused SwiGLU (TF32 GEMMs)                       │
+│    │                                                        │
+│    ▼                                                        │
+│ chunked_head_cross_entropy_with_z                           │
+│ 256-row FP32 slices · 131 MB                                │
+│    │                                                        │
+│    ▼                                                        │
+│ loss · BF16 backward · no GradScaler · AdamW FP32 moments   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 Memory flows one way: disk-backed corpus → mmap windows → hidden states → chunked head. Each arrow is where a technique caps the footprint (memmap, grad-ckpt, chunked CE), and the GPU-internal boxes are where the others accelerate (BF16, FA2, GQA, fused SwiGLU, TF32). Drop any of the three memory caps and the run no longer fits; drop the throughput techniques and it still fits but runs slower.
@@ -855,7 +896,7 @@ python3 data/prepare_data.py --stage pretrain \
     --skip-download --skip-clean --skip-tokenize
 ```
 
-The pipeline writes shards under `LLM/shared_data`'s `DATA_ROOT`; the project's `data_cache/tokens.bin` (the single uint32 file the vendored loader mmaps) is produced by the packing stage. Running `python train.py` without the cache falls back to synthetic data with a warning — see
+The pipeline writes shards under `LLM/shared_data`'s `DATA_ROOT`; after the pipeline stages complete, the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) concatenates them in manifest order into the project's `data_cache/tokens.bin` — the single uint32 file the vendored loader mmaps. Running `python train.py` without the cache falls back to synthetic data with a warning — see
 [guides/quickstart.md](guides/quickstart.md).
 
 ### Tokenizer used by LLaMA-3-Lite

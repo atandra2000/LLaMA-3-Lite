@@ -22,16 +22,30 @@ LLaMA-3-Lite data prep delegates to the universal pipeline at `LLM/shared_data/`
 
 The first is a **runtime warning** from `train.py` — training still starts on synthetic data. The second is a **hard exit** from `data/prepare_data.py` — the real corpus cannot be built on this machine at all. They are two different errors; entries 2 and 3 cover them separately.
 
-```mermaid
-flowchart TD
-    A[Run python train.py] --> B{data_cache/tokens.bin exists?}
-    B -- no --> C[FileNotFoundError caught in train_model]
-    C --> D[WARN: no token cache found - falling back to synthetic data]
-    D --> E[Training runs on random uint32 ids]
-    B -- yes --> F[Real corpus + real tokenizer]
-    G[Run python data/prepare_data.py] --> H{workspace LLM/shared_data importable?}
-    H -- no --> I[SystemExit: universal pipeline not importable]
-    I --> J[No corpus can be built here]
+```
+Run python train.py
+   │
+   ▼
+data_cache/tokens.bin exists?
+   ├─ no  → FileNotFoundError caught in train_model
+   │         │
+   │         ▼
+   │      WARN: no token cache found — falling back to synthetic data
+   │         │
+   │         ▼
+   │      Training runs on random uint32 ids
+   │
+   └─ yes → Real corpus + real tokenizer
+
+Run python data/prepare_data.py
+   │
+   ▼
+workspace LLM/shared_data importable?
+   ├─ no  → SystemExit: universal pipeline not importable
+   │         │
+   │         ▼
+   │      No corpus can be built here
+   └─ yes → (pipeline runs, builds the cache)
 ```
 
 ---
@@ -75,7 +89,7 @@ WARN: no token cache found — falling back to synthetic data. Run `python data/
 
 So this is **not** a crash: it is the smoke-test path. You are training on synthetic random ids (see entry 11 for why the output will look like garbage).
 
-**Fix.** To train on real text, build the corpus first: `python data/prepare_data.py`, which produces the uint32 `tokens.bin` the loader mmaps (`data/shared_data/loader.py:build_training_data` documents the layout: "raw `uint32` little-endian with no header"). Then rerun `python train.py` — the `WARN` disappears.
+**Fix.** To train on real text, build the corpus first: `python data/prepare_data.py`, which runs the workspace pipeline and then concatenates the packed shards into the uint32 `tokens.bin` the loader mmaps (`data/shared_data/loader.py:build_training_data` documents the layout: "raw `uint32` little-endian with no header"). Then rerun `python train.py` — the `WARN` disappears.
 
 **Prevention.** If you intend a real run, check for `data_cache/tokens.bin` before launching, and read
 [`quickstart.md`](quickstart.md) which walks the build-then-train order.
@@ -102,25 +116,23 @@ LLaMA-3-Lite data prep delegates to the universal pipeline at `LLM/shared_data/`
 
 ## 4. Triton import errors on Mac / CPU
 
-**Symptom.** With `rmsnorm_impl: 'triton'` (or `swiglu_impl` / `cross_entropy_impl`) set, the model prints one-time fallback warnings and runs slower than expected — or a direct kernel call raises `ImportError`. Typical warnings:
+**Symptom.** With `rmsnorm_impl: 'triton'` (or `swiglu_impl` / `cross_entropy_impl`) set on a box without `triton` installed, the run crashes with a hard `ImportError` instead of falling back. Typical error:
 
 ```text
-[RMSNorm] triton path unavailable (ModuleNotFoundError: No module named 'triton'); falling back to 'pytorch'.
+ImportError: cross_entropy_impl='triton' requires the `triton` package. Install with `pip install triton` (Linux + CUDA only) and set ENABLE_TRITON_KERNELS=1, or use cross_entropy_impl='pytorch'.
 ```
+
+The `RMSNorm` / `SwiGLUFFN` paths surface a similar `ImportError` from the kernel itself:
 
 ```text
-[SwiGLUFFN] triton path unavailable (ModuleNotFoundError: No module named 'triton'); falling back to 'pytorch'.
+ImportError: triton_rmsnorm requires the `triton` package. Install with `pip install triton` (Linux + CUDA only). Use `rmsnorm_impl='pytorch'` for CPU/Mac.
 ```
 
-```text
-[chunked_head_cross_entropy_with_z] triton unavailable (`import triton` failed); falling back to 'pytorch'.
-```
+**Cause.** The Triton kernels are opt-in and Linux+CUDA-only. `kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, and `kernels/cross_entropy_triton.py` each guard `import triton` in a `try/except ImportError` and set `HAS_TRITON`; the public entry points then raise `ImportError` when called. `model.py:RMSNorm.forward`, `model.py:SwiGLUFFN.forward`, and `model.py:chunked_cross_entropy_with_z` make a direct call with no `try/except` (AGENTS.md hard rule 7), so the kernel's `ImportError` propagates; `model.py:chunked_head_cross_entropy_with_z` raises an `ImportError` at function entry with a remediation message. There is no silent fallback — the run fails loudly. On macOS, `pip install triton` is not available — Triton requires a CUDA toolchain, so the kernels simply cannot run on a Mac.
 
-**Cause.** The Triton kernels are opt-in and Linux+CUDA-only. `kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, and `kernels/cross_entropy_triton.py` each guard `import triton` in a `try/except ImportError` and set `HAS_TRITON`; the model's call sites catch `(ImportError, ValueError)` and fall back to the pure-PyTorch path. `model.py:RMSNorm.forward` and `model.py:SwiGLUFFN.forward` print their fallback warning exactly once. On macOS, `pip install triton` is not available — Triton requires a CUDA toolchain, so the kernels simply cannot run on a Mac.
+**Fix.** On a Mac or CPU box: leave the `*_impl` keys at their `'pytorch'` defaults; nothing else to do. If you call a kernel entry point directly (e.g. `kernels/rmsnorm_triton.py:triton_rmsnorm`), it raises `ImportError("triton_rmsnorm requires the `triton` package. Install with `pip install triton` (Linux + CUDA only).")` — that is the public contract, not a bug. On a Linux box with CUDA: `pip install triton`, then set `ENABLE_TRITON_KERNELS=1` (entry 5).
 
-**Fix.** On a Mac or CPU box: nothing is broken — this is the intended degradation. Leave the `*_impl` keys at their `'pytorch'` defaults. If you call a kernel entry point directly (e.g. `kernels/rmsnorm_triton.py:triton_rmsnorm`), it raises `ImportError("triton_rmsnorm requires the `triton` package. Install with `pip install triton` (Linux + CUDA only).")` — that is the public contract, not a bug. On a Linux box with CUDA: `pip install triton`, then set `ENABLE_TRITON_KERNELS=1` (entry 5).
-
-**Prevention.** Default config is `'pytorch'` for all three impls (`config.py:get_config`), so nothing to do. The `HAS_TRITON` gate pattern is covered in [kernel-programming.md](../concepts/data-and-kernels.md) and the kernel reference [`kernels.md`](../references/data-reference.md).
+**Prevention.** Default config is `'pytorch'` for all three impls (`config.py:get_config`), so the only way to hit this on Mac/CPU is to set a `*_impl` to `'triton'` manually — don't. The `HAS_TRITON` gate pattern is covered in [kernel-programming.md](../concepts/data-and-kernels.md) and the kernel reference [`kernels.md`](../references/data-reference.md).
 
 ---
 
