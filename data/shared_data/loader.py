@@ -15,19 +15,22 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 
 
 class PackedDataset(Dataset):
-    """Read-only uint32 token buffer chunked into ``seq_len+1`` training windows; each chunk returns ``seq_len`` inputs and ``seq_len`` targets (next-token shift)."""
+    """Expose a read-only token stream as next-token-prediction windows.
+
+    Each item contains ``seq_len`` inputs and their one-token-shifted targets.
+    """
 
     def __init__(self, tokens: np.ndarray, seq_len: int):
         if tokens.dtype != np.uint32:
             tokens = tokens.astype(np.uint32, copy=False)
         chunk = seq_len + 1
         if tokens.size < chunk:
-            # Pad up to one chunk so a tiny buffer is still usable.
+            # Keep tiny synthetic buffers usable as a one-window dataset.
             pad = np.zeros(chunk - tokens.size, dtype=np.uint32)
             tokens = np.concatenate([tokens, pad])
         self.tokens = tokens
         self.seq_len = seq_len
-        self.n_chunks = tokens.size // (seq_len + 1)
+        self.n_chunks = tokens.size // chunk
 
     def __len__(self) -> int:
         return self.n_chunks
@@ -43,7 +46,7 @@ class PackedDataset(Dataset):
 
 
 class ShuffledRangeSampler(Sampler[int]):
-    """Deterministic shuffle of ``range(n)`` with seedable offset; bumping ``offset`` per epoch gives a fresh permutation without disturbing cross-epoch reproducibility."""
+    """Yield a reproducible permutation, with an epoch-dependent seed offset."""
 
     def __init__(self, n: int, seed: int = 0, offset: int = 0):
         self.n = n
@@ -93,7 +96,10 @@ def build_synthetic_data(
     num_tokens: Optional[int] = None,
     seed: int = 0,
 ) -> tuple[DataLoader, DataLoader, "object"]:
-    """Returns ``(train_dl, val_dl, tokenizer)`` over a synthetic uint32 stream; ``tokenizer`` is a stub exposing ``pad_token_id`` / ``eos_token_id`` / ``encode`` / ``decode``. Synthetic ids are random, so the byte stub is used unconditionally (no HF download)."""
+    """Build train and validation loaders over a deterministic synthetic stream.
+
+    The tokenizer stub avoids a network download and supports generation tests.
+    """
     seq_len = int(config["seq_len"])
     vocab = int(config["vocab_size"])
     batch = int(config["batch_size"])
@@ -117,7 +123,9 @@ def build_synthetic_data(
     train_ds = PackedDataset(tokens[:split], seq_len)
     val_ds = PackedDataset(tokens[split:], seq_len)
 
-    train_sampler = ShuffledRangeSampler(len(train_ds), seed=int(config.get("shuffle_seed", seed)))
+    train_sampler = ShuffledRangeSampler(
+        len(train_ds), seed=int(config.get("shuffle_seed", seed))
+    )
     train_dl = DataLoader(
         train_ds, batch_size=batch, sampler=train_sampler,
         num_workers=n_workers, prefetch_factor=prefetch if n_workers > 0 else None,
@@ -136,7 +144,10 @@ def build_synthetic_data(
 
 
 def build_training_data(config: dict) -> tuple[DataLoader, DataLoader, "object"]:
-    """Mmaps ``tokens.bin`` from ``data/prepare_data.py``; raw ``uint32`` little-endian with no header, last ``val_split`` fraction held out for validation."""
+    """Build loaders from the raw, little-endian ``uint32`` token cache.
+
+    The final ``val_split`` fraction is held out for validation.
+    """
     cache_dir = Path(config.get("data_cache_dir", "data_cache"))
     fname = config.get("data_cache_filename", "tokens.bin")
     path = cache_dir / fname
@@ -162,7 +173,9 @@ def build_training_data(config: dict) -> tuple[DataLoader, DataLoader, "object"]
     train_ds = PackedDataset(tokens[:split], seq_len)
     val_ds = PackedDataset(tokens[split:], seq_len)
 
-    train_sampler = ShuffledRangeSampler(len(train_ds), seed=int(config.get("shuffle_seed", 42)))
+    train_sampler = ShuffledRangeSampler(
+        len(train_ds), seed=int(config.get("shuffle_seed", 42))
+    )
     train_dl = DataLoader(
         train_ds, batch_size=batch, sampler=train_sampler,
         num_workers=n_workers, prefetch_factor=prefetch if n_workers > 0 else None,
@@ -191,7 +204,7 @@ def build_training_data(config: dict) -> tuple[DataLoader, DataLoader, "object"]
 
 
 class _SyntheticTokenizerStub:
-    """Duck-typed tokenizer for synthetic data: bytes ⇄ ids, clamped to vocab."""
+    """Minimal tokenizer substitute used by synthetic-data tests."""
 
     def __init__(self, vocab: int, eos_id: int, pad_id: int):
         self._vocab = vocab

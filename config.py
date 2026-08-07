@@ -1,7 +1,8 @@
 """LLaMA-3-Lite config: one source of truth for all hyperparameters and runtime toggles."""
 
 
-def get_config():
+def get_config() -> dict:
+    """Return the complete model, training, data, and runtime configuration."""
     return {
         'd_model':              1024,
         'n_layers':             16,

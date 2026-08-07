@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../LLaMA-3-Lite/
-_DATA_ROOT = Path(__file__).resolve().parent  # vendored shared_data lives here
-_WORKSPACE_ROOT = _PROJECT_ROOT.parent  # workspace LLM/shared_data (universal pipeline)
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_DATA_ROOT = Path(__file__).resolve().parent
+_WORKSPACE_ROOT = _PROJECT_ROOT.parent
 for _p in (_DATA_ROOT, _PROJECT_ROOT, _WORKSPACE_ROOT):
     _p = str(_p)
     if _p not in sys.path:
@@ -20,8 +20,7 @@ LLAMA3_VOCAB_SIZE = 128_000
 LLAMA3_EOS_TOKEN_ID = 128_009
 LLAMA3_PAD_TOKEN_ID = 128_002
 
-# 64M tokens ≈ 256 MB per streaming read; keeps the concat's RAM flat no
-# matter how large the corpus (an 8B-token cache is 32 GB).
+# Bound each streaming read so concatenation stays flat in host memory.
 _CONCAT_CHUNK_TOKENS = 1 << 26
 
 
@@ -117,13 +116,10 @@ def main() -> int:
     if rc != 0:
         return rc
 
-    # Bridge stage: shards + manifest (workspace layout) -> flat tokens.bin
-    # (the vendored loader's layout). Uses the same data root the pipeline
-    # just wrote to (run_pipeline honors --data-root / $LLM_DATA_ROOT).
+    # Convert the pipeline's shard layout to the loader's flat cache layout.
     from shared_data.common import DATA_ROOT
 
-    # The manifest lives inside the shards directory (shards_dir is stored
-    # relative to DATA_ROOT), so resolve it through the manifest's own field.
+    # Resolve the shard directory from the manifest, relative to DATA_ROOT.
     probe = DATA_ROOT / "shards" / "manifest.json"
     shards_dir = DATA_ROOT / json.loads(
         probe.read_text(encoding="utf-8")).get("shards_dir", "shards")

@@ -20,15 +20,15 @@ import dataset as ds
 
 def build_benchmark_buffer(num_tokens: int, vocab_size: int, seq_len: int,
                            seed: int = 42) -> np.ndarray:
-    """Synthetic uint32 buffer packed with BOS..EOS documents."""
+    """Build a synthetic uint32 stream with explicit document boundaries."""
     rng = np.random.default_rng(seed)
     doc_len = max(8, seq_len // 2)
     out: list[int] = []
     while len(out) < num_tokens:
-        out.append(1)  # BOS
+        out.append(1)
         out.extend(rng.integers(2, max(3, vocab_size),
                                 size=doc_len - 2).tolist())
-        out.append(0)  # EOS
+        out.append(0)
     return np.asarray(out[:num_tokens], dtype=np.uint32)
 
 
@@ -37,7 +37,7 @@ def benchmark(steps: int, batch_size: int, seq_len: int, vocab_size: int,
               device: torch.device, with_model_forward: bool) -> dict:
     """Run the benchmark and return a metrics dict."""
     chunk = seq_len + 1
-    n_chunks_target = steps * batch_size * 4  # enough to not run out
+    n_chunks_target = steps * batch_size * 4
     n_tokens = n_chunks_target * chunk + 100
     data = build_benchmark_buffer(n_tokens, vocab_size, seq_len)
     train_ds = ds.PackedDataset(data, seq_len=seq_len)

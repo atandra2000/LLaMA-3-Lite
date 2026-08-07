@@ -13,7 +13,7 @@ from kernels.swiglu_triton import triton_swiglu
 
 
 class RoPE(nn.Module):
-    """Rotary Position Embeddings with precomputed cos/sin buffers."""
+    """Apply rotary position embeddings from cached frequencies."""
     def __init__(self, head_dim: int, max_seq_len: int, theta: float = 500000.0):
         super().__init__()
         inv_freq = 1.0 / (theta ** (torch.arange(0, head_dim, 2).float() / head_dim))
@@ -51,7 +51,7 @@ class RMSNorm(nn.Module):
 
 
 class GroupedQueryAttention(nn.Module):
-    """Grouped-Query Attention with RoPE, optional QK-norm, and Flash Attention 2."""
+    """Causal GQA with RoPE, optional QK normalization, and SDPA."""
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
                  head_dim: int, max_seq_len: int, rope_theta: float,
                  qknorm: bool = True):
@@ -66,8 +66,7 @@ class GroupedQueryAttention(nn.Module):
         self.v_proj = nn.Linear(d_model, n_kv_heads * head_dim, bias=False)
         self.out_proj = nn.Linear(n_heads * head_dim, d_model, bias=False)
 
-        # QK-norm placement: per-head, after projection, before RoPE (Qwen2 / Gemma2).
-        # Bounds attention logit growth late in training.
+        # Normalize each projected head before RoPE to bound logit growth.
         if qknorm:
             self.q_norm = RMSNorm(head_dim, eps=1e-5)
             self.k_norm = RMSNorm(head_dim, eps=1e-5)
@@ -80,7 +79,7 @@ class GroupedQueryAttention(nn.Module):
     def forward(self, x):
         B, S, _ = x.shape
 
-        # Normalize over last axis (D) BEFORE transpose so RMSNorm sees head_dim.
+        # Normalize while head_dim is the last axis; transpose afterward.
         q = self.q_proj(x).view(B, S, self.n_heads, self.head_dim)
         k = self.k_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
         v = self.v_proj(x).view(B, S, self.n_kv_heads, self.head_dim)
@@ -104,11 +103,9 @@ class GroupedQueryAttention(nn.Module):
 
 
 class SwiGLUFFN(nn.Module):
-    """SwiGLU FFN with fused gate+up projection.
+    """SwiGLU feed-forward block with a fused gate/up projection.
 
-    The ``triton`` path is reached only when ``train.py`` has already gated on
-    ``ENABLE_TRITON_KERNELS=1``; failures surface as the kernel's own
-    ImportError/ValueError (no silent fallback — see AGENTS.md hard rule 7).
+    Triton is explicit opt-in; kernel failures are intentionally propagated.
     """
     def __init__(self, d_model: int, d_ff: int, swiglu_impl: str = "pytorch"):
         super().__init__()
@@ -126,6 +123,8 @@ class SwiGLUFFN(nn.Module):
 
 
 class DecoderBlock(nn.Module):
+    """Pre-norm attention and SwiGLU residual block."""
+
     def __init__(self, d_model: int, n_heads: int, n_kv_heads: int,
                  head_dim: int, d_ff: int, max_seq_len: int, rope_theta: float,
                  qknorm: bool = True, rmsnorm_impl: str = "pytorch",
@@ -145,6 +144,8 @@ class DecoderBlock(nn.Module):
 
 
 class Decoder(nn.Module):
+    """Stack decoder blocks and apply the final RMSNorm."""
+
     def __init__(self, layers: nn.ModuleList, d_model: int, eps: float = 1e-5,
                  rmsnorm_impl: str = "pytorch"):
         super().__init__()
@@ -158,6 +159,8 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
+    """Decoder-only language model with a separate output projection."""
+
     def __init__(self, vocab_size: int, d_model: int, n_layers: int,
                  n_heads: int, n_kv_heads: int, head_dim: int, d_ff: int,
                  max_seq_len: int, rope_theta: float = 500000.0,
@@ -209,8 +212,6 @@ class Transformer(nn.Module):
             n_params -= self.output_proj.weight.numel()
         return n_params
 
-    # ponytail: enable/disable_gradient_checkpointing setters removed —
-    # the flag is set only in __init__ and never toggled at runtime.
 
 
 def chunked_cross_entropy_with_z(
@@ -242,7 +243,7 @@ def chunked_cross_entropy_with_z(
 
     for start in range(0, logits.shape[0], chunk_size):
         end = min(start + chunk_size, logits.shape[0])
-        # Upcast to FP32 once so logsumexp + CE share a single precision promotion.
+        # One promotion keeps logsumexp and CE on the same FP32 values.
         cl = logits[start:end].float()
         ct = targets[start:end]
 
@@ -345,7 +346,7 @@ def build_transformer(
     rmsnorm_impl: str = "pytorch",
     swiglu_impl: str = "pytorch",
 ) -> Transformer:
-    """Build LLaMA 3 model with specified architecture."""
+    """Construct a LLaMA-style decoder from explicit architecture settings."""
     model = Transformer(
         vocab_size=vocab_size, d_model=d_model, n_layers=n_layers,
         n_heads=n_heads, n_kv_heads=n_kv_heads, head_dim=head_dim,

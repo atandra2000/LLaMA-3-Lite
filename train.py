@@ -50,6 +50,7 @@ def setup_gpu_optimizations(config):
 
 
 def top_k_top_p_sampling(logits, top_k, top_p, temperature):
+    """Sample one token after applying temperature, top-k, and top-p filters."""
     logits = logits / temperature
 
     if top_k > 0:
@@ -76,6 +77,7 @@ def top_k_top_p_sampling(logits, top_k, top_p, temperature):
 
 @torch.no_grad()
 def generate_samples(model, tokenizer, device, step, config):
+    """Generate fixed prompts and log the samples to Weights & Biases."""
     model.eval()
     prompts = [
         "The history of artificial intelligence began in the",
@@ -165,7 +167,7 @@ def validate(model, val_dataloader, ignore_index, device, step, config):
 
 def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=None,
                     is_final=False, async_save=True, ema=None):
-    """Returns the `Thread` when `async_save=True` (caller must `t.join()`), else None."""
+    """Save a full checkpoint and optionally return its background save thread."""
     model_folder = Path(config['model_folder'])
     model_folder.mkdir(parents=True, exist_ok=True)
 
@@ -196,7 +198,7 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
     path = model_folder / f"{config['model_filename']}_step_{step}.pt"
     if async_save:
-        # torch.save releases the GIL; caller must `t.join()` before exit.
+        # Join before process exit so the checkpoint is not abandoned.
         t = threading.Thread(target=torch.save, args=(checkpoint, path),
                               daemon=True, name=f"ckpt-save-{step}")
         t.start()
@@ -208,7 +210,7 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
 
 def load_checkpoint(model, optimizer, scheduler, config, device, ema=None):
-    """Restore model + optim + scheduler + RNG; loads EMA shadow when `ema` is given and the checkpoint has it."""
+    """Restore training state, RNG state, and optional EMA weights."""
     model_folder = Path(config['model_folder'])
     checkpoints = sorted(
         model_folder.glob(f"{config['model_filename']}_step_*.pt"),
@@ -266,6 +268,7 @@ def _next_batch(step_iterator, train_dataloader, epoch_state):
 
 
 def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=None):
+    """Run training, validation, checkpointing, and optional sample generation."""
     device_str = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device_str)
     print(f"Using device: {device}")
@@ -284,18 +287,16 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 f"cache at {config['data_cache_dir']}/{config['data_cache_filename']}."
             )
             train_dataloader, val_dataloader, tokenizer = build_synthetic_data(config)
-    # No padding in this pipeline (packed documents, full windows), so nothing
-    # is ignored; using -100 keeps EOS separators learnable.
+    # Packed windows have no padding; -100 leaves EOS separators learnable.
     ignore_index = -100
 
     gradient_checkpointing = config.get('gradient_checkpointing', True)
     real_vocab_size = max(config['vocab_size'], len(tokenizer))
     qknorm = config.get('qknorm', True)
-    # use_z_loss is the functional switch; z_loss_weight scales the term when on.
+    # Keep the feature switch separate from the configured loss scale.
     z_loss_weight = config.get('z_loss_weight', 1e-4) if config.get('use_z_loss', True) else 0.0
     cross_entropy_impl = config.get('cross_entropy_impl', 'pytorch')
-    # Per-kernel '*_impl='triton'' keys only fire when ENABLE_TRITON_KERNELS=1;
-    # default runs never silently switch to a fused path.
+    # Triton paths require an explicit environment opt-in.
     triton_enabled = os.environ.get("ENABLE_TRITON_KERNELS", "0") == "1"
     rmsnorm_impl = config.get('rmsnorm_impl', 'pytorch')
     swiglu_impl = config.get('swiglu_impl', 'pytorch')
@@ -345,7 +346,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     ce_chunk_size = config.get('ce_chunk_size', 256)
     epoch_state = {'epoch': 0}
-    # CUDA graphs recompile on shape change, so the warmup must use real training shapes.
+    # Compile warmup uses real batch shapes to avoid a later graph rebuild.
     step_iterator = iter(train_dataloader)
     _warmup_batch = _next_batch(step_iterator, train_dataloader, epoch_state)
     _warmup_input = _warmup_batch['input'].to(device, non_blocking=True)
@@ -354,10 +355,9 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     if config.get('compile_model', True) and hasattr(torch, 'compile'):
         compile_mode = config.get('compile_mode', 'reduce-overhead')
         print(f"Compiling model with torch.compile(mode={compile_mode!r})...")
-        # 'reduce-overhead' uses CUDA graphs which own the stream; non_blocking H2D
-        # is the only async prefetch compatible with that mode.
+        # CUDA-graph mode requires non-blocking host-to-device copies.
         model = torch.compile(model, mode=compile_mode)
-        # First step stalls 30s–2min on autotune; warm it up before the loop.
+        # Pay the compilation/autotune cost before measuring training steps.
         with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
                             enabled=(device.type == 'cuda')):
             _warmup_hidden = model(_warmup_input, return_hidden=True)
