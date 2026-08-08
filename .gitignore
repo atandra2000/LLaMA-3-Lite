@@ -30,3 +30,6 @@ env/
 
 # opencode local tooling
 .opencode/
+
+# HTML Documentation (Generated locally)
+docs_html/
