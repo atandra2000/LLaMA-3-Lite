@@ -95,7 +95,7 @@ There are **two distinct codebases** involved:
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-**The preparation side (workspace).** The canonical pipeline lives at `LLM/shared_data/` — one level up from this repo, in the workspace. It is shared by Mamba-2-Lite, GPT-OSS-Lite, HyMo, DeepSeek-v3-Lite, and LLaMA-3-Lite ("one corpus, five models"). Its stages run as subprocesses from `shared_data.prepare_data.run_pipeline`:
+**The preparation side (workspace).** The canonical pipeline lives at `LLM/shared_data/` — one level up from this repo, in the workspace. It is shared by Mamba-3-Lite, GPT-OSS-Lite, HyMo, DeepSeek-v3-Lite, and LLaMA-3-Lite ("one corpus, five models"). Its stages run as subprocesses from `shared_data.prepare_data.run_pipeline`:
 
 1. `download_raw` streams the mixture sources from HuggingFace as JSONL.
 2. `clean` applies the quality filter and the SHA-256 exact dedup.

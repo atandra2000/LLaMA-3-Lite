@@ -212,7 +212,6 @@ Without Optimizations · ~92 GB        With Optimizations · ~20 GB
 **Stack (8 memory techniques):** gradient checkpointing &middot; chunked cross-entropy + z-loss &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; GQA &middot; fused SwiGLU + Triton opt-ins &middot; TF32. `channels_last` is not used — LLMs are 2D matmul-bound, layout tricks don't help. **Plus 3 stability techniques:** QK-norm &middot; z-loss &middot; EMA.
 
 ### Key Design Decisions
-### Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
@@ -355,7 +354,7 @@ LR
 
 ### Mixed Precision
 
-Training uses **BFloat16** mixed precision via `torch.autocast` and `torch.amp.GradScaler`. BFloat16 is preferred over Float16 for:
+Training uses **BFloat16** mixed precision via `torch.autocast` — no GradScaler needed, since BF16 has the FP32 exponent range and cannot overflow. BFloat16 is preferred over Float16 for:
 - Native BF16 tensor cores on A100
 - Wider dynamic range
 - No overflow issues with large models
