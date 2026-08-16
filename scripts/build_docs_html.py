@@ -94,7 +94,7 @@ def fix_md_links(content: str, src_rel_path: str) -> str:
       file isn't shipped inside ``docs_html/``.
     """
     repo_base = github_base_url()
-    src_dir = Path(src_rel_path).parent
+    src_dir = WORKSPACE_DIR / Path(src_rel_path).parent
 
     def link_replacer(match):
         label = match.group(1)
@@ -568,7 +568,7 @@ def generate_html_page(rel_path: str, category: str, display_title: str):
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <!-- Highlight.js for Syntax Highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="highlight-theme">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -728,46 +728,54 @@ def generate_index_portal():
     sidebar_html = build_sidebar_html("index.html", "./")
     
     categories = {
-        "Core Architecture": [
-            ("README.html", "Project Overview", "515M-param LLaMA-3-class decoder in raw PyTorch with the 8-technique memory stack."),
-            ("AGENTS.html", "AGENTS & System Architecture", "Codebase contracts, hard rules, GPU discipline, and file map."),
-            ("SKILLS.html", "Skills Map", "Specialized agent workflows, scripts, and domain competencies."),
-            ("docs/training.html", "Training Pipeline", "BF16 training loop, chunked cross-entropy, checkpointing & numerical stability."),
-            ("docs/AUDIT.html", "Docs & Codebase Audit", "Findings table of docs↔code alignment and from-scratch codebase explanation.")
+        ("CORE", "Core Architecture"): [
+            ("README.html", "README", "Project Overview", "515M-param LLaMA-3-class decoder in raw PyTorch with the 8-technique memory stack."),
+            ("AGENTS.html", "AGENTS", "System Architecture", "Codebase contracts, hard rules, GPU discipline, and file map."),
+            ("SKILLS.html", "SKILLS", "Skills Map", "Specialized agent workflows, scripts, and domain competencies."),
+            ("docs/README.html", "DOCS", "Documentation Index", "A map of the concepts, guides, and API references in this portal."),
+            ("docs/training.html", "CORE", "Training Pipeline", "BF16 training loop, chunked cross-entropy, checkpointing & numerical stability."),
+            ("docs/AUDIT.html", "AUDIT", "Docs & Codebase Audit", "Evidence-backed documentation-to-code alignment and project orientation.")
         ],
-        "Architecture & Concepts": [
-            ("docs/concepts/architecture-components.html", "Architecture Components", "RMSNorm + QK-norm, fused SwiGLU FFN, and loss design."),
-            ("docs/concepts/attention-and-positional.html", "Attention & Positional", "GQA 8Q/4KV, causal mask, RoPE θ=500K, and the residual stream."),
-            ("docs/concepts/data-and-kernels.html", "Data Pipeline & Triton", "Mixture, packing, dedup, disk-backed uint32 cache & Triton kernels."),
-            ("docs/concepts/training-and-memory.html", "Training & Memory", "AdamW schedule, gradient checkpointing, BF16, chunked CE & z-loss.")
+        ("CONCEPTS", "Architecture & Concepts"): [
+            ("docs/concepts/architecture-components.html", "C1", "Architecture Components", "RMSNorm + QK-norm, fused SwiGLU FFN, and loss design."),
+            ("docs/concepts/attention-and-positional.html", "C2", "Attention & Positional", "GQA 8Q/4KV, causal mask, RoPE θ=500K, and the residual stream."),
+            ("docs/concepts/data-and-kernels.html", "C3", "Data Pipeline & Triton", "Mixture, packing, dedup, disk-backed uint32 cache & Triton kernels."),
+            ("docs/concepts/training-and-memory.html", "C4", "Training & Memory", "AdamW schedule, gradient checkpointing, BF16, chunked CE & z-loss.")
         ],
-        "Guides & Playbooks": [
-            ("docs/guides/quickstart.html", "Quickstart", "From zero to a running training loop — install, smoke test, full run."),
-            ("docs/guides/learning-paths.html", "Learning Paths", "Beginner / intermediate / expert routes through the documentation."),
-            ("docs/guides/troubleshooting.html", "Troubleshooting", "FAQ: CUDA OOM at batch 96, missing token cache, shared_data SystemExit."),
-            ("docs/guides/glossary.html", "Glossary", "Notation, acronyms, config keys, and file layout.")
+        ("GUIDES", "Guides & Playbooks"): [
+            ("docs/guides/quickstart.html", "G0", "Quickstart", "From zero to a running training loop — install, smoke test, full run."),
+            ("docs/guides/learning-paths.html", "G1", "Learning Paths", "Beginner / intermediate / expert routes through the documentation."),
+            ("docs/guides/troubleshooting.html", "G2", "Troubleshooting", "FAQ: CUDA OOM at batch 96, missing token cache, shared_data SystemExit."),
+            ("docs/guides/glossary.html", "G3", "Glossary", "Notation, acronyms, config keys, and file layout.")
         ],
-        "API References": [
-            ("docs/references/model-reference.html", "Model, RoPE & Config", "Model classes, RoPE, config dataclass — shapes and wiring."),
-            ("docs/references/data-reference.html", "Data & Kernels", "Data loader, tokenizer, and Triton kernel reference."),
-            ("docs/references/training-reference.html", "Training & Tests", "Training loop, test strategy, fixtures, and CI."),
-            ("docs/references/workspace-data.html", "Shared Data Pipeline", "The LLM/shared_data 8B-token pipeline — resolution, layout, use.")
+        ("REFS", "API References"): [
+            ("docs/references/model-reference.html", "R1", "Model, RoPE & Config", "Model classes, RoPE, config dataclass — shapes and wiring."),
+            ("docs/references/data-reference.html", "R2", "Data & Kernels", "Data loader, tokenizer, and Triton kernel reference."),
+            ("docs/references/training-reference.html", "R3", "Training & Tests", "Training loop, test strategy, fixtures, and CI."),
+            ("docs/references/workspace-data.html", "R4", "Shared Data Pipeline", "The LLM/shared_data 8B-token pipeline — resolution, layout, use.")
         ]
     }
-    
+
     portal_cards_html = ""
-    for cat_title, items in categories.items():
+    for (cat_tag, cat_title), items in categories.items():
         cards = ""
-        for href, title, desc in items:
+        for href, tag, title, desc in items:
             cards += f"""
             <a href="{href}" class="portal-card">
-                <h3 class="card-heading">{title}</h3>
-                <p class="card-desc">{desc}</p>
+                <span class="card-tag">{tag}</span>
+                <div class="card-body">
+                    <h3 class="card-heading">{title}</h3>
+                    <p class="card-desc">{desc}</p>
+                </div>
             </a>
             """
         portal_cards_html += f"""
         <section class="portal-section">
-            <h2 class="portal-category-title">{cat_title}</h2>
+            <header class="portal-section-head">
+                <span class="portal-section-mark">&sect; {cat_tag.lower()}</span>
+                <h2 class="portal-section-title">{cat_title}</h2>
+                <span class="portal-section-meta">{len(items)} entries</span>
+            </header>
             <div class="portal-grid">{cards}</div>
         </section>
         """
@@ -781,7 +789,7 @@ def generate_index_portal():
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <!-- CSS Stylesheet -->
     <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -796,8 +804,8 @@ def generate_index_portal():
             </a>
         </div>
         <div class="header-right">
-            <a href="README.html" class="header-link">README</a>
-            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn" aria-label="Toggle Theme">Dark</button>
+            <a href="README.html" class="header-link">GitHub README</a>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn" aria-label="Toggle Theme">☀️ Light</button>
         </div>
     </header>
 
@@ -813,14 +821,132 @@ def generate_index_portal():
         <main class="main-content">
             <div class="content-container">
                 <div class="hero-banner">
-                    <div class="hero-accent-line" aria-hidden="true"></div>
-                    <h1 class="hero-title">LLaMA-3-Lite</h1>
-                    <p class="hero-subtitle">From-scratch PyTorch implementation of a LLaMA-3-class decoder — GQA, RoPE, fused SwiGLU, gradient checkpointing, chunked cross-entropy, disk-backed token cache — with a ~78% peak-memory cut.</p>
-                    <div class="spec-row">
-                        <div class="spec-datum"><span class="spec-num">515M</span><span class="spec-label">Parameters</span></div>
-                        <div class="spec-datum"><span class="spec-num">16</span><span class="spec-label">Decoder blocks</span></div>
-                        <div class="spec-datum"><span class="spec-num">8Q·4KV</span><span class="spec-label">GQA heads</span></div>
-                        <div class="spec-datum"><span class="spec-num">~20 GB</span><span class="spec-label">Peak memory</span></div>
+                    <div class="hero-margin-ticks" aria-hidden="true"></div>
+                    <div class="hero-coords" aria-hidden="true">
+                        <span class="coord">FIG &middot; A1</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">PARAM 515M</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">GQA 8Q&middot;4KV</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">CTX 2048</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">ROPE &theta; 500K</span>
+                    </div>
+                    <h1 class="hero-title">LLaMA<span class="hero-title-em">-3</span><span class="hero-title-em-accent">-Lite</span></h1>
+                    <p class="hero-subtitle">From-scratch PyTorch implementation of a LLaMA-3-class decoder &mdash; GQA, RoPE, fused SwiGLU, gradient checkpointing, chunked cross-entropy, disk-backed token cache &mdash; with a ~78% peak-memory cut. Read it like a field notebook: a name, a wiring sketch, then the measurements.</p>
+
+                    <div class="hero-figure" aria-hidden="true">
+                        <svg class="gqa-svg" viewBox="0 0 560 224" role="img" aria-label="Grouped-Query Attention wiring: 8 query heads on the left pair down to 4 shared key-value heads on the right; an olive RoPE spiral floats in the lower right; coordinate ticks on the left margin">
+                            <!-- ruled margin line down the left, like a notebook -->
+                            <line class="margin-line" x1="36" y1="6" x2="36" y2="218" />
+                            <text class="margin-label" x="22" y="22" text-anchor="middle">A1</text>
+                            <!-- secondary margin coordinate — second figure in the
+                                 series, ties the diagram to the spec sheet below. -->
+                            <text class="margin-label margin-label-sub" x="22" y="208" text-anchor="middle">FIG</text>
+
+                            <!-- marginal coordinate ticks — every two rows, like a
+                                 ruler, drawn in olive so the page's structural mark
+                                 shows up here too. -->
+                            <g class="ruler-ticks">
+                                <line x1="32" y1="38"  x2="40" y2="38" />
+                                <line x1="32" y1="62"  x2="40" y2="62" />
+                                <line x1="32" y1="86"  x2="40" y2="86" />
+                                <line x1="32" y1="110" x2="40" y2="110" />
+                                <line x1="32" y1="134" x2="40" y2="134" />
+                                <line x1="32" y1="158" x2="40" y2="158" />
+                                <line x1="32" y1="182" x2="40" y2="182" />
+                                <line x1="32" y1="206" x2="40" y2="206" />
+                            </g>
+
+                            <!-- Q column (8 dots, all present) -->
+                            <g class="q-heads">
+                                <circle cx="92" cy="38" r="6" /><text x="92" y="42" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="62" r="6" /><text x="92" y="66" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="86" r="6" /><text x="92" y="90" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="110" r="6" /><text x="92" y="114" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="134" r="6" /><text x="92" y="138" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="158" r="6" /><text x="92" y="162" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="182" r="6" /><text x="92" y="186" text-anchor="middle">Q</text>
+                                <circle cx="92" cy="206" r="6" /><text x="92" y="210" text-anchor="middle">Q</text>
+                            </g>
+                            <!-- KV column (4 dots, each shared by two Q heads) -->
+                            <g class="kv-heads">
+                                <circle cx="488" cy="50" r="6" /><text x="488" y="54" text-anchor="middle">KV</text>
+                                <circle cx="488" cy="98" r="6" /><text x="488" y="102" text-anchor="middle">KV</text>
+                                <circle cx="488" cy="146" r="6" /><text x="488" y="150" text-anchor="middle">KV</text>
+                                <circle cx="488" cy="194" r="6" /><text x="488" y="198" text-anchor="middle">KV</text>
+                            </g>
+
+                            <!-- group bar: inked bracket on the right of the Q column -->
+                            <path class="bracket" d="M108,34 Q120,34 120,46 L120,194 Q120,210 132,210" fill="none" />
+                            <text class="lbl" x="142" y="44">8 Q heads</text>
+                            <text class="lbl-sub" x="142" y="58">512-d / head</text>
+
+                            <!-- group bar on the left of KV -->
+                            <path class="bracket" d="M468,46 Q456,46 456,58 L456,194 Q456,210 444,210" fill="none" />
+                            <text class="lbl lbl-end" x="438" y="44" text-anchor="end">4 KV heads</text>
+                            <text class="lbl-sub lbl-end" x="438" y="58" text-anchor="end">512-d / head, shared</text>
+
+                            <!-- wiring lines: every two Q dots converge into one KV dot -->
+                            <g class="wires">
+                                <line class="wire" x1="98" y1="38" x2="482" y2="50" />
+                                <line class="wire" x1="98" y1="62" x2="482" y2="50" />
+                                <line class="wire" x1="98" y1="86" x2="482" y2="98" />
+                                <line class="wire" x1="98" y1="110" x2="482" y2="98" />
+                                <line class="wire wire-active" x1="98" y1="134" x2="482" y2="146" />
+                                <line class="wire wire-active" x1="98" y1="158" x2="482" y2="146" />
+                                <line class="wire" x1="98" y1="182" x2="482" y2="194" />
+                                <line class="wire" x1="98" y1="206" x2="482" y2="194" />
+                            </g>
+                            <!-- the single active spark on the third pairing (the "one anomalous call") -->
+                            <circle class="spark" cx="290" cy="140" r="3" />
+                            <!-- hairline crosshair through the active spark —
+                                 reads as "this exact pairing, at this exact position" -->
+                            <g class="spark-cross">
+                                <line x1="290" y1="124" x2="290" y2="132" />
+                                <line x1="290" y1="148" x2="290" y2="156" />
+                                <line x1="274" y1="140" x2="282" y2="140" />
+                                <line x1="298" y1="140" x2="306" y2="140" />
+                            </g>
+
+                            <!-- dotted guide line from active spark to RoPE spiral inset -->
+                            <line class="rope-guide" x1="290" y1="140" x2="380" y2="158" />
+
+                            <!-- inset RoPE spiral in olive (smaller, off the main path) -->
+                            <g class="rope-spiral" transform="translate(380,158)">
+                                <!-- olive coordinate frame around the inset, like a
+                                     small drafting frame -->
+                                <line class="rope-frame" x1="-32" y1="-32" x2="32" y2="-32" />
+                                <line class="rope-frame" x1="-32" y1="32"  x2="32" y2="32" />
+                                <line class="rope-frame" x1="-32" y1="-32" x2="-32" y2="32" />
+                                <line class="rope-frame" x1="32"  y1="-32" x2="32"  y2="32" />
+                                <circle cx="0" cy="0" r="22" fill="none" />
+                                <circle cx="0" cy="0" r="14" fill="none" />
+                                <circle cx="0" cy="0" r="6" fill="none" />
+                                <line x1="-26" y1="0" x2="26" y2="0" />
+                                <line x1="0" y1="-26" x2="0" y2="26" />
+                                <text x="0" y="-30" text-anchor="middle">ROPE</text>
+                                <text x="0" y="40" text-anchor="middle">&theta;=500K</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <div class="spec-sheet">
+                        <div class="spec-sheet-rule" aria-hidden="true">
+                            <span class="spec-rule-key">DATASHEET</span>
+                            <span class="spec-rule-meta">rev 0.3 &middot; chk bf16 &middot; peak ~20 GB / A100-80</span>
+                        </div>
+                        <dl class="spec-grid">
+                            <div class="spec-cell"><dt class="spec-key">01 &middot; params</dt><dd class="spec-val">~515<span class="unit">M</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">02 &middot; layers</dt><dd class="spec-val">16</dd></div>
+                            <div class="spec-cell"><dt class="spec-key">03 &middot; heads</dt><dd class="spec-val">8Q &middot; 4KV<span class="unit">  GQA</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">04 &middot; hidden</dt><dd class="spec-val">1024</dd></div>
+                            <div class="spec-cell"><dt class="spec-key">05 &middot; ffn</dt><dd class="spec-val">4096<span class="unit">  SwiGLU</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">06 &middot; vocab</dt><dd class="spec-val">128 K</dd></div>
+                            <div class="spec-cell"><dt class="spec-key">07 &middot; ctx</dt><dd class="spec-val">2048<span class="unit">  RoPE 500K</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">08 &middot; peak</dt><dd class="spec-val">~20<span class="unit"> GB</span></dd></div>
+                        </dl>
                     </div>
                 </div>
 
@@ -838,11 +964,11 @@ def generate_index_portal():
             const themeBtn = document.getElementById('themeToggleBtn');
             if (htmlEl.getAttribute('data-theme') === 'dark') {{
                 htmlEl.setAttribute('data-theme', 'light');
-                themeBtn.innerText = 'Light';
+                themeBtn.innerText = '☀️ Light';
                 localStorage.setItem('theme', 'light');
             }} else {{
                 htmlEl.setAttribute('data-theme', 'dark');
-                themeBtn.innerText = 'Dark';
+                themeBtn.innerText = '🌙 Dark';
                 localStorage.setItem('theme', 'dark');
             }}
         }}
@@ -850,7 +976,7 @@ def generate_index_portal():
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'light') {{
             document.documentElement.setAttribute('data-theme', 'light');
-            document.getElementById('themeToggleBtn').innerText = 'Light';
+            document.getElementById('themeToggleBtn').innerText = '☀️ Light';
         }}
 
         function toggleSidebar() {{
@@ -875,626 +1001,16 @@ def generate_index_portal():
 
 
 def generate_css():
-    """Create docs_html/assets/style.css with modern design system."""
+    """Copy the canonical stylesheet from assets/style.css into the docs build.
+
+    The CSS body is a real .css file alongside this script (not a Python
+    triple-quoted literal) so editor tooling and diffs work on it.
+    """
+    import shutil
     assets_dir = OUTPUT_DIR / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
-    
-    css_content = """
-/* LLaMA-3-Lite Documentation — Minimal Professional Design System
-   Single accent, clean typography, generous whitespace.
-   ──────────────────────────────────────────────────────────────────────── */
-:root {
-    --bg-main: #0c0e14;
-    --bg-surface: #151820;
-    --bg-surface-hover: #1c2030;
-    --border-color: #252a38;
-    --text-primary: #e2e8f0;
-    --text-secondary: #8893a7;
-    --text-muted: #555f73;
-    --accent: #6b8aff;
-    --accent-hover: #8aa4ff;
-    --accent-alpha: rgba(107, 138, 255, 0.10);
-    --accent-strong: rgba(107, 138, 255, 0.18);
-    --code-bg: #12151d;
-    --header-bg: rgba(12, 14, 20, 0.90);
-    --callout-note-bg: rgba(107, 138, 255, 0.06);
-    --callout-note-border: #6b8aff;
-    --callout-tip-bg: rgba(107, 138, 255, 0.06);
-    --callout-tip-border: #6b8aff;
-    --callout-warn-bg: rgba(245, 180, 50, 0.06);
-    --callout-warn-border: #f5b432;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'IBM Plex Mono', 'Fira Code', 'Consolas', monospace;
-}
-
-[data-theme="light"] {
-    --bg-main: #f8f9fc;
-    --bg-surface: #ffffff;
-    --bg-surface-hover: #f1f3f8;
-    --border-color: #dfe3ec;
-    --text-primary: #1a1f2e;
-    --text-secondary: #5c6478;
-    --text-muted: #929bb0;
-    --accent: #4a6cf7;
-    --accent-hover: #3b5de6;
-    --accent-alpha: rgba(74, 108, 247, 0.08);
-    --accent-strong: rgba(74, 108, 247, 0.14);
-    --code-bg: #f1f3f8;
-    --header-bg: rgba(248, 249, 252, 0.92);
-    --callout-note-bg: rgba(74, 108, 247, 0.05);
-    --callout-note-border: #4a6cf7;
-    --callout-tip-bg: rgba(74, 108, 247, 0.05);
-    --callout-tip-border: #4a6cf7;
-    --callout-warn-bg: rgba(180, 120, 10, 0.05);
-    --callout-warn-border: #b4780a;
-}
-
-/* ── Reset ────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    font-family: var(--font-sans);
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-}
-
-:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* ── Site Header ──────────────────────────────────────────────────────── */
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 1.5rem;
-    height: 48px;
-    background: var(--header-bg);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    text-decoration: none;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 0.88rem;
-    letter-spacing: -0.01em;
-}
-
-.brand-badge {
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    padding: 2px 7px;
-    border-radius: 4px;
-    background: var(--accent-alpha);
-    color: var(--accent);
-    font-weight: 500;
-    letter-spacing: 0.02em;
-}
-
-.header-right { display: flex; align-items: center; gap: 0.85rem; }
-
-.header-link {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: color 0.15s;
-}
-.header-link:hover { color: var(--accent); }
-
-.theme-toggle, .mobile-toggle {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-family: var(--font-sans);
-    font-weight: 500;
-    transition: all 0.15s;
-}
-.theme-toggle:hover, .mobile-toggle:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-
-.mobile-toggle { display: none; }
-
-/* ── Layout Grid ──────────────────────────────────────────────────────── */
-.app-layout {
-    display: grid;
-    grid-template-columns: 250px 1fr 210px;
-    max-width: 1480px;
-    margin: 0 auto;
-    min-height: calc(100vh - 48px);
-}
-
-/* ── Sidebar Navigation ───────────────────────────────────────────────── */
-.sidebar {
-    border-right: 1px solid var(--border-color);
-    background: var(--bg-main);
-    position: sticky;
-    top: 48px;
-    height: calc(100vh - 48px);
-    overflow-y: auto;
-}
-
-.sidebar-inner { padding: 1.15rem 0.85rem; }
-
-.sidebar-search input {
-    width: 100%;
-    padding: 6px 10px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    font-size: 0.78rem;
-    margin-bottom: 1.15rem;
-    outline: none;
-}
-.sidebar-search input:focus { border-color: var(--accent); }
-
-.nav-group { margin-bottom: 1.2rem; }
-
-.nav-group-title {
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    color: var(--text-muted);
-    margin-bottom: 0.45rem;
-    padding-left: 8px;
-}
-
-.nav-list { list-style: none; }
-.nav-item { margin-bottom: 1px; }
-
-.nav-link {
-    display: block;
-    padding: 5px 10px;
-    border-radius: 4px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 400;
-    transition: all 0.12s;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.nav-link:hover {
-    background: var(--bg-surface-hover);
-    color: var(--text-primary);
-}
-.nav-link.active {
-    background: var(--accent-alpha);
-    color: var(--accent);
-    font-weight: 500;
-}
-
-/* ── Main Content Area ────────────────────────────────────────────────── */
-.main-content {
-    padding: 2.5rem 3rem;
-    overflow-x: hidden;
-}
-
-.content-container { max-width: 780px; margin: 0 auto; }
-
-.breadcrumb {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    margin-bottom: 0.85rem;
-}
-.breadcrumb a { color: var(--text-secondary); text-decoration: none; }
-.breadcrumb a:hover { color: var(--accent); }
-.breadcrumb .current { color: var(--text-primary); font-weight: 500; }
-
-.doc-header {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1.15rem;
-    margin-bottom: 1.75rem;
-}
-
-.doc-title {
-    font-size: 1.85rem;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.25;
-    margin-bottom: 0.55rem;
-}
-
-.doc-meta {
-    display: flex;
-    gap: 1rem;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-muted);
-}
-
-/* ── Typography ───────────────────────────────────────────────────────── */
-.markdown-body p {
-    margin-bottom: 1.15rem;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-}
-
-.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
-    color: var(--text-primary);
-    font-weight: 600;
-    line-height: 1.3;
-    margin-top: 2rem;
-    margin-bottom: 0.75rem;
-    scroll-margin-top: 68px;
-    position: relative;
-}
-
-.heading-anchor .anchor-link {
-    opacity: 0;
-    margin-left: 0.4rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-weight: 400;
-    transition: opacity 0.15s;
-}
-.heading-anchor:hover .anchor-link { opacity: 1; }
-
-.doc-anchor { display: block; height: 0; }
-
-.markdown-body h2 {
-    font-size: 1.3rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.3rem;
-}
-.markdown-body h3 { font-size: 1.1rem; font-weight: 600; }
-.markdown-body h4 { font-size: 1rem; }
-
-.doc-link { color: var(--accent); text-decoration: none; font-weight: 500; }
-.doc-link:hover { text-decoration: underline; }
-
-.inline-code {
-    background: var(--code-bg);
-    border: 1px solid var(--border-color);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-family: var(--font-mono);
-    font-size: 0.84em;
-    color: var(--text-primary);
-}
-
-/* ── Code Blocks ──────────────────────────────────────────────────────── */
-.code-wrapper {
-    background: var(--code-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    margin: 1.25rem 0;
-    overflow: hidden;
-}
-
-.code-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 12px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-color);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: var(--accent);
-    letter-spacing: 0.02em;
-}
-
-.copy-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    padding: 2px 7px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.68rem;
-    transition: all 0.15s;
-}
-.copy-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-.copy-btn.copied { border-color: var(--accent); color: var(--accent); }
-
-.code-wrapper pre {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    line-height: 1.6;
-}
-
-/* ── Math ─────────────────────────────────────────────────────────────── */
-.math-block {
-    overflow-x: auto;
-    margin: 1.25rem 0;
-    padding: 0.8rem 1rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    text-align: center;
-}
-
-.math-inline { font-size: 1.02em; padding: 0 2px; }
-
-/* ── Tables ───────────────────────────────────────────────────────────── */
-.table-container { overflow-x: auto; margin: 1.25rem 0; }
-
-.doc-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    text-align: left;
-}
-.doc-table th {
-    font-family: var(--font-mono);
-    background: var(--bg-surface);
-    padding: 7px 12px;
-    font-weight: 500;
-    font-size: 0.75rem;
-    letter-spacing: 0.01em;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-secondary);
-}
-.doc-table td {
-    padding: 7px 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-.doc-table tr:hover { background: var(--bg-surface-hover); }
-
-/* ── Callouts / Blockquotes ───────────────────────────────────────────── */
-.callout {
-    padding: 0.8rem 1.1rem;
-    border-left: 3px solid;
-    border-radius: 0 6px 6px 0;
-    margin: 1.25rem 0;
-}
-.callout-note { background: var(--callout-note-bg); border-color: var(--callout-note-border); }
-.callout-tip  { background: var(--callout-tip-bg);  border-color: var(--callout-tip-border); }
-.callout-warn, .callout-warning { background: var(--callout-warn-bg); border-color: var(--callout-warn-border); }
-.callout-header {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.82rem;
-    margin-bottom: 0.3rem;
-}
-
-blockquote {
-    border-left: 3px solid var(--border-color);
-    padding: 0.35rem 0.9rem;
-    color: var(--text-secondary);
-    margin: 1rem 0;
-    font-style: italic;
-}
-
-/* ── Lists ────────────────────────────────────────────────────────────── */
-.doc-list { padding-left: 1.4rem; margin-bottom: 1rem; }
-.doc-list li { margin-bottom: 0.3rem; }
-
-/* ── Footer Page Nav ──────────────────────────────────────────────────── */
-.doc-footer-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.nav-card {
-    display: flex;
-    flex-direction: column;
-    padding: 0.8rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-.nav-card:hover {
-    border-color: var(--accent);
-    background: var(--accent-alpha);
-}
-.next-card { text-align: right; }
-.card-label {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.card-title {
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    font-weight: 500;
-    margin-top: 3px;
-}
-
-/* ── TOC Sidebar ──────────────────────────────────────────────────────── */
-.toc-sidebar {
-    border-left: 1px solid var(--border-color);
-    padding: 1.25rem 0.85rem;
-    position: sticky;
-    top: 48px;
-    height: calc(100vh - 48px);
-    overflow-y: auto;
-}
-
-.toc-title {
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    color: var(--text-muted);
-    margin-bottom: 0.65rem;
-}
-
-.toc-list { list-style: none; }
-.toc-list li { margin-bottom: 4px; }
-.toc-link {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.75rem;
-    transition: color 0.15s;
-}
-.toc-link:hover { color: var(--accent); }
-.toc-h3 { padding-left: 10px; }
-
-/* ── Hero / Index Portal ──────────────────────────────────────────────── */
-.hero-banner {
-    padding: 2rem 0 1.75rem;
-    margin-bottom: 2.25rem;
-    border-bottom: 1px solid var(--border-color);
-    position: relative;
-}
-.hero-accent-line {
-    position: absolute;
-    top: 0; left: 0;
-    width: 48px; height: 2px;
-    background: var(--accent);
-    border-radius: 1px;
-}
-
-.hero-title {
-    font-size: 1.85rem;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
-    margin-bottom: 0.35rem;
-}
-.hero-subtitle {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    max-width: 640px;
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
-}
-
-/* Spec readout row */
-.spec-row {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-.spec-datum { text-align: left; }
-.spec-num {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-}
-.spec-label {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 3px;
-}
-
-/* ── Portal Cards ─────────────────────────────────────────────────────── */
-.portal-section { margin-bottom: 2.25rem; }
-
-.portal-category-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.35rem;
-    border-bottom: 1px solid var(--border-color);
-    letter-spacing: -0.01em;
-}
-
-.portal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 0.75rem;
-}
-
-.portal-card {
-    display: block;
-    padding: 1rem 1.1rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.15s;
-    border-left: 2px solid transparent;
-}
-.portal-card:hover {
-    border-color: var(--border-color);
-    border-left-color: var(--accent);
-    background: var(--bg-surface-hover);
-}
-
-.card-heading {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-    letter-spacing: -0.005em;
-}
-.card-desc {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-}
-
-/* ── Responsive ───────────────────────────────────────────────────────── */
-@media (max-width: 1100px) {
-    .app-layout { grid-template-columns: 240px 1fr; }
-    .toc-sidebar { display: none; }
-}
-
-@media (max-width: 768px) {
-    .app-layout { grid-template-columns: 1fr; }
-    .sidebar {
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 48px;
-        width: 260px;
-        z-index: 99;
-        background: var(--bg-main);
-    }
-    .sidebar.open { display: block; }
-    .mobile-toggle { display: block; }
-    .main-content { padding: 1.5rem 1.25rem; }
-    .spec-row { gap: 1.25rem; }
-    .spec-num { font-size: 0.95rem; }
-    .hero-title { font-size: 1.5rem; }
-}
-
-@media print {
-    .site-header, .sidebar, .toc-sidebar, .doc-footer-nav { display: none; }
-    .app-layout { grid-template-columns: 1fr; }
-    body { background: #fff; color: #000; }
-}
-
-"""
-    (assets_dir / "style.css").write_text(css_content, encoding="utf-8")
+    src_css = WORKSPACE_DIR / "assets" / "style.css"
+    shutil.copyfile(src_css, assets_dir / "style.css")
 
 
 def main():
