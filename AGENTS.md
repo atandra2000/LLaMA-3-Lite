@@ -7,7 +7,16 @@ metadata:
 
 # AGENTS.md — LLaMA-3-Lite
 
-> **CRITICAL RULE:** You must also read, understand, and strictly obey all workspace-level rules defined in the top-level `CoreProjects/AGENTS.md` and `CoreProjects/.agents/AGENTS.md` files. Those higher-level instructions apply globally to all projects.
+> **CRITICAL RULE:** You must also read, understand, and strictly obey all higher-level rules: the workspace `LLM/AGENTS.md` (shared-data pipeline rules, repo boundaries, cross-project invariants) and the top-level `CoreProjects/AGENTS.md` / `CoreProjects/.agents/AGENTS.md`. Those instructions apply globally to all projects; this file wins only on LLaMA-3-Lite-specific conflicts.
+
+## Quick checks (run before claiming work is done)
+
+```bash
+cd LLM/LLaMA-3-Lite
+python3 -m pytest tests/ -v          # CPU-friendly suite
+python3 tests/test_doc_refs.py       # doc↔code symbol anchors
+python3 train.py                     # entry point (config.py drives everything)
+```
 
 
 > **Project:** `LLM/LLaMA-3-Lite/` · **Type:** memory-optimized LM
@@ -16,7 +25,7 @@ metadata:
 > (92 GB → 20 GB)** via chunked CE + disk cache + BF16 + FA2.
 
 The flagship systems-engineering project. From-scratch LLaMA-3-style
-decoder-only transformer with a **7-technique memory stack** that lets a
+decoder-only transformer with an **8-technique memory stack** that lets a
 515M-param model train at batch 96 with 2× headroom on a single A100.
 
 ---
