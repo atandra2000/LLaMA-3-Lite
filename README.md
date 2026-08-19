@@ -507,7 +507,7 @@ SOFTWARE.
 
 ## Support
 
-- **Documentation**: This README and [`docs/README.md`](docs/README.md) (extracted rationale index)
+- **Documentation**: [GitHub Pages](https://atandra2000.github.io/LLaMA-3-Lite/) (interactive HTML portal), this README, and [`docs/README.md`](docs/README.md) (extracted rationale index)
 - **Issues**: [GitHub Issues](https://github.com/atandra2000/LLaMA-3-Lite/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/atandra2000/LLaMA-3-Lite/discussions)
 
