@@ -1,39 +1,27 @@
-/* LLaMA-3-Lite documentation — "mechanic's notebook" design system.
+/* LLaMA-3-Lite documentation — "dark bench notebook" design system.
    ---------------------------------------------------------------------
-   Subject-grounded: this is a *practical, runnable* PyTorch project. The
-   page should read like an engineer's clipboard at the bench, not like
-   a marketing splash.
+   The engineer's clipboard translated to night mode: espresso-graphite
+   paper, warm-bone ink, and the two warm marks kept from the daylight
+   edition —
 
-     • Warm manila paper instead of dark blueprint — daylight,
-       clipboarded, ready to be scribbled on. The two projects in this
-       portfolio (DeepSeek-v3-Lite = research-blueprint / dark) sit on
-       opposite ends of the same editorial spectrum.
+     • terracotta   the "one active anomaly" mark: active nav tick,
+                    model number, hover arrows. Used sparingly.
+     • olive        the structural warm (coordinate stamps, § prefixes,
+                    hairlines on critical paths).
 
-     • Two warm risk colors, deliberately paired:
-         terracotta   -- the "one active anomaly" mark on the GQA wiring,
-                         the active sidebar tick, the model number on the
-                         title. Used sparingly.
-         olive        -- the structural warm (RoPE marks, hairline rules
-                         on critical paths, § prefixes). Carries weight
-                         without ever shouting.
-       The paper's manila + ink-blue neutrals give both warm colors room
-       to breathe.
+     • One typeface: JetBrains Mono runs everything — headings, prose,
+       labels, coordinates, code. This is a code-centric portal.
 
-     • Two typefaces, same roles as the sibling project:
-         IBM Plex Serif  — runs the prose
-         IBM Plex Mono   — runs every heading, label, code, coordinate.
-       Drop Inter, drop Space Grotesk; the previous design's serif-less
-       body wasn't doing the math any favors.
+     • The index hero is a Breathing Field: the complex-SSD recurrence
+       h_t = exp((A+iB)·dt)·h traced as a double logarithmic spiral of
+       phasors (the 32 conjugate pairs), perpetually rotating with a
+       state-pulse riding the arm. Below the datasheet sits the
+       interactive chunkwise-SSD pass figure. Both are the page's
+       signatures.
 
-     • The hero figure is a GQA wiring sketch on a ruled-margin page,
-       with a single RoPE spiral inset in olive. This is the page's
-       signature.
-
-     • Numbered sidebar items, two-digit counters, an active tick in
-       terracotta. Same system as the sibling; different paper.
-
-   This file is the single source of truth; `scripts/build_docs_html.py`
-   copies it into `docs_html/assets/style.css` during the build. */
+   Dark-only by design; there is no light theme. This file is the single
+   source of truth; `scripts/build_docs_html.py` copies it into
+   `docs_html/assets/style.css` during the build. */
 
 
 
@@ -42,60 +30,59 @@
    ===================================================================== */
 
 :root {
-    /* The page is a daylight notebook, not a darkroom. */
-    --paper:         #f6efe1;     /* manila base */
-    --paper-2:       #efe6d3;     /* a slightly inset plane */
-    --paper-3:       #e7dcc4;     /* the bottom layer */
-    --ink:           #1b1d24;     /* ink-blue text on paper */
-    --ink-soft:      #2c2f3a;
-    --ink-faint:     #6b6d7c;
+    /* Espresso-graphite paper, three planes deep. */
+    --paper:         #12100d;     /* page */
+    --paper-2:       #161310;     /* card / sidebar plane */
+    --paper-3:       #1a1712;     /* raised plane */
+    --ink:           #d8ccb4;     /* warm-bone ink */
+    --ink-soft:      #b3a68c;
+    --ink-faint:     #7a7160;
 
     /* Hairlines, ticks, the structural lines. */
-    --rule:          #b9a87a;     /* warm tan hairline */
-    --rule-strong:   #998459;     /* the structural rule */
-    --rule-mark:     #5d4a1f;     /* deep olive ink for printed marks */
+    --rule:          #2c261c;     /* warm graphite hairline */
+    --rule-strong:   #3a3226;     /* the structural rule */
+    --rule-mark:     #c9a35c;     /* dim gold for printed marks */
 
-    /* Two warm risk colors. */
-    --terracotta:    #c44a1f;     /* the "one active anomaly" mark */
-    --terracotta-tint: rgba(196, 74, 31, 0.10);
-    --terracotta-glow: rgba(196, 74, 31, 0.30);
-    --olive:         #5a581a;     /* structural olive (WCAG AA) */
-    --olive-tint:    rgba(90, 88, 26, 0.10);
+    /* Two warm marks, carried over from the daylight edition. */
+    --terracotta:    #e07a3f;     /* the "one active anomaly" mark */
+    --terracotta-tint: rgba(224, 122, 63, 0.10);
+    --terracotta-glow: rgba(224, 122, 63, 0.35);
+    --olive:         #9a9440;     /* structural olive (AA on graphite) */
+    --olive-tint:    rgba(154, 148, 64, 0.12);
 
-    /* Math/code surface — a slightly cooler note than the body paper. */
-    --code-paper:    #ece4d0;
-    --code-rule:     #c5b889;
+    /* Math/code surface — sunk one plane below the body paper. */
+    --code-paper:    #0e0c0a;
+    --code-rule:     #2c261c;
 
     /* Header chrome */
-    --header-bg:     rgba(246, 239, 225, 0.88);
+    --header-bg:     rgba(18, 16, 13, 0.88);
 
     /* Status callouts */
-    --callout-note-bg:    rgba(93, 74, 31, 0.05);
-    --callout-note-rule:  #5d4a1f;
-    --callout-tip-bg:     rgba(196, 74, 31, 0.06);
-    --callout-tip-rule:   #c44a1f;
-    --callout-warn-bg:    rgba(150, 40, 50, 0.06);
-    --callout-warn-rule:  #962832;
+    --callout-note-bg:    rgba(201, 163, 92, 0.06);
+    --callout-note-rule:  #c9a35c;
+    --callout-tip-bg:     rgba(224, 122, 63, 0.07);
+    --callout-tip-rule:   #e07a3f;
+    --callout-warn-bg:    rgba(232, 96, 110, 0.07);
+    --callout-warn-rule:  #e8606e;
 
     /* Subtle warm tints — used for hover, code chips, table hover, etc.
-       Distinct from the terracotta/olive "marks": these are the *paper*
-       tones, not the ink. */
-    --tint-warm-04:   rgba(108, 106, 31, 0.04);
-    --tint-warm-08:   rgba(108, 106, 31, 0.08);
-    --tint-warm-12:   rgba(108, 106, 31, 0.12);
-    --tint-terra-04:  rgba(196, 74, 31, 0.04);
-    --tint-terra-14:  rgba(196, 74, 31, 0.14);
-    --tint-ink-04:    rgba(27, 29, 36, 0.04);
+       These are the *paper* tones, not the ink marks. */
+    --tint-warm-04:   rgba(216, 204, 180, 0.04);
+    --tint-warm-08:   rgba(216, 204, 180, 0.08);
+    --tint-warm-12:   rgba(216, 204, 180, 0.12);
+    --tint-terra-04:  rgba(224, 122, 63, 0.05);
+    --tint-terra-14:  rgba(224, 122, 63, 0.18);
+    --tint-ink-04:    rgba(216, 204, 180, 0.05);
 
     /* Hairline at finer weights, for nested structure (cards within a grid,
-       rows within a card, etc.) — same warm tan, just thinner. */
-    --rule-fine:       #d2c397;
-    --rule-fade:       rgba(185, 168, 122, 0.5);
+       rows within a card, etc.). */
+    --rule-fine:       #221d15;
+    --rule-fade:       rgba(58, 50, 38, 0.5);
 
     /* Inset paper — the "even more recessed" plane used for the spec sheet
        cells, code blocks, callouts, and any element that sits below the
        main paper surface. */
-    --paper-inset:    #efe7d2;
+    --paper-inset:    #0e0c0a;
 
     /* Motion: one consistent timing voice. Slow enough to feel deliberate,
        fast enough not to drag. */
@@ -107,62 +94,13 @@
     /* Focus ring — explicit, never rely on the UA default. */
     --focus-ring:    0 0 0 2px var(--paper), 0 0 0 4px var(--terracotta);
 
-    /* Type families */
-    --font-prose:    'IBM Plex Serif', Charter, 'Iowan Old Style', Georgia, serif;
-    --font-mono:     'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* Type families — one voice: JetBrains Mono runs everything. */
+    --font-mono:     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-prose:    var(--font-mono);
 
     /* Mono features shared by every label/number/coord role: tabular figures
        so columns line up, slashed zero so "0" doesn't read as "O". */
     --mono-feats: "tnum" 1, "zero" 1, "ss01" 1;
-}
-
-/* Dark mode — kept for completeness; the brand default is light.
-   We invert cleanly: the warm paper becomes a deep ink-blue plate,
-   olive becomes a dim gold mark, terracotta stays terracotta. */
-[data-theme="dark"] {
-    --paper:         #131318;
-    --paper-2:       #1a1a21;
-    --paper-3:       #23232c;
-    --ink:           #ece6d6;
-    --ink-soft:      #d8d2c1;
-    --ink-faint:     #847a64;
-
-    --rule:          #3a3a45;
-    --rule-strong:   #56545d;
-    --rule-mark:     #d2b25a;
-
-    --terracotta:    #e06040;     /* cross-theme consistency */
-    --terracotta-tint: rgba(224, 96, 64, 0.10);
-    --terracotta-glow: rgba(224, 96, 64, 0.35);
-    --olive:         #d2b25a;     /* WCAG AA in dark mode */
-    --olive-tint:    rgba(210, 178, 90, 0.12);
-
-    --code-paper:    #181820;
-    --code-rule:     #30303a;
-
-    --header-bg:     rgba(19, 19, 24, 0.90);
-
-    --callout-note-bg:    rgba(210, 178, 90, 0.06);
-    --callout-note-rule:  #d2b25a;
-    --callout-tip-bg:     rgba(255, 133, 86, 0.07);
-    --callout-tip-rule:   #ff8556;
-    --callout-warn-bg:    rgba(232, 96, 110, 0.07);
-    --callout-warn-rule:  #e8606e;
-
-    /* Dark warm tints */
-    --tint-warm-04:   rgba(197, 180, 85, 0.04);
-    --tint-warm-08:   rgba(197, 180, 85, 0.08);
-    --tint-warm-12:   rgba(197, 180, 85, 0.12);
-    --tint-terra-04:  rgba(255, 133, 86, 0.05);
-    --tint-terra-14:  rgba(255, 133, 86, 0.18);
-    --tint-ink-04:    rgba(236, 230, 214, 0.05);
-
-    --rule-fine:      #2f2f38;
-    --rule-fade:      rgba(86, 84, 93, 0.5);
-
-    --paper-inset:    #16161c;
-
-    --focus-ring:     0 0 0 2px var(--paper-3), 0 0 0 4px var(--terracotta);
 }
 
 
@@ -199,7 +137,6 @@ body {
     border-radius: 0;
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--rule-strong); }
-[data-theme="dark"] *::-webkit-scrollbar-thumb { border-color: var(--paper-3); }
 
 /* Faint ruled grid like a notebook — vertical lines every 32px and a
    horizontal line every 36px, only visible at very low opacity. Gives
@@ -214,27 +151,13 @@ body::before {
         repeating-linear-gradient(to right,
             transparent 0,
             transparent 31px,
-            rgba(108, 106, 31, 0.05) 31px,
-            rgba(108, 106, 31, 0.05) 32px),
+            rgba(216, 204, 180, 0.025) 31px,
+            rgba(216, 204, 180, 0.025) 32px),
         repeating-linear-gradient(to bottom,
             transparent 0,
             transparent 35px,
-            rgba(108, 106, 31, 0.04) 35px,
-            rgba(108, 106, 31, 0.04) 36px);
-}
-
-[data-theme="dark"] body::before {
-    background-image:
-        repeating-linear-gradient(to right,
-            transparent 0,
-            transparent 31px,
-            rgba(197, 180, 85, 0.04) 31px,
-            rgba(197, 180, 85, 0.04) 32px),
-        repeating-linear-gradient(to bottom,
-            transparent 0,
-            transparent 35px,
-            rgba(197, 180, 85, 0.03) 35px,
-            rgba(197, 180, 85, 0.03) 36px);
+            rgba(216, 204, 180, 0.02) 35px,
+            rgba(216, 204, 180, 0.02) 36px);
 }
 
 .site-header, .app-layout, .hero-banner, .toc-sidebar, .sidebar {
@@ -242,14 +165,48 @@ body::before {
     z-index: 2;
 }
 
+/* Boot overlay — a 350ms "loading weights" plate that fades on
+   DOMContentLoaded. Respects prefers-reduced-motion (drops straight to
+   invisible). Lives on every page so reloads feel coherent. */
+#boot-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    color: var(--ink);
+    transition: opacity var(--t-fast) var(--ease), visibility var(--t-fast) var(--ease);
+}
+.boot-inner { text-align: center; }
+.boot-wordmark {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--ink);
+    margin-bottom: 0.8rem;
+    font-feature-settings: var(--mono-feats);
+}
+.boot-line {
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-feature-settings: var(--mono-feats);
+}
+.boot-bar { color: var(--terracotta); font-weight: 600; }
+.boot-fading { opacity: 0; pointer-events: none; }
+
 
 
 /* =====================================================================
    3. TYPE
    ===================================================================== */
 
-.brand-name, .doc-title, .hero-title, .hero-coords, .hero-figure .lbl,
-.hero-figure .lbl-sub, .portal-section-mark, .portal-section-title,
+.brand-name, .doc-title, .hero-title, .hero-coords, .ascii-hero,
+.portal-section-mark, .portal-section-title,
 .portal-section-meta, .card-heading, .card-tag, .nav-card .card-title,
 .nav-card .card-label, .nav-group-title, .nav-link, .toc-title,
 .toc-link, .breadcrumb, .doc-meta, .meta-item,
@@ -259,7 +216,7 @@ body::before {
 .heading-anchor, .hero-subtitle,
 .callout-header, .callout-title,
 .brand-badge, .header-link,
-.theme-toggle, .mobile-toggle, .sidebar-search input,
+.mobile-toggle, .sidebar-search input,
 .doc-footer-nav {
     font-family: var(--font-mono);
 }
@@ -297,10 +254,22 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
 .nav-link:focus-visible,
 .toc-link:focus-visible,
 .header-link:focus-visible,
-.theme-toggle:focus-visible,
 .mobile-toggle:focus-visible,
 .copy-btn:focus-visible {
     box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--terracotta);
+}
+
+/* Visually hidden, but available to screen readers and search engines. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 
@@ -391,7 +360,7 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
 }
 .header-link:hover { color: var(--terracotta); border-bottom-color: var(--terracotta); }
 
-.theme-toggle, .mobile-toggle {
+.mobile-toggle {
     background: var(--tint-warm-04);
     border: 1px solid var(--rule-strong);
     color: var(--ink-faint);
@@ -406,7 +375,7 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     font-feature-settings: var(--mono-feats);
     transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
-.theme-toggle:hover, .mobile-toggle:hover {
+.mobile-toggle:hover {
     color: var(--ink);
     border-color: var(--rule-mark);
     background: var(--tint-warm-08);
@@ -426,6 +395,23 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     max-width: 1560px;
     margin: 0 auto;
     min-height: calc(100vh - 50px);
+}
+
+.index-portal .app-layout,
+.app-layout:not(:has(.toc-sidebar)) {
+    grid-template-columns: 264px minmax(0, 1fr);
+    max-width: 1560px;
+    margin: 0 auto;
+}
+
+.index-portal .content-container {
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.index-portal .main-content {
+    padding: 2.5rem 3rem 4rem;
 }
 
 .sidebar {
@@ -517,9 +503,9 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
 
 .nav-link {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.55rem;
-    padding: 5px 10px;
+    padding: 6px 10px;
     color: var(--ink-faint);
     text-decoration: none;
     font-size: 0.82rem;
@@ -528,10 +514,15 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     border-left: 2px solid transparent;
     margin-left: -2px;
     transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+    position: relative;
+    min-width: 0;
+}
+.nav-link-text {
+    flex: 1 1 auto;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    position: relative;
 }
 .nav-link::before {
     content: counter(navitem, decimal-leading-zero);
@@ -752,7 +743,11 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     align-items: center;
     gap: 0.45rem;
     padding: 3px 9px 3px 0;
-    border-right: 1px solid var(--rule-fine);
+}
+.doc-meta .meta-mark {
+    color: var(--olive);
+    font-weight: 600;
+    font-size: 0.78rem;
 }
 .doc-meta .meta-item:last-child { border-right: none; padding-right: 0; }
 .doc-meta .meta-label { color: var(--ink-faint); opacity: 0.75; }
@@ -771,7 +766,7 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     background: var(--paper-2);
     border: 1px solid var(--rule-strong);
     border-radius: 0;
-    margin-bottom: 3.5rem;
+    margin-bottom: 1.8rem;
     position: relative;
     overflow: hidden;
     /* a soft inner olive tint to push the hero off the body paper without
@@ -860,186 +855,557 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     font-size: 1.08rem;
     color: var(--ink-soft);
     line-height: 1.6;
-    max-width: 580px;
+    max-width: 1080px;
     margin: 0 0 2rem;
     font-feature-settings: "kern", "liga";
 }
 
-/* ----- The GQA wiring figure ----------------------------------------- */
+/* ----- FIG. A0 — Complex State-Space Dynamics (Precision Instrument) - */
 .hero-figure {
-    margin: 0 0 2rem;
-    border-top: 1px solid var(--rule);
-    border-bottom: 1px solid var(--rule);
-    padding: 0.85rem 0 0.6rem;
-    background: var(--paper);
+    margin: 0.8rem 0 1.8rem;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-inset);
     position: relative;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.35);
 }
-.hero-figure::before {
-    /* A small coordinate stamp on the left, like a figure number on a
-       published paper. Olive so it doesn't compete with the title. */
-    content: "FIG. A1  ·  ATTENTION WIRING (GQA)";
-    position: absolute;
-    top: -0.55rem;
-    left: 0;
+
+.hero-figure-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.9rem;
     background: var(--paper-2);
-    padding: 0 0.55rem;
-    color: var(--olive);
+    border-bottom: 1px solid var(--rule);
+}
+
+
+.fig-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     font-family: var(--font-mono);
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    font-weight: 500;
+}
+
+.fig-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--olive);
+    box-shadow: 0 0 8px var(--olive);
+    animation: figDotPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes figDotPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1.0; transform: scale(1.15); filter: drop-shadow(0 0 3px var(--olive)); }
+}
+
+.fig-tag {
+    color: var(--olive);
+    font-weight: 700;
+}
+
+.fig-sep {
+    color: var(--ink-faint);
+    opacity: 0.5;
+}
+
+.fig-title {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.fig-dim {
+    color: var(--ink-faint);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+}
+
+.fig-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.fig-btn {
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 0.22rem 0.55rem;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+    user-select: none;
+}
+
+.fig-btn:hover {
+    background: var(--tint-terra-04);
+    color: var(--ink);
+    border-color: var(--rule-mark);
+}
+
+.fig-btn.active {
+    background: var(--tint-terra-14);
+    color: var(--terracotta);
+    border-color: var(--terracotta);
+    box-shadow: 0 0 8px var(--terracotta-tint);
+}
+
+.fig-btn-icon {
+    padding: 0.22rem 0.45rem;
+    font-size: 0.52rem;
+}
+
+/* Canvas Container & Viewport */
+.fig-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 360px;
+    background: radial-gradient(ellipse at center, #17130f 0%, #0e0c0a 70%, #080706 100%);
+    overflow: hidden;
+    cursor: crosshair;
+}
+.hero-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Corner HUD Telemetry Overlay */
+.fig-overlay-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.hud-corner {
+    position: absolute;
+    padding: 0.45rem 0.7rem;
+    background: rgba(18, 16, 13, 0.90);
+    border: 1px solid var(--rule-strong);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-family: var(--font-mono);
+    line-height: 1.35;
+    border-radius: 2px;
+}
+
+.hud-corner.top-left { top: 8px; left: 8px; }
+.hud-corner.top-right { top: 8px; right: 8px; text-align: right; }
+.hud-corner.bottom-left { bottom: 8px; left: 8px; }
+.hud-corner.bottom-right { bottom: 8px; right: 8px; text-align: right; }
+
+.hud-lbl {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.60rem;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.hud-val {
+    display: block;
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 600;
     font-feature-settings: var(--mono-feats);
 }
 
-.gqa-svg {
-    width: 100%;
-    height: auto;
-    max-width: 600px;
+.hud-val .num {
+    color: var(--terracotta);
+    font-weight: 700;
+}
+
+/* Floating Probe Inspection Card */
+.hud-probe {
+    position: absolute;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    z-index: 10;
+}
+
+.probe-card {
+    background: rgba(22, 19, 16, 0.96);
+    border: 1px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(201, 163, 92, 0.25);
+    padding: 0.45rem 0.75rem;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.probe-tag {
     display: block;
-    margin: 0 auto;
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
 }
 
-/* Left ruled margin line */
-.gqa-svg .margin-line { stroke: var(--terracotta); stroke-width: 1.4; opacity: 0.85; }
-.gqa-svg .margin-label {
-    fill: var(--terracotta);
-    font-family: var(--font-mono);
-    font-size: 8px;
+.probe-val {
+    display: block;
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-feature-settings: var(--mono-feats);
+}
+
+.probe-sub {
+    display: block;
+    color: var(--olive);
+    font-size: 0.64rem;
+    margin-top: 2px;
     letter-spacing: 0.04em;
+}
+/* Footer: Formula & Legend */
+.hero-figure-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.48rem 0.9rem;
+    background: var(--paper-2);
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.70rem;
+}
+
+.fig-formula {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    font-size: 0.74rem;
+}
+
+.fig-formula .formula-sym { color: var(--ink); font-weight: 600; }
+.fig-formula .formula-op { color: var(--ink-faint); margin: 0 0.1rem; }
+.fig-formula .formula-term { color: var(--rule-mark); font-weight: 500; }
+.fig-formula .term-a { color: var(--olive); font-weight: 600; }
+.fig-formula .term-b { color: var(--terracotta); font-weight: 600; }
+.fig-formula .formula-dot { color: var(--ink-faint); }
+.fig-formula .f-sub, .fig-legend .f-sub {
+    font-size: 0.58rem;
+    vertical-align: sub;
+    color: var(--ink-soft);
+    font-feature-settings: var(--mono-feats);
+}
+.fig-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--ink-soft);
+    font-size: 0.65rem;
+}
+
+.legend-swatch {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-swatch.olive {
+    background: var(--olive);
+    box-shadow: 0 0 5px var(--olive);
+}
+
+.legend-swatch.terra {
+    background: var(--terracotta);
+    box-shadow: 0 0 5px var(--terracotta);
+}
+
+.legend-swatch.core {
+    background: #fffaf0;
+    box-shadow: 0 0 6px var(--terracotta-glow);
+}
+
+.legend-hint {
+    color: var(--ink-faint);
+    font-size: 0.52rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+/* ----- FIG. A1 — Full Training Step Pipeline (Precision Instrument) --- */
+.pass-widget {
+    margin-top: 1.8rem;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-inset);
+    position: relative;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.pass-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    padding: 0.55rem 0.9rem;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+}
+
+.pass-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.pass-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    box-shadow: 0 0 8px var(--terracotta);
+    animation: passDotPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes passDotPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1.0; transform: scale(1.15); filter: drop-shadow(0 0 3px var(--terracotta)); }
+}
+
+.pass-tag {
+    color: var(--terracotta);
+    font-weight: 700;
+}
+
+.pass-sep {
+    color: var(--ink-faint);
+    opacity: 0.5;
+}
+
+.pass-title {
+    color: var(--ink);
     font-weight: 600;
 }
-.gqa-svg .margin-label-sub {
-    fill: var(--olive);
-    font-size: 6px;
-    font-weight: 500;
-    opacity: 0.85;
-}
-.gqa-svg .ruler-ticks line {
-    stroke: var(--olive);
-    stroke-width: 0.7;
-    opacity: 0.55;
-    stroke-linecap: round;
+
+.pass-dim {
+    color: var(--ink-faint);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
 }
 
-/* Q heads (warm ink, all present) */
-.gqa-svg .q-heads circle {
-    fill: var(--paper);
-    stroke: var(--ink-soft);
-    stroke-width: 1.2;
-    transition: stroke-width var(--t-fast) var(--ease), fill var(--t-fast) var(--ease);
-}
-.gqa-svg .q-heads text {
-    fill: var(--ink-soft);
-    font-family: var(--font-mono);
-    font-size: 8px;
-    font-weight: 500;
+.pass-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
-/* KV heads — slightly heavier (the "shared" group) */
-.gqa-svg .kv-heads circle {
-    fill: var(--paper-3);
-    stroke: var(--rule-mark);
-    stroke-width: 1.4;
-    transition: stroke-width var(--t-fast) var(--ease), fill var(--t-fast) var(--ease);
-}
-.gqa-svg .kv-heads text {
-    fill: var(--rule-mark);
+.pass-btn {
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 0.58rem;
     font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 0.22rem 0.55rem;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+    user-select: none;
 }
 
-/* The brackets that label each column */
-.gqa-svg .bracket {
-    stroke: var(--rule-strong);
-    stroke-width: 1;
-    fill: none;
-    stroke-linecap: square;
+.pass-btn:hover {
+    background: var(--tint-terra-04);
+    color: var(--ink);
+    border-color: var(--rule-mark);
 }
 
-/* Wiring lines — most are dim, two are highlighted as the active pair */
-.gqa-svg .wire {
-    stroke: var(--ink-faint);
-    stroke-width: 0.8;
-    opacity: 0.55;
-}
-.gqa-svg .wire-active {
-    stroke: var(--terracotta);
-    stroke-width: 1.3;
-    opacity: 1;
+.pass-btn.active {
+    background: var(--tint-terra-14);
+    color: var(--terracotta);
+    border-color: var(--terracotta);
+    box-shadow: 0 0 8px var(--terracotta-tint);
 }
 
-/* The single active spark — sits on the active wire pair's midpoint.
-   This is the *one* place terracotta draws attention on the figure. */
-.gqa-svg .spark {
-    fill: var(--terracotta);
-    filter: drop-shadow(0 0 3px var(--tint-terra-14));
-}
-.gqa-svg .spark-cross line {
-    stroke: var(--terracotta);
-    stroke-width: 0.7;
-    stroke-linecap: round;
-    opacity: 0.65;
+.pass-btn-icon {
+    padding: 0.22rem 0.45rem;
+    font-size: 0.52rem;
 }
 
-/* Labels */
-.gqa-svg .lbl {
-    fill: var(--ink-soft);
+/* Canvas Container */
+.pass-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 270px;
+    background: radial-gradient(ellipse at center, #17130f 0%, #0e0c0a 70%, #080706 100%);
+    overflow: hidden;
+    cursor: crosshair;
+}
+.pass-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+/* HUD Overlay */
+.pass-overlay-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.pass-hud-chip {
+    position: absolute;
+    padding: 0.45rem 0.7rem;
+    background: rgba(18, 16, 13, 0.90);
+    border: 1px solid var(--rule-strong);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     font-family: var(--font-mono);
-    font-size: 9px;
+    line-height: 1.35;
+    border-radius: 2px;
+}
+
+.pass-hud-chip.top-left { top: 8px; left: 8px; }
+.pass-hud-chip.top-right { top: 8px; right: 8px; text-align: right; }
+
+.ph-lbl {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.60rem;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.ph-val {
+    display: block;
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-feature-settings: var(--mono-feats);
+}
+
+/* Stage Tooltip */
+.pass-stage-tooltip {
+    position: absolute;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    z-index: 10;
+}
+
+.st-card {
+    background: rgba(18, 15, 12, 0.98);
+    border: 1px solid var(--gold);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85), 0 0 12px rgba(201, 163, 92, 0.35);
+    padding: 0.6rem 0.95rem;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    max-width: 320px;
+    white-space: normal;
+    word-break: break-word;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.st-tag {
+    display: block;
+    color: var(--gold);
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.st-op {
+    display: block;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-feature-settings: var(--mono-feats);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.st-shape {
+    display: block;
+    color: var(--terracotta);
+    font-size: 0.68rem;
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+.st-desc {
+    display: block;
+    color: var(--ink);
+    font-size: 0.66rem;
+    margin-top: 3px;
+    letter-spacing: 0.02em;
+}
+/* Footer: Ticker & Legend */
+.pass-widget-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.48rem 0.9rem;
+    background: var(--paper-2);
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.70rem;
+}
+
+.pass-status-ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink);
     letter-spacing: 0.04em;
+    font-size: 0.68rem;
+}
+
+.ticker-beacon {
+    color: var(--terracotta);
+    font-size: 1.1em;
+}
+
+.ticker-text {
+    color: var(--ink);
     font-weight: 500;
 }
-.gqa-svg .lbl-end { text-anchor: end; }
-.gqa-svg .lbl-sub {
-    fill: var(--ink-faint);
-    font-family: var(--font-mono);
-    font-size: 7px;
-    letter-spacing: 0.04em;
-    opacity: 0.85;
+
+.pass-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
 }
 
-/* RoPE spiral — an inset annotation, drawn in olive so it reads as a
-   *note* rather than a primary element. */
-.gqa-svg .rope-spiral circle {
-    stroke: var(--olive);
-    stroke-width: 0.8;
-    fill: none;
+.legend-swatch.gold {
+    background: var(--rule-mark);
+    box-shadow: 0 0 5px var(--rule-mark);
 }
-.gqa-svg .rope-spiral line {
-    stroke: var(--olive);
-    stroke-width: 0.7;
-    opacity: 0.7;
-}
-.gqa-svg .rope-spiral text {
-    fill: var(--olive);
-    font-family: var(--font-mono);
-    font-size: 7px;
-    letter-spacing: 0.06em;
-    font-weight: 500;
-}
-.gqa-svg .rope-spiral .rope-frame {
-    stroke: var(--olive);
-    stroke-width: 0.5;
-    opacity: 0.4;
-    stroke-dasharray: 1.5 1.5;
-}
-.gqa-svg .rope-guide {
-    stroke: var(--olive);
-    stroke-width: 0.5;
-    stroke-dasharray: 2 2;
-    opacity: 0.4;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .gqa-svg .wire-active {
-        stroke-dasharray: 4 4;
-        animation: pulse 4.5s ease-in-out infinite;
-    }
-    @keyframes pulse { to { stroke-dashoffset: -80; } }
-}
-
 /* ----- The datasheet / spec sheet ------------------------------------- */
 .spec-sheet { margin-top: 0; }
 .spec-sheet-rule {
@@ -1078,6 +1444,8 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
     /* the gap is the rule color, so the cells appear to share hairlines. */
     gap: 1px;
 }
+
+
 .spec-cell {
     padding: 0.9rem 1rem 1rem;
     margin: 0;
@@ -1188,10 +1556,15 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
 
 .portal-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1px;
     background: var(--rule-strong);
     border: 1px solid var(--rule-strong);
+}
+
+/* Eliminate blank space blocks: odd trailing cards span full width */
+.portal-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
 }
 
 .portal-card {
@@ -1275,14 +1648,13 @@ a:hover { color: var(--terracotta); text-decoration-color: var(--terracotta); }
 .markdown-body h4::before {
     color: var(--olive);
     font-weight: 400;
-    margin-right: 0.55rem;
+    margin-right: 0.45rem;
     font-feature-settings: var(--mono-feats);
     display: inline-block;
 }
-.markdown-body h2::before { content: "§2"; font-size: 0.7em; vertical-align: 0.18em; }
-.markdown-body h3::before { content: "§3"; font-size: 0.68em; vertical-align: 0.2em; }
-.markdown-body h4::before { content: "§4"; font-size: 0.66em; vertical-align: 0.22em; }
-
+.markdown-body h2::before { content: "\00a7"; font-size: 0.82em; opacity: 0.8; }
+.markdown-body h3::before { content: "\00a7\00a7"; font-size: 0.72em; opacity: 0.65; }
+.markdown-body h4::before { content: "\00a7\00a7\00a7"; font-size: 0.65em; opacity: 0.55; }
 .markdown-body h2 {
     font-size: 1.34rem;
     padding-bottom: 0.5rem;
@@ -1498,8 +1870,40 @@ blockquote p:last-child { margin-bottom: 0; }
     font-feature-settings: var(--mono-feats);
     transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
-.copy-btn:hover { border-color: var(--rule-mark); color: var(--rule-mark); background: var(--tint-warm-04); }
+.copy-btn:hover, .expand-btn:hover { border-color: var(--rule-mark); color: var(--rule-mark); background: var(--tint-warm-04); }
 .copy-btn.copied { border-color: var(--terracotta); color: var(--terracotta); background: var(--tint-terra-04); }
+
+/* Long-block collapse: a faded cutoff with an expand affordance. */
+.code-actions { display: inline-flex; align-items: center; gap: 6px; }
+.expand-btn {
+    background: transparent;
+    border: 1px solid var(--code-rule);
+    color: var(--ink-faint);
+    padding: 2px 9px;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-feature-settings: var(--mono-feats);
+    transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.code-wrapper.collapsed pre {
+    max-height: 15.5em;
+    overflow: hidden;
+}
+.code-wrapper.collapsed::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4.5em;
+    background: linear-gradient(to bottom, transparent, var(--code-paper));
+    pointer-events: none;
+}
 .code-wrapper pre {
     margin: 0;
     padding: 0.95rem 1.1rem 1rem;
@@ -1724,16 +2128,431 @@ blockquote p:last-child { margin-bottom: 0; }
 
 
 /* =====================================================================
+   MAMBA-3 ARCHITECTURAL TELEMETRY RIBBON & MECHANISM EXPLODER SUITE
+   ===================================================================== */
+
+/* Live Telemetry Ribbon */
+.mamba-telemetry-ribbon, .llama-telemetry-ribbon, .deepseek-telemetry-ribbon, .gptoss-telemetry-ribbon {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--rule-strong);
+    border: 1px solid var(--rule-strong);
+    margin: 1.4rem 0 1.8rem;
+}
+
+.telemetry-card {
+    background: var(--paper-2);
+    padding: 1rem 1.1rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    position: relative;
+    overflow: hidden;
+    min-height: 5.5rem;
+}
+
+.telemetry-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--rule);
+}
+
+/* Subtle bottom gradient — gives cards a grounded feel on desktop. */
+.telemetry-card::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.12), transparent);
+    pointer-events: none;
+}
+
+.telemetry-card.terra::before { background: var(--terracotta); }
+.telemetry-card.olive::before { background: var(--olive); }
+.telemetry-card.gold::before { background: var(--rule-mark); }
+.telemetry-card.ink::before { background: var(--ink-soft); }
+
+.tc-badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-feature-settings: var(--mono-feats);
+}
+
+.tc-badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+    flex-shrink: 0;
+}
+
+.telemetry-card.terra .tc-badge-dot { background: var(--terracotta); box-shadow: 0 0 6px var(--terracotta-glow); }
+.telemetry-card.olive .tc-badge-dot { background: var(--olive); box-shadow: 0 0 6px var(--olive-tint); }
+.telemetry-card.gold .tc-badge-dot { background: var(--rule-mark); box-shadow: 0 0 6px rgba(201, 163, 92, 0.4); }
+.telemetry-card.ink .tc-badge-dot { background: var(--ink-soft); }
+
+.tc-val {
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-feature-settings: var(--mono-feats);
+    margin: 2px 0 1px;
+}
+
+.tc-val .unit {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+}
+
+.tc-desc {
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    line-height: 1.4;
+    margin-top: auto;
+}
+
+/* Mechanism Exploder Section */
+.mechanism-section {
+    margin: 2.5rem 0 2rem;
+}
+
+.mechanism-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.3rem;
+    position: relative;
+}
+.mechanism-section-head::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 12px;
+    height: 2px;
+    background: var(--terracotta);
+}
+
+.mechanism-section-title {
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: var(--olive);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-feature-settings: var(--mono-feats);
+}
+
+.mechanism-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 1.8rem;
+    align-items: stretch;
+}
+
+.mechanism-card {
+    background: var(--paper-inset);
+    border: 1px solid var(--rule-strong);
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
+}
+
+.mechanism-card:hover {
+    border-color: var(--rule-mark);
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Per-card accent bar — top edge coloured by card type */
+.mechanism-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 1;
+}
+.mechanism-card.card-ssd::before, .mechanism-card.card-gqa::before { background: var(--terracotta); }
+.mechanism-card.card-mimo::before, .mechanism-card.card-chunkce::before { background: var(--olive); }
+.mechanism-card.card-chunk::before, .mechanism-card.card-rope::before { background: var(--rule-mark); }
+
+.mechanism-card-head {
+    padding: 0.7rem 0.9rem;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mch-tag {
+    font-size: 0.60rem;
+    font-weight: 700;
+    color: var(--terracotta);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-feature-settings: var(--mono-feats);
+}
+.mechanism-card.card-mimo .mch-tag, .mechanism-card.card-chunkce .mch-tag { color: var(--olive); }
+.mechanism-card.card-chunk .mch-tag, .mechanism-card.card-rope .mch-tag { color: var(--rule-mark); }
+
+.mch-title {
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.mechanism-card-body {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.mch-explainer {
+    font-size: 0.70rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Calculator & Controls Inside Mechanism Cards */
+.mch-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.66rem;
+    color: var(--ink-faint);
+}
+.mch-control-row strong {
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+
+.mch-slider {
+    width: 100%;
+    margin: 4px 0 8px;
+    accent-color: var(--terracotta);
+    cursor: pointer;
+    height: 4px;
+}
+
+.mch-canvas {
+    width: 100%;
+    height: 130px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    display: block;
+}
+
+.mch-stat-box {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--font-mono);
+    margin-top: auto;
+}
+
+.msb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.66rem;
+    color: var(--ink-soft);
+    font-feature-settings: var(--mono-feats);
+    padding: 1px 0;
+}
+
+.msb-row.highlight {
+    color: var(--terracotta);
+    font-weight: 700;
+    border-top: 1px dashed var(--rule);
+    padding-top: 4px;
+    margin-top: 3px;
+}
+
+.mch-action-btn {
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    border-radius: 2px;
+}
+
+.mch-action-btn:hover {
+    background: var(--tint-terra-04);
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+}
+.mechanism-card.card-mimo .mch-action-btn:hover, .mechanism-card.card-chunkce .mch-action-btn:hover {
+    border-color: var(--olive);
+    color: var(--olive);
+    background: var(--olive-tint);
+}
+.mechanism-card.card-chunk .mch-action-btn:hover, .mechanism-card.card-rope .mch-action-btn:hover {
+    border-color: var(--rule-mark);
+    color: var(--rule-mark);
+    background: var(--callout-note-bg);
+}
+
+/* MIMO Live Mini Matrix (16×16) */
+.mimo-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 1px;
+    margin: 6px 0;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    padding: 1px;
+}
+
+.mimo-cell {
+    background: var(--paper);
+    padding: 3px 1px;
+    text-align: center;
+    font-size: 0.46rem;
+    color: var(--ink-faint);
+    transition: background 0.22s ease, color 0.18s ease;
+    font-family: var(--font-mono);
+    line-height: 1;
+    min-height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mimo-cell.diagonal {
+    background: rgba(201, 163, 92, 0.14) !important;
+    color: var(--rule-mark);
+    font-weight: 700;
+    font-size: 0.50rem;
+}
+
+.mimo-cell.active {
+    color: var(--ink);
+    font-weight: 700;
+}
+
+/* Chunkwise Pipeline Visualizer */
+.chunk-pipeline-box {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 0.65rem 0.7rem;
+    font-size: 0.60rem;
+    line-height: 1.45;
+    font-family: var(--font-mono);
+}
+
+.chunk-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    color: var(--ink-soft);
+    transition: opacity 0.3s ease;
+    padding: 3px 0;
+}
+.chunk-stage + .chunk-stage {
+    border-top: 1px solid var(--rule-fine);
+}
+
+.chunk-badge {
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 0.54rem;
+    font-weight: 700;
+    font-feature-settings: var(--mono-feats);
+    flex-shrink: 0;
+    min-width: 42px;
+    text-align: center;
+}
+
+.chunk-badge.scan {
+    background: var(--tint-warm-08);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+}
+
+.chunk-badge.chunk {
+    background: var(--olive-tint);
+    color: var(--olive);
+    border: 1px solid var(--olive);
+}
+
+.chunk-badge.state {
+    background: var(--tint-terra-04);
+    color: var(--terracotta);
+    border: 1px solid var(--terracotta);
+}
+
+@media (max-width: 1024px) {
+    .mamba-telemetry-ribbon, .llama-telemetry-ribbon, .deepseek-telemetry-ribbon, .gptoss-telemetry-ribbon { grid-template-columns: repeat(2, 1fr); }
+    .mechanism-grid { grid-template-columns: 1fr; }
+}
+
+
+
+/* =====================================================================
    11. RESPONSIVE
    ===================================================================== */
 
 @media (max-width: 1180px) {
-    .app-layout { grid-template-columns: 232px minmax(0, 1fr); }
+    .app-layout,
+    .index-portal .app-layout,
+    .app-layout:not(:has(.toc-sidebar)) {
+        grid-template-columns: 232px minmax(0, 1fr);
+    }
     .toc-sidebar { display: none; }
 }
 
 @media (max-width: 880px) {
-    .app-layout { grid-template-columns: 1fr; }
+    .app-layout,
+    .index-portal .app-layout,
+    .app-layout:not(:has(.toc-sidebar)) {
+        grid-template-columns: 1fr;
+    }
     .sidebar {
         display: none;
         position: fixed;
@@ -1743,25 +2562,87 @@ blockquote p:last-child { margin-bottom: 0; }
         background: var(--paper-2);
         border-right: 1px solid var(--rule);
         height: calc(100vh - 50px);
-        box-shadow: 4px 0 14px rgba(27, 29, 36, 0.06);
+        box-shadow: 4px 0 14px rgba(0, 0, 0, 0.5);
     }
     .sidebar.open { display: block; }
     .mobile-toggle { display: inline-block; }
 
-    .main-content { padding: 1.6rem 1.25rem 3rem; }
+    .main-content,
+    .index-portal .main-content {
+        padding: 1.6rem 1.25rem 3rem;
+        width: 100%;
+        max-width: 100%;
+    }
     .main-content::before { left: 14px; }
     .hero-banner { padding: 1.8rem 1.3rem; }
     .hero-title { font-size: 1.95rem; }
+    .fig-canvas-wrap { height: 280px; }
+    .pass-canvas-wrap { height: 200px; }
+    .fig-dim, .pass-dim { display: none; }
+    .legend-hint { display: none; }
     .doc-title { font-size: 1.65rem; }
     .hero-coords { font-size: 0.64rem; }
     .spec-grid { grid-template-columns: repeat(2, 1fr); }
+    .portal-grid { grid-template-columns: 1fr; }
+    .portal-card:last-child:nth-child(odd) {
+        flex-direction: column;
+        gap: 6px;
+    }
     .spec-cell:nth-child(4n) { border-right: 1px solid var(--rule); }
     .spec-cell:nth-child(2n) { border-right: none; }
     .spec-cell:nth-last-child(-n+4) { border-bottom: 1px solid var(--rule); }
     .spec-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .mamba-telemetry-ribbon, .llama-telemetry-ribbon, .deepseek-telemetry-ribbon, .gptoss-telemetry-ribbon { grid-template-columns: repeat(2, 1fr); }
+    .mimo-matrix-grid { grid-template-columns: repeat(8, 1fr); }
     .doc-meta .meta-item { border-right: none; padding-right: 0; }
     .portal-card::after { display: none; }
     .portal-card:hover .card-heading { color: var(--ink); }
+}
+@media (max-width: 560px) {
+    .hero-figure-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    .fig-badge {
+        justify-content: flex-start;
+    }
+    .fig-controls {
+        display: flex;
+        width: 100%;
+    }
+    .fig-controls .fig-btn:not(.fig-btn-icon) {
+        flex: 1;
+        text-align: center;
+        padding: 0.25rem 0.2rem;
+        font-size: 0.52rem;
+    }
+    .hud-corner, .pass-hud-chip {
+        display: none;
+    }
+    .hero-figure-footer, .pass-widget-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+    .pass-widget-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    .pass-badge {
+        justify-content: flex-start;
+    }
+    .pass-controls {
+        display: flex;
+        width: 100%;
+    }
+    .pass-controls .pass-btn:not(.pass-btn-icon) {
+        flex: 1;
+        text-align: center;
+        padding: 0.25rem 0.2rem;
+        font-size: 0.52rem;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1770,5 +2651,4 @@ blockquote p:last-child { margin-bottom: 0; }
         transition: none !important;
         scroll-behavior: auto !important;
     }
-    .gqa-svg .wire-active { stroke-dasharray: none; }
 }
