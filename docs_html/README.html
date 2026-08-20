@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Overview (README) | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="./index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="./index.html" class="header-link">Portal</a>
+            <a href="./README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="./README.html" class="nav-link active" title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="./AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="./SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="./docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="./docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="./docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="./docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="./docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="./docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="./docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="./docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="./docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="./docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="./docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="./docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="./index.html">Docs</a> &gt; <span>Core</span> &gt; <span class="current">Project Overview (README)</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Project Overview (README)</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> README.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 2,501 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~11 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <p>&lt;div align="center"&gt;</p>
+<span class="doc-anchor" id="llama-3-lite"></span>
+<p><a href="https://img.shields.io/badge/python-3.10+-blue.svg" class="doc-link">![Python 3.10+</a>](https://www.python.org/downloads/)</p>
+<p><a href="https://img.shields.io/badge/PyTorch-2.x-ee4c2c?logo=pytorch" class="doc-link">![PyTorch 2.x</a>](https://pytorch.org/)</p>
+<p><a href="https://img.shields.io/badge/License-MIT-yellow.svg" class="doc-link">![License: MIT</a>](https://opensource.org/licenses/MIT)</p>
+<p><a href="https://img.shields.io/badge/GPU-A100%2080GB-76b900" class="doc-link">![GPU: A100 80GB</a>](https://www.nvidia.com/en-us/data-center/a100/)</p>
+<blockquote><strong>Status:</strong> Architecture, data pipeline, and memory-optimization stack are implemented and smoke-tested; the full 8.25B-token pretraining run has not yet started.</blockquote>
+<p>A from-scratch <strong>LLaMA 3-style transformer</strong> implementation in PyTorch, designed for pretraining on a single <strong>NVIDIA A100 80GB SXM</strong> GPU.</p>
+<p>&lt;br&gt;Every component — GQA, RoPE, fused SwiGLU, gradient checkpointing, chunked cross-entropy, disk-backed token cache — is in place, with projected peak memory <strong>~78% lower</strong> (92 GB → 20 GB) enabling a 2× batch-size headroom.</p>
+<p>&lt;/div&gt;</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash">python train.py  # Start training with one command</code></pre></div>
+<hr class='doc-hr'>
+<h2 id="table-of-contents" class="heading-anchor">Table of Contents<a href="#table-of-contents" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><a href="#features" class="doc-link">Features</a>
+</li>
+<li><a href="#quick-start" class="doc-link">Quick Start</a>
+</li>
+<li><a href="#architecture-overview" class="doc-link">Architecture Overview</a>
+</li>
+<li><a href="#performance-optimizations" class="doc-link">Performance Optimizations</a>
+</li>
+<li><a href="#configuration" class="doc-link">Configuration</a>
+</li>
+<li><a href="#training-details" class="doc-link">Training Details</a>
+</li>
+<li><a href="#project-structure" class="doc-link">Project Structure</a>
+</li>
+<li><a href="#hardware-requirements" class="doc-link">Hardware Requirements</a>
+</li>
+<li><a href="#contributing" class="doc-link">Contributing</a>
+</li>
+<li><a href="#license" class="doc-link">License</a>
+</li>
+</ul>
+<hr class='doc-hr'>
+<h2 id="features" class="heading-anchor">Features<a href="#features" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Feature</th><th>Status</th><th>Impact</th></tr></thead><tbody><tr><td><strong>Grouped-Query Attention (GQA)</strong></td><td>✅</td><td>Reduces KV cache size by 50%</td></tr><tr><td><strong>Rotary Position Embeddings (RoPE)</strong></td><td>✅</td><td>Enables length extrapolation (θ = 500K)</td></tr><tr><td><strong>Fused SwiGLU FFN</strong></td><td>✅</td><td>Cuts GEMM kernels from 3→2 per layer</td></tr><tr><td><strong>QK-Norm</strong></td><td>✅</td><td>Bounds attention logit growth, prevents late-run collapse</td></tr><tr><td><strong>Z-Loss (CE + log-partition penalty)</strong></td><td>✅</td><td>Bounds output logit growth, prevents late-run collapse</td></tr><tr><td><strong>Gradient Checkpointing</strong></td><td>✅</td><td>Reduces activation memory by ~70 GB</td></tr><tr><td><strong>Chunked Cross-Entropy</strong></td><td>✅</td><td>Reduces logits memory from 50 GB → 0.3 GB</td></tr><tr><td><strong>Flash Attention 2</strong></td><td>✅</td><td>O(N) memory, kernel-fused softmax+matmul</td></tr><tr><td><strong>BFloat16 Mixed Precision</strong></td><td>✅</td><td>Native A100 tensor cores, stable training</td></tr><tr><td><strong>Exponential Moving Average (EMA)</strong></td><td>✅</td><td>Smoother val loss, better generation samples</td></tr><tr><td><strong>Disk-Backed Token Cache</strong></td><td>✅</td><td>Reduces RAM from 112 GB → ~1 MB</td></tr><tr><td><strong>Document Deduplication</strong></td><td>✅</td><td>SHA-256 exact dedup, better data quality</td></tr><tr><td><strong>Async CPU→GPU Transfer</strong></td><td>✅</td><td>Hides data loading behind compute</td></tr><tr><td><strong>torch.compile(mode="reduce-overhead")</strong></td><td>✅</td><td>CUDA-graph capture, ~10–20% throughput</td></tr><tr><td><strong>W&amp;B Integration</strong></td><td>✅</td><td>Full experiment tracking</td></tr></tbody></table></div>
+<h3 id="model-specifications" class="heading-anchor">Model Specifications<a href="#model-specifications" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody><tr><td><strong>Total Parameters</strong></td><td>~515M</td></tr><tr><td><strong>Non-Embedding Parameters</strong></td><td>~252M</td></tr><tr><td><strong>Layers</strong></td><td>16 decoder blocks</td></tr><tr><td><strong>Hidden Dimension</strong></td><td>1024</td></tr><tr><td><strong>Attention Heads</strong></td><td>8 Q heads / 4 KV heads</td></tr><tr><td><strong>FFN Dimension</strong></td><td>4096 (SwiGLU)</td></tr><tr><td><strong>Vocabulary Size</strong></td><td>128,000 (LLaMA 3 tokenizer)</td></tr><tr><td><strong>Sequence Length</strong></td><td>2048 tokens</td></tr><tr><td><strong>Peak GPU Memory</strong></td><td>~20 GB @ batch_size=96</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="quick-start" class="heading-anchor">Quick Start<a href="#quick-start" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="prerequisites" class="heading-anchor">Prerequisites<a href="#prerequisites" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><strong>Python</strong> 3.10+
+</li>
+<li><strong>GPU</strong>: NVIDIA A100 80GB SXM (or ≥20 GB VRAM with optimizations)
+</li>
+<li><strong>CUDA</strong> 12.1+
+</li>
+<li><strong>Weights &amp; Biases</strong> account (optional, for logging)
+</li>
+</ul>
+<h3 id="installation" class="heading-anchor">Installation<a href="#installation" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="9"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash"># Clone the repository
+git clone https://github.com/atandra2000/LLaMA-3-Lite.git
+cd LLaMA-3-Lite
+
+# Install PyTorch (CUDA 12.1)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install dependencies
+pip install transformers datasets wandb</code></pre></div>
+<h3 id="training" class="heading-anchor">Training<a href="#training" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="8"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash"># Start full pretraining (42,000 steps, ~8.25B tokens)
+python train.py
+
+# Quick smoke test (no data download, CPU-only)
+python -m pytest tests/ -m smoke
+
+# Benchmark data pipeline on GPU
+python benchmark_data.py --steps 50 --batch_size 96 --seq_len 2048</code></pre></div>
+<h3 id="resume-from-checkpoint" class="heading-anchor">Resume from Checkpoint<a href="#resume-from-checkpoint" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Edit <code class="inline-code">config.py</code> to specify a checkpoint path:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python">&#x27;preload&#x27;: &#x27;weights/llama3-515M_step_5000.pt&#x27;</code></pre></div>
+<p>The training script auto-detects the latest checkpoint and restores full RNG state for exact reproducibility.</p>
+<hr class='doc-hr'>
+<h2 id="architecture-overview" class="heading-anchor">Architecture Overview<a href="#architecture-overview" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="end-to-end-forward-pass" class="heading-anchor">End-to-End Forward Pass<a href="#end-to-end-forward-pass" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper collapsed" data-lines="41"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 41 lines" onclick="toggleCode(this)">expand ▾ · 41 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>Input Token IDs  [B, T=2048]
+      │
+      ▼
+Token Embedding  vocab=128000 → d=1024
+      │
+      ▼
+× Scaler √d_model
+      │
+      ▼
+16× Decoder Blocks (gradient checkpointing):
+  ┌─────────────────────────────────────────────────┐
+  │ RMSNorm                                         │
+  │   │                                             │
+  │   ▼                                             │
+  │ GQA — 8 Q / 4 KV · head_dim=128 · RoPE θ=500K   │
+  │   │                                             │
+  │   ▼                                             │
+  │ Residual Add                                    │
+  │   │                                             │
+  │   ▼                                             │
+  │ RMSNorm                                         │
+  │   │                                             │
+  │   ▼                                             │
+  │ Fused SwiGLU — gate ∥ up → down                 │
+  │   │                                             │
+  │   ▼                                             │
+  │ Residual Add                                    │
+  └─────────────────────────────────────────────────┘
+      │
+      ▼
+Final RMSNorm
+      │
+      ▼
+Output Projection  d=1024 → vocab=128000
+      │
+      ▼
+Chunked Cross-Entropy  FP32 log_softmax · chunk=256 tokens
+                       logits 50 GB → 0.3 GB
+      │
+      ▼
+Loss (scalar)</code></pre></div>
+<h3 id="grouped-query-attention--8-q-heads-share-4-kv-heads" class="heading-anchor">Grouped Query Attention — 8 Q-heads share 4 KV-heads<a href="#grouped-query-attention--8-q-heads-share-4-kv-heads" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper collapsed" data-lines="20"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 20 lines" onclick="toggleCode(this)">expand ▾ · 20 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>Query heads (8) · head_dim=128        KV heads (4) · head_dim=128
+┌──────────────────────────────┐     ┌──────────────────────────┐
+│ Q1 ──────────────┐           │     │        ┌──► KV1          │
+│ Q2 ────────────┐ │           │     │        │    KV2          │
+│ Q3 ──────────┐ │ │           │     │        │    KV3          │
+│ Q4 ────────┐ │ │ │           │     │        │    KV4          │
+│ Q5 ──────┐ │ │ │ │           │     │        │                 │
+│ Q6 ────┐ │ │ │ │ │           │     │        │                 │
+│ Q7 ──┐ │ │ │ │ │ │           │     │        │                 │
+│ Q8 ─┐ │ │ │ │ │ │ │           │     │        │                 │
+└─────┼─┼─┼─┼─┼─┼─┼───────────┘     └────────┼─┼─┼─┼────────────┘
+      │ │ │ │ │ │ │                          │ │ │ │
+      │ │ │ │ │ │ └──────────────────────────┘ │ │ │   Q8 → KV4
+      │ │ │ │ │ └──────────────────────────────┘ │ │   Q7 → KV4
+      │ │ │ │ └──────────────────────────────────┘ │   Q6 → KV3
+      │ │ │ └──────────────────────────────────────┘   Q5 → KV3
+      │ │ └──────────────────────────────────────────┘ Q4 → KV2
+      │ └────────────────────────────────────────────┘  Q3 → KV2
+      └──────────────────────────────────────────────┘  Q2 → KV1
+                                                         Q1 → KV1</code></pre></div>
+<blockquote>KV cache is <strong>2&times; smaller</strong> than Multi-Head Attention at the same model quality &mdash; the headline reason this model fits batch 96 on a single A100.</blockquote>
+<h3 id="memory-stack--how-92nbspgb-rarr-20nbspgb" class="heading-anchor">Memory Stack — How 92&nbsp;GB &rarr; 20&nbsp;GB<a href="#memory-stack--how-92nbspgb-rarr-20nbspgb" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="10"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>Without Optimizations · ~92 GB        With Optimizations · ~20 GB
+┌────────────────────────────────┐    ┌────────────────────────────────┐
+│ Activations      ~70 GB        │    │ Checkpointed Activations 3.2 GB│
+│ Logits            50 GB        │    │ Chunked CE Logits      0.3 GB │
+│ Model + Optim    7.2 GB        │    │ Model + Optim         7.2 GB  │
+│ Grad + Overhead    2 GB        │    │ Grad + Overhead       5.7 GB  │
+└────────────────────────────────┘    └────────────────────────────────┘
+          │                                        ╱
+          │   &quot;78% peak memory cut&quot;               ╱
+          └──────────────────────────────────────►</code></pre></div>
+<p><strong>Stack (8 memory techniques):</strong> gradient checkpointing &middot; chunked cross-entropy + z-loss &middot; disk-backed uint32 mmap cache &middot; BF16 &middot; FA2 &middot; GQA &middot; fused SwiGLU + Triton opt-ins &middot; TF32. <code class="inline-code">channels_last</code> is not used — LLMs are 2D matmul-bound, layout tricks don't help. <strong>Plus 3 stability techniques:</strong> QK-norm &middot; z-loss &middot; EMA.</p>
+<h3 id="key-design-decisions" class="heading-anchor">Key Design Decisions<a href="#key-design-decisions" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Decision</th><th>Rationale</th></tr></thead><tbody><tr><td><strong>Gradient Checkpointing</strong></td><td>Trades ~25% per-step compute for ~78% memory reduction. Net throughput <strong>+33%</strong> via 2× batch size.</td></tr><tr><td><strong>Chunked LM Head + CE</strong></td><td>Computes the output projection in 256-token chunks inside a checkpoint region, so the full logits tensor is never materialized. Numerically identical to standard CE (&lt;1e-5 difference).</td></tr><tr><td><strong>Fused SwiGLU</strong></td><td>Merges <code class="inline-code">gate_proj</code> + <code class="inline-code">up_proj</code> into single matmul. Reads input activation once instead of twice.</td></tr><tr><td><strong>GQA (8Q/4KV)</strong></td><td>Shares each KV head across 2 query heads. Improves inference throughput without quality loss.</td></tr><tr><td><strong>No Dropout</strong></td><td>Relies on data scale and weight decay for regularization.</td></tr><tr><td><strong>No Weight Tying</strong></td><td>Output projection is a separate learnable matrix from input embedding.</td></tr><tr><td><strong>Disk-Backed Cache</strong></td><td>Streams tokens once to memory-mapped uint32 file (~32 GB). Subsequent runs reuse cache.</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="performance-optimizations" class="heading-anchor">Performance Optimizations<a href="#performance-optimizations" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="memory-reduction-breakdown" class="heading-anchor">Memory Reduction Breakdown<a href="#memory-reduction-breakdown" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Optimization</th><th>Memory Saved</th><th>Status</th></tr></thead><tbody><tr><td>Gradient Checkpointing</td><td>−70 GB activations</td><td>✅</td></tr><tr><td>Chunked Cross-Entropy</td><td>−50 GB logits</td><td>✅</td></tr><tr><td>Disk-Backed Token Cache</td><td>−112 GB RAM</td><td>✅</td></tr><tr><td><strong>Total Reduction</strong></td><td><strong>~78% (92 GB → 20 GB)</strong></td><td>✅</td></tr></tbody></table></div>
+<h3 id="throughput-optimizations" class="heading-anchor">Throughput Optimizations<a href="#throughput-optimizations" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Optimization</th><th>Speedup</th><th>Status</th></tr></thead><tbody><tr><td>Fused SwiGLU (gate+up)</td><td>+2% (3→2 GEMM kernels)</td><td>✅</td></tr><tr><td>Batch Size 48→96</td><td>+100% tokens/step</td><td>✅</td></tr><tr><td>Async CPU→GPU Transfer</td><td>+5–15%</td><td>✅</td></tr><tr><td>TF32 Tensor Cores</td><td>~3× matmul</td><td>✅</td></tr><tr><td>torch.compile()</td><td>Kernel fusion</td><td>✅</td></tr><tr><td>Persistent DataLoader Workers</td><td>+3%</td><td>✅</td></tr><tr><td>Flash Attention 2</td><td>O(N) vs O(N²)</td><td>✅</td></tr></tbody></table></div>
+<h3 id="gpu-memory-breakdown-a100-80gb-sxm" class="heading-anchor">GPU Memory Breakdown (A100 80GB SXM)<a href="#gpu-memory-breakdown-a100-80gb-sxm" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Component</th><th>Without Optimizations</th><th>With Optimizations</th></tr></thead><tbody><tr><td>Model State (BF16 + FP32 master + Adam m+v)</td><td>7.2 GB</td><td>7.2 GB</td></tr><tr><td>Checkpointed Activations (16 layers)</td><td>~70 GB</td><td>3.2 GB</td></tr><tr><td>One Layer Backward Recomputation</td><td>—</td><td>3.6 GB</td></tr><tr><td>Logits Tensor</td><td>50.4 GB</td><td>0.3 GB</td></tr><tr><td>Overhead + Gradients</td><td>2.0 GB</td><td>5.7 GB</td></tr><tr><td><strong>Peak Total</strong></td><td><strong>~92 GB (OOM)</strong></td><td><strong>~20 GB (25%)</strong></td></tr><tr><td><strong>Headroom</strong></td><td>−12 GB</td><td>~60 GB</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="configuration" class="heading-anchor">Configuration<a href="#configuration" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>All settings are defined in <a href="https://github.com/atandra2000/LLaMA-3-Lite/blob/main/config.py" class="doc-link"><code class="inline-code">config.py</code></a>. Key configuration groups:</p>
+<h3 id="model-architecture" class="heading-anchor">Model Architecture<a href="#model-architecture" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">d_model</code></td><td>1024</td><td>Hidden dimension</td></tr><tr><td><code class="inline-code">n_layers</code></td><td>16</td><td>Decoder layers</td></tr><tr><td><code class="inline-code">n_heads</code></td><td>8</td><td>Query attention heads</td></tr><tr><td><code class="inline-code">n_kv_heads</code></td><td>4</td><td>Key/value attention heads</td></tr><tr><td><code class="inline-code">head_dim</code></td><td>128</td><td>Dimension per head</td></tr><tr><td><code class="inline-code">d_ff</code></td><td>4096</td><td>FFN intermediate dimension</td></tr><tr><td><code class="inline-code">vocab_size</code></td><td>128000</td><td>LLaMA 3 tokenizer</td></tr><tr><td><code class="inline-code">seq_len</code></td><td>2048</td><td>Maximum sequence length</td></tr><tr><td><code class="inline-code">rope_theta</code></td><td>500000.0</td><td>RoPE base frequency</td></tr><tr><td><code class="inline-code">rms_norm_eps</code></td><td>1e-5</td><td>RMSNorm epsilon</td></tr></tbody></table></div>
+<h3 id="training-a100-optimized" class="heading-anchor">Training (A100 Optimized)<a href="#training-a100-optimized" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">batch_size</code></td><td>96</td><td>Per-GPU batch size</td></tr><tr><td><code class="inline-code">gradient_accumulation</code></td><td>1</td><td>Gradient accumulation steps</td></tr><tr><td><code class="inline-code">gradient_checkpointing</code></td><td><code class="inline-code">True</code></td><td>Required for A100 80GB</td></tr><tr><td><code class="inline-code">ce_chunk_size</code></td><td>256</td><td>LM-head rows per loss chunk (bounds logits memory to ~0.3 GB)</td></tr><tr><td><code class="inline-code">max_steps</code></td><td>42000</td><td>Total training steps</td></tr><tr><td><code class="inline-code">learning_rate</code></td><td>3e-4</td><td>Peak learning rate</td></tr><tr><td><code class="inline-code">min_lr</code></td><td>3e-5</td><td>Minimum LR floor</td></tr><tr><td><code class="inline-code">warmup_steps</code></td><td>2000</td><td>Linear warmup</td></tr><tr><td><code class="inline-code">weight_decay</code></td><td>0.1</td><td>AdamW (2D+ params only)</td></tr><tr><td><code class="inline-code">max_grad_norm</code></td><td>1.0</td><td>Gradient clipping</td></tr><tr><td><code class="inline-code">compile_model</code></td><td><code class="inline-code">True</code></td><td>torch.compile()</td></tr></tbody></table></div>
+<h3 id="data-pipeline" class="heading-anchor">Data Pipeline<a href="#data-pipeline" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">data_cache_dir</code></td><td><code class="inline-code">data_cache</code></td><td>Token cache directory</td></tr><tr><td><code class="inline-code">reuse_data_cache</code></td><td><code class="inline-code">True</code></td><td>Reuse cache on subsequent runs</td></tr><tr><td><code class="inline-code">shuffle_documents</code></td><td><code class="inline-code">True</code></td><td>Within-source diversity</td></tr><tr><td><code class="inline-code">dedup</code></td><td><code class="inline-code">True</code></td><td>SHA-256 exact deduplication</td></tr><tr><td><code class="inline-code">target_tokens</code></td><td>8,000,000,000</td><td>Total tokens in the universal corpus</td></tr></tbody></table></div>
+<h3 id="data-sources" class="heading-anchor">Data Sources<a href="#data-sources" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>The canonical mixture (<code class="inline-code">LLM/shared_data/config/mixture.yaml</code>, shared by all five LLM projects — the <code class="inline-code">data_sources</code> dict in <code class="inline-code">config.py</code> is vestigial and consumed by nothing):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Source</th><th>Weight</th><th>Description</th></tr></thead><tbody><tr><td>FineWeb-Edu</td><td>0.40</td><td>Quality-gated web backbone (<code class="inline-code">sample-10BT</code>)</td></tr><tr><td>DCLM Baseline</td><td>0.15</td><td>DCLM-curated web (SOTA diet)</td></tr><tr><td>The Stack v2 (Python)</td><td>0.15</td><td>Python source code</td></tr><tr><td>The Stack v2 (Jupyter)</td><td>0.05</td><td>Notebook code + prose</td></tr><tr><td>OpenMathInstruct-2</td><td>0.10</td><td>Math, problem + generated solution</td></tr><tr><td>ArXiv</td><td>0.10</td><td>Long-form scientific prose</td></tr><tr><td>Cosmopedia</td><td>0.05</td><td>Synthetic educational prose</td></tr></tbody></table></div>
+<h3 id="wb-logging" class="heading-anchor">W&amp;B Logging<a href="#wb-logging" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">wandb_project</code></td><td><code class="inline-code">langgpt-llama3-pretrain</code></td><td>Project name</td></tr><tr><td><code class="inline-code">wandb_entity</code></td><td><code class="inline-code">None</code></td><td>Set to your W&amp;B entity</td></tr><tr><td><code class="inline-code">log_interval</code></td><td>50</td><td>Log metrics every N steps</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="training-details" class="heading-anchor">Training Details<a href="#training-details" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="learning-rate-schedule" class="heading-anchor">Learning Rate Schedule<a href="#learning-rate-schedule" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="10"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>LR
+│
+3e-4 ┤           ╭────────╮
+     │          ╱          ╲
+     │         ╱            ╲
+     │        ╱              ╲
+3e-5 ┤───────╱                ╲──────
+     └──────┬──────────────────┬──────
+            0    2000        42000
+          warmup    cosine decay</code></pre></div>
+<ul class="doc-list">
+<li><strong>Warmup</strong> (steps 0–2000): Linear increase from ~0 to <code class="inline-code">3e-4</code>
+</li>
+<li><strong>Decay</strong> (steps 2000–42000): Cosine decay from <code class="inline-code">3e-4</code> to <code class="inline-code">3e-5</code>
+</li>
+<li><strong>Floor</strong>: LR never drops below <code class="inline-code">3e-5</code>
+</li>
+</ul>
+<h3 id="mixed-precision" class="heading-anchor">Mixed Precision<a href="#mixed-precision" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Training uses <strong>BFloat16</strong> mixed precision via <code class="inline-code">torch.autocast</code> — no GradScaler needed, since BF16 has the FP32 exponent range and cannot overflow. BFloat16 is preferred over Float16 for:</p>
+<ul class="doc-list">
+<li>Native BF16 tensor cores on A100
+</li>
+<li>Wider dynamic range
+</li>
+<li>No overflow issues with large models
+</li>
+</ul>
+<h3 id="validation--generation" class="heading-anchor">Validation &amp; Generation<a href="#validation--generation" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Metric</th><th>Interval</th><th>Description</th></tr></thead><tbody><tr><td>Validation Loss</td><td>Every 2,000 steps</td><td>Cross-entropy + perplexity (100 batches)</td></tr><tr><td>Sample Generation</td><td>Every 20,000 steps</td><td>5 prompts, 128 tokens, top-k/top-p sampling</td></tr><tr><td>Checkpointing</td><td>Every 5,000 steps</td><td>Full state (model, optimizer, RNG)</td></tr></tbody></table></div>
+<h3 id="logged-metrics-wb" class="heading-anchor">Logged Metrics (W&amp;B)<a href="#logged-metrics-wb" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Metric</th><th>Frequency</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">train/loss</code></td><td>Every 50 steps</td><td>Training cross-entropy</td></tr><tr><td><code class="inline-code">train/lr</code></td><td>Every 50 steps</td><td>Current learning rate</td></tr><tr><td><code class="inline-code">train/grad_norm</code></td><td>Every 50 steps</td><td>Gradient norm before clipping</td></tr><tr><td><code class="inline-code">train/step_time_ms</code></td><td>Every 50 steps</td><td>Step duration</td></tr><tr><td><code class="inline-code">train/tokens_per_sec</code></td><td>Every 50 steps</td><td>Throughput</td></tr><tr><td><code class="inline-code">val/loss</code></td><td>Every 2,000 steps</td><td>Validation loss</td></tr><tr><td><code class="inline-code">val/perplexity</code></td><td>Every 2,000 steps</td><td>Validation perplexity</td></tr><tr><td><code class="inline-code">gpu/memory_used_mb</code></td><td>Every 50 steps</td><td>GPU memory allocated</td></tr><tr><td><code class="inline-code">gpu/utilization_pct</code></td><td>Every 50 steps</td><td>GPU compute utilization</td></tr><tr><td><code class="inline-code">gen/samples</code></td><td>Every 20,000 steps</td><td>Generated text (W&amp;B Table)</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="project-structure" class="heading-anchor">Project Structure<a href="#project-structure" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="code-wrapper" data-lines="12"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>LLaMA-3-Lite/
+├── config.py           # Central configuration &amp; hyperparameters
+├── model.py            # Transformer architecture (RoPE, GQA, SwiGLU, RMSNorm)
+├── dataset.py          # Thin shim re-exporting the vendored loader (data/shared_data/loader)
+├── train.py            # Training loop (validation, generation, checkpointing)
+├── kernels/            # Opt-in Triton kernels (rmsnorm, swiglu, chunked CE)
+├── data/               # prepare_data.py shim + vendored loader (data/shared_data/)
+├── docs/               # concepts/ + references/ + guides/ + training.md (see docs/README.md)
+├── tests/              # pytest suite (smoke + numeric + GPU) + doc-ref checker
+├── benchmark_data.py   # Data pipeline benchmark (GPU)
+├── weights/            # Checkpoints (created at runtime)
+└── data_cache/         # Token cache (created at runtime, ~32 GB)</code></pre></div>
+<h3 id="module-reference" class="heading-anchor">Module Reference<a href="#module-reference" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Module</th><th>Key Functions</th><th>Description</th></tr></thead><tbody><tr><td><code class="inline-code">config.py</code></td><td><code class="inline-code">get_config()</code></td><td>Central configuration with A100-optimized defaults</td></tr><tr><td><code class="inline-code">model.py</code></td><td><code class="inline-code">build_transformer()</code>, <code class="inline-code">chunked_head_cross_entropy_with_z()</code>, <code class="inline-code">Transformer</code></td><td>Pure PyTorch model with gradient checkpointing support</td></tr><tr><td><code class="inline-code">dataset.py</code></td><td><code class="inline-code">build_training_data()</code>, <code class="inline-code">build_synthetic_data()</code>, <code class="inline-code">PackedDataset</code>, <code class="inline-code">ShuffledRangeSampler</code>, <code class="inline-code">collate_fn</code></td><td>Re-exports the vendored training loader from <code class="inline-code">data/shared_data/loader</code> (single source of truth)</td></tr><tr><td><code class="inline-code">train.py</code></td><td><code class="inline-code">train_model()</code>, <code class="inline-code">validate()</code>, <code class="inline-code">generate_samples()</code>, <code class="inline-code">save_checkpoint()</code>, <code class="inline-code">load_checkpoint()</code></td><td>Full training orchestration with W&amp;B logging</td></tr></tbody></table></div>
+<p>Full code walkthroughs: <code class="inline-code">docs/references/model-reference.md</code> (model, RoPE, config), <code class="inline-code">docs/training.md</code> (training loop + memory stack + data pipeline), <code class="inline-code">docs/references/data-reference.md</code> (data, tokenizer, kernels).</p>
+<hr class='doc-hr'>
+<h2 id="hardware-requirements" class="heading-anchor">Hardware Requirements<a href="#hardware-requirements" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="recommended-configuration" class="heading-anchor">Recommended Configuration<a href="#recommended-configuration" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Component</th><th>Specification</th></tr></thead><tbody><tr><td><strong>GPU</strong></td><td>NVIDIA A100 80GB SXM</td></tr><tr><td><strong>VRAM</strong></td><td>80 GB HBM2e</td></tr><tr><td><strong>Tensor Cores</strong></td><td>3rd gen (BF16, TF32, FP16, INT8)</td></tr><tr><td><strong>Memory Bandwidth</strong></td><td>2.0 TB/s</td></tr></tbody></table></div>
+<h3 id="gpu-sizing-guide" class="heading-anchor">GPU Sizing Guide<a href="#gpu-sizing-guide" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>GPU VRAM</th><th>Recommended Settings</th></tr></thead><tbody><tr><td><strong>80 GB (A100)</strong></td><td><code class="inline-code">batch_size=96</code>, <code class="inline-code">gradient_checkpointing=True</code>, <code class="inline-code">ce_chunk_size=256</code></td></tr><tr><td><strong>40 GB (A100 40GB)</strong></td><td><code class="inline-code">batch_size=48</code>, <code class="inline-code">gradient_checkpointing=True</code>, <code class="inline-code">ce_chunk_size=256</code></td></tr><tr><td><strong>24 GB (A10G, 3090)</strong></td><td><code class="inline-code">batch_size=16</code>, <code class="inline-code">gradient_accumulation=6</code>, <code class="inline-code">gradient_checkpointing=True</code>, <code class="inline-code">ce_chunk_size=256</code></td></tr><tr><td><strong>16 GB (V100, T4)</strong></td><td>Not recommended — model state alone requires ~7.2 GB</td></tr></tbody></table></div>
+<blockquote><strong>Note</strong>: Gradient checkpointing and chunked cross-entropy are <strong>required</strong> for batch_size=96. Without them, peak memory exceeds 90 GB (OOM on A100 80GB).</blockquote>
+<hr class='doc-hr'>
+<h2 id="contributing" class="heading-anchor">Contributing<a href="#contributing" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>Contributions are welcome! Please follow these guidelines:</p>
+<h3 id="reporting-issues" class="heading-anchor">Reporting Issues<a href="#reporting-issues" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li>Use the <a href="https://github.com/atandra2000/LLaMA-3-Lite/issues" class="doc-link">GitHub Issues</a> tracker
+</li>
+<li>Include: Python version, PyTorch version, GPU model, CUDA version
+</li>
+<li>Provide minimal reproduction steps for bugs
+</li>
+</ul>
+<h3 id="pull-requests" class="heading-anchor">Pull Requests<a href="#pull-requests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ol class="doc-list">
+<li>Fork the repository
+</li>
+<li>Create a feature branch (<code class="inline-code">git checkout -b feature/amazing-feature</code>)
+</li>
+<li>Commit your changes (<code class="inline-code">git commit -m &#x27;Add amazing feature&#x27;</code>)
+</li>
+<li>Push to the branch (<code class="inline-code">git push origin feature/amazing-feature</code>)
+</li>
+<li>Open a Pull Request
+</li>
+</ol>
+<h3 id="code-style" class="heading-anchor">Code Style<a href="#code-style" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li>Follow PEP 8 guidelines
+</li>
+<li>Use type hints for function signatures
+</li>
+<li>Add docstrings to public functions and classes
+</li>
+<li>Include unit tests for new features
+</li>
+</ul>
+<hr class='doc-hr'>
+<h2 id="license" class="heading-anchor">License<a href="#license" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>This project is licensed under the <strong>MIT License</strong> — see the <a href="https://github.com/atandra2000/LLaMA-3-Lite/blob/main/LICENSE" class="doc-link">LICENSE</a> file for details.</p>
+<div class="code-wrapper collapsed" data-lines="21"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 21 lines" onclick="toggleCode(this)">expand ▾ · 21 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>MIT License
+
+Copyright (c) 2026 LLaMA-3-Lite Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</code></pre></div>
+<hr class='doc-hr'>
+<h2 id="acknowledgments" class="heading-anchor">Acknowledgments<a href="#acknowledgments" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><strong>LLaMA 3</strong> architecture from Meta AI
+</li>
+<li><strong>Tokenizer</strong>: NousResearch/Meta-Llama-3-8B (public re-upload, no gated access)
+</li>
+<li><strong>Datasets</strong>: FineWeb-Edu, DCLM-Baseline, The Stack v2, OpenMathInstruct-2, ArXiv, Cosmopedia (canonical mixture in <code class="inline-code">LLM/shared_data/config/mixture.yaml</code>)
+</li>
+<li><strong>Flash Attention 2</strong>: <a href="https://github.com/Dao-AILab/flash-attention" class="doc-link">tri Dao</a>
+</li>
+<li><strong>Weights &amp; Biases</strong>: Experiment tracking and visualization
+</li>
+</ul>
+<hr class='doc-hr'>
+<h2 id="support" class="heading-anchor">Support<a href="#support" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><strong>Documentation</strong>: <a href="https://atandra2000.github.io/LLaMA-3-Lite/" class="doc-link">GitHub Pages</a> (interactive HTML portal), this README, and <a href="docs/README.html" class="doc-link"><code class="inline-code">docs/README.md</code></a> (extracted rationale index)
+</li>
+<li><strong>Issues</strong>: <a href="https://github.com/atandra2000/LLaMA-3-Lite/issues" class="doc-link">GitHub Issues</a>
+</li>
+<li><strong>Discussions</strong>: <a href="https://github.com/atandra2000/LLaMA-3-Lite/discussions" class="doc-link">GitHub Discussions</a>
+</li>
+</ul>
+<hr class='doc-hr'>
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;&lt;strong&gt;Assumptions and Prerequisites&lt;/strong&gt; (click to expand)&lt;/summary&gt;</p>
+<ol class="doc-list">
+<li><strong>A100 80GB SXM GPU</strong>: Default configuration targets this hardware. Other GPUs require adjusting <code class="inline-code">batch_size</code> (see GPU sizing table).
+</li>
+<li><strong>HuggingFace access</strong>: Tokenizer uses <code class="inline-code">NousResearch/Meta-Llama-3-8B</code> (public, no gated access). No login required.
+</li>
+<li><strong>W&amp;B account</strong>: Training initializes a W&amp;B run. Set <code class="inline-code">WANDB_API_KEY</code> or run <code class="inline-code">wandb login</code>. Set <code class="inline-code">wandb_entity</code> in config if needed.
+</li>
+<li><strong>Data preparation</strong>: Run <code class="inline-code">python data/prepare_data.py</code> (delegates to the universal <code class="inline-code">shared_data</code> pipeline — download, clean, tokenise, pack, dedup) to produce <code class="inline-code">data/shards/manifest.json</code> + <code class="inline-code">shard_*.bin</code>, byte-compatible with the flat <code class="inline-code">data_cache/tokens.bin</code> the loader mmaps. With no prepared corpus it falls back to synthetic data for smoke tests.
+</li>
+<li><strong>No weight tying</strong>: Output projection is learned independently from input embedding (<code class="inline-code">tie_embeddings: False</code>).
+</li>
+<li><strong>Document packing</strong>: Multiple documents packed per sequence with EOS separators. Cross-document attention is not masked.
+</li>
+<li><strong>Gradient checkpointing required</strong>: Without it, batch_size=96 requires ~92 GB (OOM on A100 80GB).
+</li>
+<li><strong>Document deduplication</strong>: SHA-256 hash over first 256 tokens per document. Hash set held in memory (&lt;2 GB RAM for 4B tokens).
+</li>
+<li><strong>Train/val split alignment</strong>: Split occurs at document boundaries (after EOS) and chunk boundaries (multiples of <code class="inline-code">seq_len+1</code>).
+</li>
+</ol>
+<p>&lt;/details&gt;</p>
+                </article>
+
+                <div class="doc-footer-nav">
+                    
+                    <a href="./AGENTS.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">AGENTS & System Architecture</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#table-of-contents" class="toc-link">Table of Contents</a></li><li class="toc-h2"><a href="#features" class="toc-link">Features</a></li><li class="toc-h3"><a href="#model-specifications" class="toc-link">Model Specifications</a></li><li class="toc-h2"><a href="#quick-start" class="toc-link">Quick Start</a></li><li class="toc-h3"><a href="#prerequisites" class="toc-link">Prerequisites</a></li><li class="toc-h3"><a href="#installation" class="toc-link">Installation</a></li><li class="toc-h3"><a href="#training" class="toc-link">Training</a></li><li class="toc-h3"><a href="#resume-from-checkpoint" class="toc-link">Resume from Checkpoint</a></li><li class="toc-h2"><a href="#architecture-overview" class="toc-link">Architecture Overview</a></li><li class="toc-h3"><a href="#end-to-end-forward-pass" class="toc-link">End-to-End Forward Pass</a></li><li class="toc-h3"><a href="#grouped-query-attention--8-q-heads-share-4-kv-heads" class="toc-link">Grouped Query Attention — 8 Q-heads share 4 KV-heads</a></li><li class="toc-h3"><a href="#memory-stack--how-92nbspgb-rarr-20nbspgb" class="toc-link">Memory Stack — How 92&nbsp;GB &rarr; 20&nbsp;GB</a></li><li class="toc-h3"><a href="#key-design-decisions" class="toc-link">Key Design Decisions</a></li><li class="toc-h2"><a href="#performance-optimizations" class="toc-link">Performance Optimizations</a></li><li class="toc-h3"><a href="#memory-reduction-breakdown" class="toc-link">Memory Reduction Breakdown</a></li><li class="toc-h3"><a href="#throughput-optimizations" class="toc-link">Throughput Optimizations</a></li><li class="toc-h3"><a href="#gpu-memory-breakdown-a100-80gb-sxm" class="toc-link">GPU Memory Breakdown (A100 80GB SXM)</a></li><li class="toc-h2"><a href="#configuration" class="toc-link">Configuration</a></li><li class="toc-h3"><a href="#model-architecture" class="toc-link">Model Architecture</a></li><li class="toc-h3"><a href="#training-a100-optimized" class="toc-link">Training (A100 Optimized)</a></li><li class="toc-h3"><a href="#data-pipeline" class="toc-link">Data Pipeline</a></li><li class="toc-h3"><a href="#data-sources" class="toc-link">Data Sources</a></li><li class="toc-h3"><a href="#wb-logging" class="toc-link">W&B Logging</a></li><li class="toc-h2"><a href="#training-details" class="toc-link">Training Details</a></li><li class="toc-h3"><a href="#learning-rate-schedule" class="toc-link">Learning Rate Schedule</a></li><li class="toc-h3"><a href="#mixed-precision" class="toc-link">Mixed Precision</a></li><li class="toc-h3"><a href="#validation--generation" class="toc-link">Validation & Generation</a></li><li class="toc-h3"><a href="#logged-metrics-wb" class="toc-link">Logged Metrics (W&B)</a></li><li class="toc-h2"><a href="#project-structure" class="toc-link">Project Structure</a></li><li class="toc-h3"><a href="#module-reference" class="toc-link">Module Reference</a></li><li class="toc-h2"><a href="#hardware-requirements" class="toc-link">Hardware Requirements</a></li><li class="toc-h3"><a href="#recommended-configuration" class="toc-link">Recommended Configuration</a></li><li class="toc-h3"><a href="#gpu-sizing-guide" class="toc-link">GPU Sizing Guide</a></li><li class="toc-h2"><a href="#contributing" class="toc-link">Contributing</a></li><li class="toc-h3"><a href="#reporting-issues" class="toc-link">Reporting Issues</a></li><li class="toc-h3"><a href="#pull-requests" class="toc-link">Pull Requests</a></li><li class="toc-h3"><a href="#code-style" class="toc-link">Code Style</a></li><li class="toc-h2"><a href="#license" class="toc-link">License</a></li><li class="toc-h2"><a href="#acknowledgments" class="toc-link">Acknowledgments</a></li><li class="toc-h2"><a href="#support" class="toc-link">Support</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="./assets/portal.js"></script>
+</body>
+</html>

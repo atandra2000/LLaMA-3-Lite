@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quickstart — From Zero to a Running Loop | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="../../index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="../../index.html" class="header-link">Portal</a>
+            <a href="../../README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="../../AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="../../SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="../../docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="../../docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="../../docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="../../docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="../../docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="../../docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/guides/quickstart.html" class="nav-link active" title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="../../docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="../../docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="../../docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="../../docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="../../docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="../../docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="../../index.html">Docs</a> &gt; <span>Guides</span> &gt; <span class="current">Quickstart — From Zero to a Running Loop</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Quickstart — From Zero to a Running Loop</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> docs/guides/quickstart.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 2,208 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~10 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <span class="doc-anchor" id="quickstart--from-zero-to-a-running-training-loop"></span>
+<blockquote>Audience: beginner. You have cloned <code class="inline-code">LLaMA-3-Lite</code> and want to see it train something — synthetic data, real data, or just the tests — without reading the whole codebase first. Scope: the current working tree. All commands below were checked against the source files they invoke.</blockquote>
+<h2 id="the-60-second-summary" class="heading-anchor">The 60-second summary<a href="#the-60-second-summary" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><code class="inline-code">python train.py</code> always trains: if <code class="inline-code">data_cache/tokens.bin</code> does not exist, <code class="inline-code">train.py:train_model</code> prints a loud warning and falls back to <strong>synthetic data</strong> (random token ids, a byte-level tokenizer stub, no downloads), so the loop, checkpointing, W&amp;B, and resume machinery all work on a machine with nothing but PyTorch. To train on real text you must first build the corpus cache with <code class="inline-code">python3 data/prepare_data.py --stage pretrain</code>, which delegates to the workspace-level <code class="inline-code">LLM/shared_data</code> pipeline (download → clean → tokenize → pack) and writes the single uint32 file <code class="inline-code">data_cache/tokens.bin</code> that the in-tree loader memory-maps. For a fast sanity check there is a CPU pytest suite and a standalone end-to-end smoke script (<code class="inline-code">tests/e2e_gpu_smoke.py</code>) that exercises the whole pipeline on a tiny model in a few minutes. This guide walks all three paths, then covers resume (<code class="inline-code">preload</code>), W&amp;B offline mode, the config keys worth touching first, and where artifacts land.</p>
+<h2 id="1-prerequisites" class="heading-anchor">1. Prerequisites<a href="#1-prerequisites" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Requirement</th><th>Version / note</th></tr></thead><tbody><tr><td>Python</td><td>3.10+</td></tr><tr><td>PyTorch</td><td>2.x (CUDA 12.1 build on a GPU host: <code class="inline-code">pip install torch --index-url https://download.pytorch.org/whl/cu121</code>)</td></tr><tr><td>GPU</td><td>NVIDIA A100 80GB for the full 42,000-step run at batch 96; anything with ≥20 GB VRAM with the memory stack on (see <a href="../training.html" class="doc-link">memory-stack.md</a>)</td></tr><tr><td><code class="inline-code">wandb</code></td><td>imported unconditionally by <code class="inline-code">train.py</code> — install even for offline runs (<code class="inline-code">WANDB_MODE=offline</code>). The pytest suite does not need it: <code class="inline-code">tests/conftest.py</code> injects a stub when the package is missing, but that stub is conftest-only — a <em>manual</em> <code class="inline-code">python train.py</code> on a bare checkout without wandb installed fails at <code class="inline-code">import wandb</code></td></tr><tr><td><code class="inline-code">transformers</code> / <code class="inline-code">datasets</code></td><td>only needed for the real tokenizer (<code class="inline-code">data/shared_data/loader.py:build_tokenizer</code>) and the real-data pipeline; the synthetic path never touches them</td></tr><tr><td>Workspace package</td><td><code class="inline-code">LLM/shared_data</code> (the universal pipeline) — required only for Mode 2, real data</td></tr></tbody></table></div>
+<p>Model scale for reference: 16 layers, <code class="inline-code">d_model</code> 1024, GQA 8Q/4KV, SwiGLU <code class="inline-code">d_ff</code> 4096, vocab 128k, seq 2048 — <strong>513.8M parameters</strong> (≈515M in the README's rounding), 1.03 GB in BF16 (<span class="math-inline">$513.8\text{M} \times 2\text{B}$</span>).</p>
+<h2 id="2-the-three-ways-to-run" class="heading-anchor">2. The three ways to run<a href="#2-the-three-ways-to-run" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="code-wrapper collapsed" data-lines="24"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 24 lines" onclick="toggleCode(this)">expand ▾ · 24 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>python train.py
+   │
+   ▼
+build_training_data: cache exists?
+   ├─ no: FileNotFoundError ──► WARN + build_synthetic_data
+   │                              │
+   │                              ▼
+   │                          loop runs on random ids
+   └─ yes ──► mmap data_cache/tokens.bin
+                │
+                ▼
+            loop runs on real corpus
+                ▲
+                │
+python3 data/prepare_data.py --stage pretrain
+   │
+   ▼
+LLM/shared_data pipeline (download → clean → tokenize → pack)
+   │
+   ▼
+shards/ + manifest.json ──► concat_shards_to_cache
+   │
+   ▼
+data_cache/tokens.bin ─────────────────┘</code></pre></div>
+<h3 id="21-mode-1---what-actually-happens-right-now" class="heading-anchor">2.1 Mode 1 — <code class="inline-code">python train.py</code> (what actually happens right now)<a href="#21-mode-1---what-actually-happens-right-now" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Without a prepared cache, this is not an error path — it is the designed fallback. <code class="inline-code">train_model</code> first tries <code class="inline-code">data/shared_data/loader.py:build_training_data</code>, which checks for <code class="inline-code">data_cache/tokens.bin</code> and raises <code class="inline-code">FileNotFoundError</code> if it is missing. The trainer catches it and prints exactly this:</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">WARN: Token cache not found at data_cache/tokens.bin. Run `python data/prepare_data.py`
+first (or pass `data_sources` empty + use build_synthetic_data).
+WARN: no token cache found — falling back to synthetic data. Run `python data/prepare_data.py`
+to build the real corpus cache at data_cache/tokens.bin.</code></pre></div>
+<p>then calls <code class="inline-code">data/shared_data/loader.py:build_synthetic_data</code>, and training proceeds normally.</p>
+<p><strong>What "synthetic" means.</strong> A random uint32 buffer of <code class="inline-code">max(8 × (seq_len+1) × batch, 4096)</code> ids — at the default config that is 8 × 2049 × 96 ≈ <strong>1.57M tokens</strong> — split 95/5 into train/val, served through the same <code class="inline-code">PackedDataset</code> + <code class="inline-code">ShuffledRangeSampler</code> + DataLoader path as real data. The tokenizer is <code class="inline-code">data/shared_data/loader.py:_SyntheticTokenizerStub</code>, a duck-typed bytes⇄ids stub (<code class="inline-code">encode</code>/<code class="inline-code">decode</code>, <code class="inline-code">eos_token_id=0</code>, <code class="inline-code">pad_token_id=0</code>) that needs no HuggingFace download. Its <code class="inline-code">__len__</code> returns the config vocab, so <code class="inline-code">real_vocab_size = max(config[&#x27;vocab_size&#x27;], len(tokenizer))</code> still resolves to 128,000.</p>
+<p><strong>Why it exists.</strong> This repo vendors only the <em>loader</em> half of the data pipeline (<code class="inline-code">data/shared_data/</code> is 2 files); the preparation pipeline lives in the workspace. Synthetic mode makes <code class="inline-code">train.py</code> runnable on a bare checkout so the training loop, checkpointing, EMA, W&amp;B logging, and resume are all testable without a 32 GB corpus on disk.</p>
+<p><strong>What you should expect.</strong> Targets are random, so the loss sits at the cross-entropy floor for uniform random labels, <span class="math-inline">$\ln(128000) \approx 11.76$</span>, and never improves — that is correct behavior, not a bug. The 1.57M-token corpus is ~7 train batches at batch 96, after which <code class="inline-code">train.py:_next_batch</code> prints <code class="inline-code">WARN: train corpus exhausted (epoch N); restarting the sampler with a fresh permutation</code> and wraps around, so even a 42k-step "synthetic run" completes (by re-reading the same random ids with a new shuffle). Generation samples are byte-garbage by construction. Use Mode 1 to prove the <em>loop</em> works; use Mode 2 for anything with real signal.</p>
+<h3 id="22-mode-2--real-data--then" class="heading-anchor">2.2 Mode 2 — real data: <code class="inline-code">prepare_data.py</code> then <code class="inline-code">train.py</code><a href="#22-mode-2--real-data--then" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="3"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash"># from the repo root
+python3 data/prepare_data.py --stage pretrain
+python train.py</code></pre></div>
+<p><code class="inline-code">data/prepare_data.py:main</code> is a thin shim: it inserts the project root, <code class="inline-code">data/</code>, and the project's parent on <code class="inline-code">sys.path</code>, then imports the <strong>workspace</strong> <code class="inline-code">LLM/shared_data</code> package and delegates to its <code class="inline-code">run_pipeline</code>. If that package is not importable on your machine, it exits with guidance rather than failing cryptically:</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">LLaMA-3-Lite data prep delegates to the universal pipeline at `LLM/shared_data/`
+(shared_data.config / shared_data.prepare_data). That workspace package is not
+importable on this machine (...). This project vendors only the loader
+(data/shared_data/).</code></pre></div>
+<p>The <code class="inline-code">--stage pretrain</code> choice is currently the only stage. Other flags mirror the universal pipeline so you can skip phases when re-running:</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Flag</th><th>Effect</th></tr></thead><tbody><tr><td><code class="inline-code">--mixture PATH</code></td><td>override the mixture spec (default: <code class="inline-code">LLM/shared_data/config/mixture.yaml</code>)</td></tr><tr><td><code class="inline-code">--data-config PATH</code></td><td>override the data config (default: <code class="inline-code">.../data_config.yaml</code>)</td></tr><tr><td><code class="inline-code">--data-root PATH</code></td><td>override where shards are written</td></tr><tr><td><code class="inline-code">--source NAME</code></td><td>restrict to one source key from <code class="inline-code">data_sources</code></td></tr><tr><td><code class="inline-code">--skip-download</code></td><td>reuse an existing corpus</td></tr><tr><td><code class="inline-code">--skip-clean</code> / <code class="inline-code">--skip-tokenize</code></td><td>reuse cleaned / tokenized artifacts</td></tr><tr><td><code class="inline-code">--skip-pack</code></td><td>stop before the packing stage</td></tr></tbody></table></div>
+<p>After the pipeline stages finish, the shim's bridge stage (<code class="inline-code">data/prepare_data.py:concat_shards_to_cache</code>) concatenates the shards in manifest order into <code class="inline-code">data_cache/tokens.bin</code> (the name comes from <code class="inline-code">config[&#x27;data_cache_dir&#x27;]</code> / <code class="inline-code">config[&#x27;data_cache_filename&#x27;]</code>): a single little-endian uint32 file with no header, EOS-separated documents. At the full 8B-token budget that is ~32 GB on disk. <code class="inline-code">build_training_data</code> then opens it with <code class="inline-code">np.memmap(path, dtype=np.uint32, mode=&quot;r&quot;)</code> — resident RAM stays near zero because pages are faulted in on access — holds out the last <code class="inline-code">val_split</code> (5%) on chunk boundaries, and hands you train/val loaders plus a tokenizer.</p>
+<p><strong>Tokenizer caveat.</strong> The real path tries <code class="inline-code">data/shared_data/loader.py:build_tokenizer</code> (<code class="inline-code">transformers.AutoTokenizer</code> on <code class="inline-code">tokenizer_name: NousResearch/Meta-Llama-3-8B</code>; requires a one-time download; pad falls back to EOS). If that fails, the loader prints <code class="inline-code">[data] tokenizer load failed (...); using the byte stub. Generation samples will be meaningless until a real tokenizer is available.</code> and trains on the mmap cache with the stub — the loss is real, only the sample text is meaningless. With the real tokenizer (vocab 128,256) the model is built at 128,256 via <code class="inline-code">max(config[&#x27;vocab_size&#x27;], len(tokenizer))</code>.</p>
+<h3 id="23-mode-3--quick-smoke-tests-and-the-e2e-script" class="heading-anchor">2.3 Mode 3 — quick smoke: tests and the e2e script<a href="#23-mode-3--quick-smoke-tests-and-the-e2e-script" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Fastest path, no GPU required for the pytest suite (the <code class="inline-code">device</code> fixture in <code class="inline-code">tests/conftest.py:device</code> defaults to CPU, where tests run FP32 for exactness):</p>
+<div class="code-wrapper" data-lines="3"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash">python -m pytest tests/ -m smoke      # end-to-end smoke tests, seconds
+python -m pytest tests/               # full CPU suite
+python -m pytest tests/ --run-gpu     # additionally run gpu-marked tests</code></pre></div>
+<p><code class="inline-code">tests/</code> covers the model (attention causality, fused≡unfused SwiGLU, chunked CE ≡ dense CE), the config contract, training mechanics (scheduler, EMA, checkpoint round-trip), and the end-to-end smoke class. <code class="inline-code">gpu</code>-marked tests are skipped by default; the conftest injects a <code class="inline-code">wandb</code> stub and sets <code class="inline-code">WANDB_MODE=offline</code>/<code class="inline-code">WANDB_DISABLED</code> so the suite is hermetic. See</p>
+<p><a href="../references/training-reference.html" class="doc-link">tests.md</a> for the full fixture/marker reference.</p>
+<p>For a true end-to-end GPU check, the standalone script:</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash">python tests/e2e_gpu_smoke.py            # 8 stages; use ~/.venv/bin/python if you have a project venv
+python tests/e2e_gpu_smoke.py --steps 4  # override the tiny config&#x27;s max_steps</code></pre></div>
+<p><code class="inline-code">tests/e2e_gpu_smoke.py:main</code> runs 8 stages — environment, data pipeline, model build, training steps, chunked-CE vs dense equivalence, validation, checkpoint save/load round-trip, Triton kernels — on a tiny config (<code class="inline-code">d_model</code> 128, 2 layers, vocab 512, batch 4) that fits in ~4 GB of VRAM. It sets <code class="inline-code">WANDB_MODE=offline</code> and <code class="inline-code">WANDB_DISABLED</code> itself, and still runs on CPU (with a warning that the "GPU run" goal is not met). A green run ends with <code class="inline-code">E2E SMOKE: ALL CHECKS PASSED</code>.</p>
+<p>Optionally, <code class="inline-code">python benchmark_data.py --steps 50 --batch_size 96 --seq_len 2048</code> measures data-pipeline throughput only (no model forward unless <code class="inline-code">--with_model_forward</code>); see <code class="inline-code">benchmark_data.py:main</code>.</p>
+<h2 id="3-resuming-from-a-checkpoint" class="heading-anchor">3. Resuming from a checkpoint<a href="#3-resuming-from-a-checkpoint" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>Set the <code class="inline-code">preload</code> config key to anything non-<code class="inline-code">None</code> in <code class="inline-code">config.py</code> (<code class="inline-code">config.py:get_config</code> defaults it to <code class="inline-code">None</code>):</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python">&#x27;preload&#x27;: True,   # any non-None value arms the resume path</code></pre></div>
+<p>When non-<code class="inline-code">None</code>, <code class="inline-code">train.py:load_checkpoint</code> is called before the loop. Two things worth knowing:</p>
+<ul class="doc-list">
+<li><strong>The value is a switch, not a path.</strong> <code class="inline-code">load_checkpoint</code> ignores the
+<br> string and auto-detects the <em>latest</em> <code class="inline-code">llama3-515M_step_*.pt</code> in <code class="inline-code">config[&#x27;model_folder&#x27;]</code> (sorted by step number). The README's example <code class="inline-code">&#x27;preload&#x27;: &#x27;weights/llama3-515M_step_5000.pt&#x27;</code> works, but any non-<code class="inline-code">None</code> value resumes the newest checkpoint in <code class="inline-code">weights/</code>.
+</li>
+<li><strong>Everything is restored</strong>, not just weights: model, optimizer, and
+<br> scheduler state dicts; the full RNG state (<code class="inline-code">rng_torch</code>, <code class="inline-code">rng_numpy</code>, <code class="inline-code">rng_python</code>, plus <code class="inline-code">rng_cuda</code> on GPU — the cross-device move is handled by a <code class="inline-code">.cpu().to(torch.uint8)</code> fix); the EMA shadow (<code class="inline-code">ema_state_dict</code>) when present; and the recorded <code class="inline-code">step</code> + <code class="inline-code">best_val_loss</code>. The loop then runs <code class="inline-code">range(initial_step, max_steps)</code> and prints <code class="inline-code">Resumed from step N</code>. This is what makes resumes bit-identical — see
+<br> <a href="../concepts/training-and-memory.html" class="doc-link">reproducibility.md</a>.
+</li>
+</ul>
+<h2 id="4-wb-online-offline-disabled" class="heading-anchor">4. W&amp;B: online, offline, disabled<a href="#4-wb-online-offline-disabled" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><code class="inline-code">train.py</code> calls <code class="inline-code">wandb.init(project=config[&#x27;wandb_project&#x27;], ...)</code> with a timestamped run name (<code class="inline-code">llama3-515M-{device}-{unix_time}</code>). Without an account or network this would block/fail, so:</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">bash</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-bash">WANDB_MODE=offline python train.py     # log locally, sync later with `wandb sync`
+WANDB_DISABLED=true python train.py    # no logging at all (tests use this)</code></pre></div>
+<p>Offline runs write a local run directory under <code class="inline-code">wandb/</code> in the repo root. Logged metrics include <code class="inline-code">train/loss</code>, <code class="inline-code">train/lr</code>, <code class="inline-code">train/grad_norm</code>, <code class="inline-code">train/tokens_per_sec</code>, <code class="inline-code">train/tokens_seen</code>, <code class="inline-code">gpu/memory_*</code>, <code class="inline-code">val/loss</code>, <code class="inline-code">val/perplexity</code>, and the generation table at <code class="inline-code">generation_interval</code>.</p>
+<h2 id="5-config-keys-for-your-first-run" class="heading-anchor">5. Config keys for your first run<a href="#5-config-keys-for-your-first-run" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>All in <code class="inline-code">config.py:get_config</code>. The ones that change the <em>shape</em> of a first run:</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Touch it because</th></tr></thead><tbody><tr><td><code class="inline-code">max_steps</code></td><td>42000</td><td>the full pretraining run (~8.26B tokens = 42,000 × 96 × 2048). Set 20–100 for a smoke run</td></tr><tr><td><code class="inline-code">warmup_steps</code></td><td>2000</td><td>the cosine scheduler gets <code class="inline-code">T_max = max_steps − warmup_steps</code>, so <strong>keep <code class="inline-code">max_steps &gt; warmup_steps</code></strong>; for a 50-step run use <code class="inline-code">warmup_steps: 10</code></td></tr><tr><td><code class="inline-code">batch_size</code></td><td>96</td><td>the A100 budget; drop to 48/32/16 on smaller GPUs (sizing math in <a href="../concepts/training-and-memory.html" class="doc-link">memory-engineering.md</a>)</td></tr><tr><td><code class="inline-code">compile_model</code></td><td>True</td><td><code class="inline-code">torch.compile(mode=&#x27;reduce-overhead&#x27;)</code> captures CUDA graphs; the first step stalls 30s–2min on autotune. Set <code class="inline-code">False</code> for quick/CPU smoke runs</td></tr><tr><td><code class="inline-code">gradient_checkpointing</code></td><td>True</td><td>the main activation-memory lever; leave on unless profiling</td></tr><tr><td><code class="inline-code">ce_chunk_size</code></td><td>256</td><td>chunk width of the head+loss (memory vs overhead tradeoff; see <a href="../concepts/architecture-components.html" class="doc-link">loss-functions.md</a>)</td></tr><tr><td><code class="inline-code">model_folder</code></td><td><code class="inline-code">weights</code></td><td>where every artifact lands</td></tr><tr><td><code class="inline-code">checkpoint_interval</code> / <code class="inline-code">val_interval</code> / <code class="inline-code">log_interval</code></td><td>5000 / 2000 / 50</td><td>cadence of checkpoints, validation, and W&amp;B logging</td></tr><tr><td><code class="inline-code">preload</code></td><td><code class="inline-code">None</code></td><td>set non-<code class="inline-code">None</code> to resume (see §3)</td></tr><tr><td><code class="inline-code">wandb_project</code></td><td><code class="inline-code">langgpt-llama3-pretrain</code></td><td>your W&amp;B project name</td></tr></tbody></table></div>
+<p>Other load-bearing keys to be aware of (not first-run knobs): <code class="inline-code">use_z_loss</code> (+<code class="inline-code">z_loss_weight</code> 1e-4), <code class="inline-code">qknorm</code>, <code class="inline-code">use_ema</code> (<code class="inline-code">ema_decay</code> 0.999), <code class="inline-code">tf32</code>, <code class="inline-code">keep_last_n_checkpoints</code> (3), <code class="inline-code">num_workers</code>/<code class="inline-code">prefetch_factor</code>/<code class="inline-code">pin_memory</code> (loader), and the <code class="inline-code">*_impl</code> Triton gates — <code class="inline-code">rmsnorm_impl</code>/<code class="inline-code">swiglu_impl</code>/ <code class="inline-code">cross_entropy_impl</code> only take effect with <code class="inline-code">ENABLE_TRITON_KERNELS=1</code>; otherwise <code class="inline-code">train.py</code> force-restores all three to <code class="inline-code">&#x27;pytorch&#x27;</code> with a warning. Full key-by-key reference: <a href="../references/model-reference.html" class="doc-link">config.md</a>.</p>
+<h2 id="6-where-artifacts-land" class="heading-anchor">6. Where artifacts land<a href="#6-where-artifacts-land" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>Everything goes under <code class="inline-code">config[&#x27;model_folder&#x27;]</code> (default <code class="inline-code">weights/</code>, created on demand by <code class="inline-code">train.py:save_checkpoint</code>):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Artifact</th><th>When</th></tr></thead><tbody><tr><td><code class="inline-code">weights/llama3-515M_step_N.pt</code></td><td>every <code class="inline-code">checkpoint_interval</code> (5000); pruned to the newest <code class="inline-code">keep_last_n_checkpoints</code> (3)</td></tr><tr><td><code class="inline-code">weights/llama3-515M_best.pt</code></td><td>on any validation loss improvement (weights only)</td></tr><tr><td><code class="inline-code">weights/llama3-515M_final_model_full.pt</code></td><td>end of training — full checkpoint (state dicts + RNG + EMA + config)</td></tr><tr><td><code class="inline-code">weights/llama3-515M_final_model_weights.pt</code></td><td>end of training — model weights only</td></tr><tr><td><code class="inline-code">wandb/</code></td><td>local run dirs when <code class="inline-code">WANDB_MODE=offline</code></td></tr><tr><td><code class="inline-code">data_cache/tokens.bin</code></td><td>the prepared corpus cache (Mode 2); reused across runs</td></tr></tbody></table></div>
+<p>Step checkpoints are saved on a background thread when <code class="inline-code">async_checkpoint</code> is <code class="inline-code">True</code> (the default); <code class="inline-code">train_model</code> joins the thread before exiting so the final writes never get cut off.</p>
+<h2 id="references" class="heading-anchor">References<a href="#references" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><a href="learning-paths.html" class="doc-link">learning-paths.md</a> — where this fits in the doc tree
+</li>
+<li><a href="../training.html" class="doc-link">training.md</a> — the loop this guide starts
+</li>
+<li><a href="../references/model-reference.html" class="doc-link">config.md</a> — every key, with interactions
+</li>
+<li><a href="../references/data-reference.html" class="doc-link">data.md</a> — the vendored loader, line by line
+</li>
+<li><a href="../concepts/data-and-kernels.html" class="doc-link">data-engineering.md</a> — the universal pipeline behind <code class="inline-code">prepare_data.py</code>
+</li>
+<li><a href="troubleshooting.html" class="doc-link">troubleshooting.md</a> — OOM, CUDA-graph stalls, missing-cache errors
+</li>
+<li><a href="glossary.html" class="doc-link">glossary.md</a> — notation used across the docs
+</li>
+</ul>
+                </article>
+
+                <div class="doc-footer-nav">
+                    <a href="../../docs/concepts/training-and-memory.html" class="nav-card prev-card"><span class="card-label">← Previous</span><span class="card-title">Training, Memory & Numerical Stability</span></a>
+                    <a href="../../docs/guides/learning-paths.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">Learning Paths — How to Read the Docs</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#the-60-second-summary" class="toc-link">The 60-second summary</a></li><li class="toc-h2"><a href="#1-prerequisites" class="toc-link">1. Prerequisites</a></li><li class="toc-h2"><a href="#2-the-three-ways-to-run" class="toc-link">2. The three ways to run</a></li><li class="toc-h3"><a href="#21-mode-1---what-actually-happens-right-now" class="toc-link">2.1 Mode 1 —  (what actually happens right now)</a></li><li class="toc-h3"><a href="#22-mode-2--real-data--then" class="toc-link">2.2 Mode 2 — real data:  then </a></li><li class="toc-h3"><a href="#23-mode-3--quick-smoke-tests-and-the-e2e-script" class="toc-link">2.3 Mode 3 — quick smoke: tests and the e2e script</a></li><li class="toc-h2"><a href="#3-resuming-from-a-checkpoint" class="toc-link">3. Resuming from a checkpoint</a></li><li class="toc-h2"><a href="#4-wb-online-offline-disabled" class="toc-link">4. W&B: online, offline, disabled</a></li><li class="toc-h2"><a href="#5-config-keys-for-your-first-run" class="toc-link">5. Config keys for your first run</a></li><li class="toc-h2"><a href="#6-where-artifacts-land" class="toc-link">6. Where artifacts land</a></li><li class="toc-h2"><a href="#references" class="toc-link">References</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="../../assets/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model, RoPE & Config Reference | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="../../index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="../../index.html" class="header-link">Portal</a>
+            <a href="../../README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="../../AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="../../SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="../../docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="../../docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="../../docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="../../docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="../../docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="../../docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="../../docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="../../docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="../../docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/references/model-reference.html" class="nav-link active" title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="../../docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="../../docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="../../docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="../../index.html">Docs</a> &gt; <span>References</span> &gt; <span class="current">Model, RoPE & Config Reference</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Model, RoPE & Config Reference</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> docs/references/model-reference.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 13,783 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~63 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <span class="doc-anchor" id="llama-3-lite--model-rope-and-config-reference"></span>
+<blockquote>Audience: intermediate (ML practitioners who can read PyTorch). This is the consolidated code-keyed reference for the model architecture, the rotary position embedding implementation, and the training config. It merges the former <code class="inline-code">model.md</code> (the walkthrough of <code class="inline-code">model.py</code>), <code class="inline-code">rope.md</code> (the RoPE implementation deep dive), and <code class="inline-code">config.md</code> (every key in <code class="inline-code">config.py:get_config</code>). Concept theory lives in <code class="inline-code">docs/concepts/</code>; this file explains what the code does, in what order, with what shapes, and why each piece exists.</blockquote>
+<h2 id="overview" class="heading-anchor">Overview<a href="#overview" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><code class="inline-code">model.py</code> implements the entire LLaMA-3-Lite network: a decoder-only transformer with 515M parameters (128,000-token vocabulary, 16 layers, d_model 1024, 8 query heads / 4 KV heads, head_dim 128, SwiGLU FFN of width 4096, RoPE with theta 500,000). The file is organized bottom-up: small leaf modules (<code class="inline-code">RoPE</code>, <code class="inline-code">RMSNorm</code>), then <code class="inline-code">GroupedQueryAttention</code>, <code class="inline-code">SwiGLUFFN</code>, <code class="inline-code">DecoderBlock</code>, <code class="inline-code">Decoder</code>, and finally <code class="inline-code">Transformer</code> plus a <code class="inline-code">build_transformer</code> factory. Two loss functions live here too: <code class="inline-code">chunked_cross_entropy_with_z</code> (the reference implementation over materialized logits) and <code class="inline-code">chunked_head_cross_entropy_with_z</code> (the training path, which computes the 128k-wide LM head in <code class="inline-code">chunk_size</code>-row slices inside gradient checkpointing so the full <code class="inline-code">[196608, 128000]</code> logits tensor never exists). Three Triton kernels (rmsnorm, swiglu, cross-entropy) are optional drop-ins controlled by <code class="inline-code">*_impl</code> constructor arguments, each with a PyTorch fallback.</p>
+<p><strong>RoPE</strong> encodes the position of a token by <strong>rotating</strong> the query and key vectors of every attention head in 2-D planes, one plane per adjacent pair of features, each plane spinning at its own frequency. Two consequences fall out for free: (1) the attention score between two tokens depends only on their <strong>relative</strong> distance, not their absolute positions, and (2) the model can generalize to sequence lengths beyond what it saw in training — <em>length extrapolation</em> — because the rotation angles are well-defined for any integer position. In LLaMA-3-Lite the whole mechanism is one small <code class="inline-code">nn.Module</code>, <code class="inline-code">model.py:RoPE</code>, which precomputes the cos/sin tables once in <code class="inline-code">model.py:RoPE.__init__</code> and applies a single broadcast rotation in <code class="inline-code">model.py:RoPE.forward</code>. It has <strong>no learnable parameters</strong>: the frequency schedule is fixed by <code class="inline-code">theta = 500000.0</code> from <code class="inline-code">config.py:get_config</code>, exactly as LLaMA-3 uses it. The rotation is applied to Q and K only, after the per-head QK-norm and before Flash Attention 2, inside <code class="inline-code">model.py:GroupedQueryAttention.forward</code>.</p>
+<p><strong>Config.</strong> <code class="inline-code">config.py</code> is the single source of truth for the whole training run: model shape, optimizer and schedule, precision and memory engineering, the data pipeline, checkpointing, and W&amp;B logging. <code class="inline-code">train.py:train_model</code> reads it directly, <code class="inline-code">data/shared_data/loader.py</code> reads the subset it needs, and <code class="inline-code">model.py:build_transformer</code> receives its architecture values as keyword arguments. The dict is a <strong>contract with the test suite</strong>: <code class="inline-code">tests/test_config.py::TestGetConfig.test_has_all_required_keys</code> fails if any declared key disappears, and <code class="inline-code">tests/test_config.py::TestGetConfig.test_no_extra_unknown_keys</code> fails if any undocumented key is added — so adding or removing a key is a deliberate, reviewed change. Roughly half the keys are load-bearing (they change numerics or memory), a handful are informational (they document intent or pass through to the workspace data pipeline outside this repo), and the defaults are tuned so that <code class="inline-code">python train.py</code> on a single A100 80GB "just works".</p>
+<h2 id="model-reference-modelpy" class="heading-anchor">Model Reference (model.py)<a href="#model-reference-modelpy" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="file-overview-and-module-map" class="heading-anchor">File Overview and Module Map<a href="#file-overview-and-module-map" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Symbol</th><th>Kind</th><th>Role</th></tr></thead><tbody><tr><td><code class="inline-code">model.py:RoPE</code></td><td>class</td><td>Rotary position embeddings, precomputed cos/sin buffers, no learnable params</td></tr><tr><td><code class="inline-code">model.py:RMSNorm</code></td><td>class</td><td>RMS normalization with optional Triton fused path</td></tr><tr><td><code class="inline-code">model.py:GroupedQueryAttention</code></td><td>class</td><td>GQA: Q/K/V projections, QK-norm, RoPE, SDPA with <code class="inline-code">is_causal=True</code></td></tr><tr><td><code class="inline-code">model.py:SwiGLUFFN</code></td><td>class</td><td>Fused gate+up projection, SiLU gating, optional Triton path</td></tr><tr><td><code class="inline-code">model.py:DecoderBlock</code></td><td>class</td><td>One transformer layer: pre-norm attention + pre-norm FFN residuals</td></tr><tr><td><code class="inline-code">model.py:Decoder</code></td><td>class</td><td>Stack of blocks + final RMSNorm</td></tr><tr><td><code class="inline-code">model.py:Transformer</code></td><td>class</td><td>Full model: embedding, decoder, untied LM head, weight init, param counting</td></tr><tr><td><code class="inline-code">model.py:chunked_cross_entropy_with_z</code></td><td>function</td><td>Reference CE + z-loss over an already-materialized logits tensor</td></tr><tr><td><code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code></td><td>function</td><td>Memory-bounded LM head + CE + z-loss (the training path)</td></tr><tr><td><code class="inline-code">model.py:build_transformer</code></td><td>function</td><td>Factory with diagnostic parameter printing</td></tr></tbody></table></div>
+<p>The module imports only PyTorch (<code class="inline-code">torch</code>, <code class="inline-code">torch.nn</code>, <code class="inline-code">torch.nn.functional</code>, <code class="inline-code">torch.utils.checkpoint.checkpoint</code>) and the three Triton entry points (<code class="inline-code">kernels/rmsnorm_triton.py:triton_rmsnorm</code>, <code class="inline-code">kernels/swiglu_triton.py:triton_swiglu</code>, <code class="inline-code">kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z</code>). The Triton kernels are described in <a href="data-reference.html" class="doc-link">data-reference.md</a>; their theory in <a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a>.</p>
+<h3 id="block-by-block-walkthrough" class="heading-anchor">Block-by-Block Walkthrough<a href="#block-by-block-walkthrough" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="rotary-position-embeddings" class="heading-anchor"><code class="inline-code">RoPE</code> — rotary position embeddings<a href="#rotary-position-embeddings" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Purpose.</strong> Attention is permutation-invariant: without position information, the token at position 3 and the token at position 40 produce identical Q/K inner products. RoPE encodes position by rotating each head-dimension pair of the query and key vectors by an angle proportional to the absolute position, so that the Q·K inner product becomes a function of the <em>relative</em> offset <code class="inline-code">i − j</code>. The theory is in</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>; the</p>
+<p>implementation deep-dive is <a href="#rope-implementation-deep-dive" class="doc-link">§ RoPE Implementation Deep Dive</a> below.</p>
+<p><strong>Constructor (<code class="inline-code">model.py:RoPE.__init__</code>).</strong> With <code class="inline-code">head_dim=128</code>, <code class="inline-code">max_seq_len=2048</code>, <code class="inline-code">theta=500000.0</code>:</p>
+<ul class="doc-list">
+<li><code class="inline-code">inv_freq[i] = 1 / theta^(2i / head_dim)</code> for <code class="inline-code">i</code> in <code class="inline-code">0..63</code> — 64 frequency
+<br> constants, geometrically spaced. The high <code class="inline-code">theta=500k</code> slows the rotation schedule (LLaMA 3's long-context choice; the AGENTS.md hard rule).
+</li>
+<li><code class="inline-code">cos_cached</code>, <code class="inline-code">sin_cached</code> = <code class="inline-code">cos/sin(t ⊗ inv_freq)</code> for <code class="inline-code">t = 0..2047</code>,
+<br> shaped <code class="inline-code">[1, 1, 2048, 64]</code>. These are registered as <strong>buffers</strong> — persistent in <code class="inline-code">state_dict</code> but with zero gradient and zero parameter count.
+</li>
+</ul>
+<p><strong>Forward (<code class="inline-code">model.py:RoPE.forward</code>).</strong> Given <code class="inline-code">x</code> of shape <code class="inline-code">[B, n_heads, S, head_dim]</code> and a <code class="inline-code">seq_len</code>:</p>
+<ol class="doc-list">
+<li>Slice the cached tables to <code class="inline-code">[1, 1, seq_len, 64]</code> — buffers are
+<br> precomputed up to <code class="inline-code">max_seq_len</code>, so any shorter sequence is a cheap view.
+</li>
+<li>Split <code class="inline-code">x</code> into even-indexed elements <code class="inline-code">x[..., ::2]</code> and odd-indexed
+<br> <code class="inline-code">x[..., 1::2]</code> (<code class="inline-code">x1</code>, <code class="inline-code">x2</code>).
+</li>
+<li>Apply the 2D rotation per pair:
+<br> <code class="inline-code">stack([x1·cos − x2·sin, x1·sin + x2·cos], dim=-1)</code> and <code class="inline-code">flatten(-2)</code> back to <code class="inline-code">[B, n_heads, S, head_dim]</code>.
+</li>
+</ol>
+<p>Because each pair is rotated by an orthogonal matrix, the norm of every vector is preserved (<code class="inline-code">tests/test_model.py::TestRoPE::test_rotation_is_orthogonal</code>), position 0 is the identity (<code class="inline-code">test_position_zero_is_identity</code>), and the relative-position property holds (<code class="inline-code">test_relative_position_property</code>). RoPE is applied to Q and K only — never to V.</p>
+<h4 id="root-mean-square-normalization" class="heading-anchor"><code class="inline-code">RMSNorm</code> — root mean square normalization<a href="#root-mean-square-normalization" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Purpose.</strong> Pre-normalization keeps residual-stream gradients stable; RMS normalization drops LayerNorm's mean-subtraction, which costs one reduction pass and matters at this scale. Theory:</p>
+<p><a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.</p>
+<p><strong>Constructor (<code class="inline-code">model.py:RMSNorm.__init__</code>).</strong> One learnable scale <code class="inline-code">self.weight = ones(d_model)</code>, <code class="inline-code">eps=1e-5</code>, and an <code class="inline-code">impl</code> string (<code class="inline-code">&quot;pytorch&quot;</code> default, <code class="inline-code">&quot;triton&quot;</code> opt-in).</p>
+<p><strong>Forward (<code class="inline-code">model.py:RMSNorm.forward</code>).</strong> The reference path is exactly</p>
+<div class="math-block">$$
+x \odot \frac{1}{\sqrt{\frac{1}{d}\sum_{i=1}^{d} x_i^2 + \epsilon}} \odot w
+$$</div>
+<p>implemented as <code class="inline-code">x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + eps) * weight</code>. When <code class="inline-code">impl == &quot;triton&quot;</code>, the module delegates to <code class="inline-code">kernels/rmsnorm_triton.py:triton_rmsnorm</code>; if triton is unavailable the kernel raises <code class="inline-code">ImportError</code> (and a <code class="inline-code">ValueError</code> if <code class="inline-code">d_model</code> exceeds the kernel's max block size). There is no silent fallback — the trainer (<code class="inline-code">train.py</code>) is responsible for force-restoring <code class="inline-code">rmsnorm_impl</code> to <code class="inline-code">&quot;pytorch&quot;</code> when <code class="inline-code">ENABLE_TRITON_KERNELS != &quot;1&quot;</code> (see AGENTS.md hard rule 7). There is no mean subtraction anywhere: the normalization constant is the RMS of the row, not its standard deviation.</p>
+<h4 id="gqa-with-qk-norm-and-sdpa" class="heading-anchor"><code class="inline-code">GroupedQueryAttention</code> — GQA with QK-norm and SDPA<a href="#gqa-with-qk-norm-and-sdpa" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Purpose.</strong> With 8 query heads and 4 KV heads (<code class="inline-code">n_rep = 8/4 = 2</code>), the KV projections and the KV cache are half the size of full MHA. Theory:</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.</p>
+<p><strong>Constructor (<code class="inline-code">model.py:GroupedQueryAttention.__init__</code>).</strong> Four bias-free <code class="inline-code">nn.Linear</code>s:</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Projection</th><th>Weight shape</th><th>Rows it produces</th></tr></thead><tbody><tr><td><code class="inline-code">q_proj</code></td><td><code class="inline-code">[8·128, 1024] = [1024, 1024]</code></td><td>8 query heads × 128</td></tr><tr><td><code class="inline-code">k_proj</code></td><td><code class="inline-code">[4·128, 1024] = [512, 1024]</code></td><td>4 KV heads × 128</td></tr><tr><td><code class="inline-code">v_proj</code></td><td><code class="inline-code">[4·128, 1024] = [512, 1024]</code></td><td>4 KV heads × 128</td></tr><tr><td><code class="inline-code">out_proj</code></td><td><code class="inline-code">[1024, 8·128] = [1024, 1024]</code></td><td>projects attention output back to d_model</td></tr></tbody></table></div>
+<p>If <code class="inline-code">qknorm=True</code> (the default), <code class="inline-code">q_norm</code> and <code class="inline-code">k_norm</code> are <code class="inline-code">RMSNorm(head_dim=128)</code> — per-head normalization applied <em>after</em> projection and <em>before</em> RoPE (Qwen2/Gemma2 placement; it bounds attention-logit growth late in training). If <code class="inline-code">qknorm=False</code> they become <code class="inline-code">nn.Identity()</code>. <code class="inline-code">self.rope = RoPE(head_dim, max_seq_len, rope_theta)</code>.</p>
+<p><strong>Forward (<code class="inline-code">model.py:GroupedQueryAttention.forward</code>)</strong> — note the signature is <code class="inline-code">forward(self, x)</code> with <strong>no mask parameter</strong>: causality is expressed solely through SDPA's <code class="inline-code">is_causal=True</code> flag.</p>
+<ol class="doc-list">
+<li><code class="inline-code">q = q_proj(x).view(B, S, 8, 128)</code>; <code class="inline-code">k</code>, <code class="inline-code">v</code> likewise with 4 heads. The
+<br> <code class="inline-code">view</code> keeps the token axis second so the subsequent RMSNorm operates on the last axis (<code class="inline-code">head_dim</code>), which is what the per-head norm needs.
+</li>
+<li><code class="inline-code">q = q_norm(q)</code>, <code class="inline-code">k = k_norm(k)</code> — QK-norm here, on <code class="inline-code">[B, S, n_heads, head_dim]</code>.
+</li>
+<li><code class="inline-code">transpose(1, 2)</code> gives <code class="inline-code">[B, 8, S, 128]</code> for Q and <code class="inline-code">[B, 4, S, 128]</code> for K/V.
+</li>
+<li><code class="inline-code">q = rope(q, S)</code>, <code class="inline-code">k = rope(k, S)</code> — position information enters.
+</li>
+<li>GQA expansion: <code class="inline-code">k</code>/<code class="inline-code">v</code> are broadcast <code class="inline-code">expand(B, 4, 2, S, 128).reshape(B, 8, S, 128)</code> —
+<br> a strided-view trick, no memory copy.
+</li>
+<li><code class="inline-code">x = F.scaled_dot_product_attention(q, k, v, is_causal=True)</code> — PyTorch's
+<br> fused SDPA, which dispatches to the Flash Attention 2 kernel on CUDA (O(S) memory instead of an O(S²) attention matrix). The causal flag means token <code class="inline-code">i</code> attends only to <code class="inline-code">0..i</code>; <code class="inline-code">tests/test_model.py::TestGroupedQueryAttention::test_causality</code> enforces this by perturbing the last token and checking earlier outputs are unchanged.
+</li>
+<li><code class="inline-code">x.transpose(1, 2).contiguous().view(B, S, -1)</code> then <code class="inline-code">out_proj(x)</code> →
+<br> <code class="inline-code">[B, S, 1024]</code>.
+</li>
+</ol>
+<h4 id="gated-feed-forward-network" class="heading-anchor"><code class="inline-code">SwiGLUFFN</code> — gated feed-forward network<a href="#gated-feed-forward-network" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Purpose.</strong> The FFN does the per-token nonlinear computation; SwiGLU gates the hidden activation so each token can modulate <em>how much</em> of the up-projected value passes through. Theory:</p>
+<p><a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.</p>
+<p><strong>Constructor (<code class="inline-code">model.py:SwiGLUFFN.__init__</code>).</strong> <code class="inline-code">gate_up_proj</code> is one <code class="inline-code">nn.Linear(d_model, 2·d_ff)</code> — weight <code class="inline-code">[8192, 1024]</code> — fusing what LLaMA calls <code class="inline-code">gate_proj</code> and <code class="inline-code">up_proj</code> into a single matmul (one Tensor-Core-friendly GEMM instead of two). <code class="inline-code">down_proj</code> is <code class="inline-code">nn.Linear(d_ff, d_model)</code> — weight <code class="inline-code">[1024, 4096]</code>.</p>
+<p><strong>Forward (<code class="inline-code">model.py:SwiGLUFFN.forward</code>).</strong></p>
+<div class="math-block">$$
+x \mapsto \text{down\_proj}\big(\text{SiLU}(xW_{\text{gate}}) \odot xW_{\text{up}}\big)
+$$</div>
+<p>With <code class="inline-code">swiglu_impl=&quot;pytorch&quot;</code>: <code class="inline-code">gate, up = gate_up.chunk(2, dim=-1)</code>, then <code class="inline-code">down_proj(F.silu(gate) * up)</code>. With <code class="inline-code">swiglu_impl=&quot;triton&quot;</code>: the module calls <code class="inline-code">kernels/swiglu_triton.py:triton_swiglu(gate_up, d_ff)</code> — one fused elementwise kernel that computes SiLU, gating and splitting in a single launch; triton failure (<code class="inline-code">ImportError</code> when the package is missing, <code class="inline-code">ValueError</code> when <code class="inline-code">d_ff</code> exceeds the kernel's max block size) surfaces as a raised exception, not a silent fallback. The fusion equivalence is tested by <code class="inline-code">tests/test_model.py::TestSwiGLUFFN::test_fused_equals_unfused_reference</code>.</p>
+<h4 id="one-transformer-layer" class="heading-anchor"><code class="inline-code">DecoderBlock</code> — one transformer layer<a href="#one-transformer-layer" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Constructor (<code class="inline-code">model.py:DecoderBlock.__init__</code>).</strong> Wires one <code class="inline-code">GroupedQueryAttention</code>, one <code class="inline-code">SwiGLUFFN</code>, and two d_model-wide <code class="inline-code">RMSNorm</code>s (<code class="inline-code">attention_norm</code>, <code class="inline-code">ffn_norm</code>), threading <code class="inline-code">qknorm</code>, <code class="inline-code">rmsnorm_impl</code>, and <code class="inline-code">swiglu_impl</code> through.</p>
+<p><strong>Forward (<code class="inline-code">model.py:DecoderBlock.forward</code>).</strong> Pre-norm residual layout:</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+x = x + self.attention(self.attention_norm(x))   # attention sub-block
+x = x + self.ffn(self.ffn_norm(x))               # FFN sub-block
+return x</code></pre></div>
+<p>Normalize first, transform, then add back to the unchanged residual stream. The residual path is an identity map, so gradients flow through the stack without vanishing through 16 nonlinearities.</p>
+<h4 id="the-layer-stack" class="heading-anchor"><code class="inline-code">Decoder</code> — the layer stack<a href="#the-layer-stack" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Constructor (<code class="inline-code">model.py:Decoder.__init__</code>).</strong> Holds the <code class="inline-code">nn.ModuleList</code> of 16 <code class="inline-code">DecoderBlock</code>s and the final <code class="inline-code">RMSNorm(d_model, eps=rms_norm_eps)</code>.</p>
+<p><strong>Forward (<code class="inline-code">model.py:Decoder.forward</code>).</strong> Loops the blocks in order, then applies the final norm once:</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+for layer in self.layers:
+    x = layer(x)
+return self.norm(x)</code></pre></div>
+<p>The final norm is what the LM head reads; it is part of <code class="inline-code">Decoder</code> (not of <code class="inline-code">Transformer</code>) because the gradient-checkpointing path in <code class="inline-code">model.py:Transformer.forward</code> interacts with it (see below).</p>
+<h4 id="the-full-model" class="heading-anchor"><code class="inline-code">Transformer</code> — the full model<a href="#the-full-model" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><strong>Constructor (<code class="inline-code">model.py:Transformer.__init__</code>).</strong></p>
+<ul class="doc-list">
+<li><code class="inline-code">input_embedding = nn.Embedding(vocab_size, d_model)</code> — weight <code class="inline-code">[128000, 1024]</code>.
+</li>
+<li>16 <code class="inline-code">DecoderBlock</code>s in a <code class="inline-code">ModuleList</code>, wrapped in a <code class="inline-code">Decoder</code>.
+</li>
+<li><code class="inline-code">output_proj = nn.Linear(d_model, vocab_size)</code> — weight <code class="inline-code">[128000, 1024]</code>,
+<br> <strong>untied</strong>: a separate matrix from the input embedding, so the LM head is a full 131M parameters of its own (no weight tying).
+</li>
+<li><code class="inline-code">gradient_checkpointing</code> is stored as a plain flag. Per the in-code note,
+<br> the enable/disable setters were removed — the flag is fixed at construction time and never toggled at runtime.
+</li>
+<li><code class="inline-code">_init_weights()</code>: every <code class="inline-code">nn.Linear</code> and <code class="inline-code">nn.Embedding</code> weight is drawn
+<br> from <code class="inline-code">normal_(0, 0.02)</code>. RMSNorm scales stay at 1.0; RoPE has no parameters.
+</li>
+</ul>
+<p><strong>Forward (<code class="inline-code">model.py:Transformer.forward</code>).</strong></p>
+<div class="code-wrapper" data-lines="10"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+x = self.input_embedding(x)                       # [B, S] -&gt; [B, S, 1024]
+if self.gradient_checkpointing and self.training:
+    for layer in self.decoder.layers:
+        x = checkpoint(layer, x, use_reentrant=False)
+else:
+    x = self.decoder(x)                           # layers + final norm
+if return_hidden:
+    return x
+return self.output_proj(x)                        # [B, S, 128000]</code></pre></div>
+<ul class="doc-list">
+<li><code class="inline-code">return_hidden=True</code> returns the final hidden states instead of logits —
+<br> this is the training contract: <code class="inline-code">train.py</code> calls <code class="inline-code">model(ids, return_hidden=True)</code> and feeds the hidden states to <code class="inline-code">chunked_head_cross_entropy_with_z</code> (see the chunked-losses section; the loop is documented in
+<br> <a href="../training.html" class="doc-link">training.md</a>).
+</li>
+<li>The gradient-checkpointing branch wraps each layer in
+<br> <code class="inline-code">torch.utils.checkpoint.checkpoint(layer, x, use_reentrant=False)</code> so layer inputs are discarded and recomputed during backward (theory:
+<br> <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>). Two
+<br> subtleties worth knowing:
+</li>
+</ul>
+<ol class="doc-list">
+<li>The branch fires only when <code class="inline-code">self.training</code> is true. In eval mode a
+<br> checkpoint-enabled model takes the <code class="inline-code">else</code> branch and runs normally.
+</li>
+<li>The checkpointed loop applies <code class="inline-code">decoder.norm</code> explicitly after the
+<br> layers (<code class="inline-code">x = self.decoder.norm(x)</code>), so training and eval apply the final RMSNorm identically — a fix for the earlier behavior where the checkpointed branch bypassed it. <code class="inline-code">tests/test_model.py::TestTransformerForward::test_gradient_checkpointing_matches_normal</code> exercises both models in eval mode, where the two paths coincide.
+</li>
+</ol>
+<p><strong>Parameter counting (<code class="inline-code">model.py:Transformer.get_num_params</code>).</strong> Sums <code class="inline-code">p.numel()</code> over all parameters; with <code class="inline-code">non_embedding=True</code> (default) it subtracts both <code class="inline-code">input_embedding.weight.numel()</code> and <code class="inline-code">output_proj.weight.numel()</code>. Buffers (RoPE cos/sin, <code class="inline-code">inv_freq</code>) are not parameters and never counted. The definition is pinned by <code class="inline-code">tests/test_model.py::TestTransformerParamCount::test_get_num_params_definition_mismatch</code>, which asserts <code class="inline-code">get_num_params(non_embedding=True) == total − embedding − head</code>.</p>
+<h3 id="the-chunked-losses-reference-vs-training-path" class="heading-anchor">The Chunked Losses: Reference vs. Training Path<a href="#the-chunked-losses-reference-vs-training-path" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>The vocabulary projection is the memory bottleneck of the whole model. At the training batch of <code class="inline-code">B=96, S=2048</code> there are <span class="math-inline">$N = 96 \times 2048 = 196{,}608$</span> tokens, so a materialized logits tensor would be</p>
+<div class="math-block">$$
+196{,}608 \times 128{,}000 = 25.17 \times 10^9 \text{ elements} = \begin{cases} 50.3 \text{ GB (BF16)} \\ 100.7 \text{ GB (FP32)} \end{cases}
+$$</div>
+<p>which exceeds the A100's 80 GB. Two functions in <code class="inline-code">model.py</code> exist because there are two different problems: <em>where</em> the FP32 loss chain is bounded, and *whether the logits tensor exists at all. Full derivation:</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>.</p>
+<h4 id="the-reference-implementation" class="heading-anchor"><code class="inline-code">chunked_cross_entropy_with_z</code> — the reference implementation<a href="#the-reference-implementation" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Signature (real, from source):</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python">chunked_cross_entropy_with_z(logits, targets, chunk_size=256, ignore_index=-100,
+                             z_loss_weight=1e-4, cross_entropy_impl=&quot;pytorch&quot;)</code></pre></div>
+<p>This function <strong>receives the full logits tensor already materialized</strong> — it is the reference and the numerical ground truth used by the equivalence tests; its docstring explicitly says to prefer the head-chunked variant when the logits themselves would not fit in memory. It chunks along the token axis so the FP32 upcast chain never sees more than <code class="inline-code">chunk_size</code> rows at once. Per chunk (<code class="inline-code">model.py:chunked_cross_entropy_with_z</code> loop):</p>
+<ul class="doc-list">
+<li><code class="inline-code">cl = logits[start:end].float()</code> — one FP32 upcast shared by CE and
+<br> logsumexp (a single precision promotion, not two).
+</li>
+<li><code class="inline-code">mask = ct != ignore_index</code>; ignored positions are excluded from <strong>both</strong>
+<br> the CE mean and the z-loss mean.
+</li>
+<li><code class="inline-code">log_z = logsumexp(cl, -1)</code>; accumulate <code class="inline-code">log_z[mask].pow(2).sum()</code> and the
+<br> mask count — this is the masked z-loss (PaLM/Gemma2 logit-growth penalty).
+</li>
+<li><code class="inline-code">ce = F.cross_entropy(cl, ct, ignore_index=ignore_index, reduction=&#x27;none&#x27;)</code>;
+<br> accumulate <code class="inline-code">ce[mask].sum()</code> and the count.
+</li>
+</ul>
+<p>After the loop:</p>
+<div class="math-block">$$
+\mathcal{L} = \frac{\sum_{\text{valid}} \text{CE}}{\text{count}} + z\_loss\_weight \cdot \frac{\sum_{\text{valid}} \log z^2}{\max(n_z, 1)}
+$$</div>
+<p>with the <code class="inline-code">max(…, 1)</code> guards protecting against an all-ignored batch. <code class="inline-code">cross_entropy_impl=&quot;triton&quot;</code> swaps the whole per-chunk loop for <code class="inline-code">kernels/cross_entropy_triton.py:triton_chunked_cross_entropy_with_z</code> (fused online-softmax kernel; a missing <code class="inline-code">triton</code> package or a vocab that exceeds the kernel's max block size surfaces as a raised <code class="inline-code">ImportError</code>/<code class="inline-code">ValueError</code> — there is no silent PyTorch fallback, per AGENTS.md hard rule 7). Equivalence with <code class="inline-code">F.cross_entropy</code> plus a <code class="inline-code">weight·mean(log_z²)</code> penalty is pinned at 1e-5 by <code class="inline-code">tests/test_model.py::TestChunkedCrossEntropyWithZ::test_matches_ce_plus_zpen_reference</code>, and ignore-index masking by <code class="inline-code">test_z_loss_ignores_ignore_index_positions</code>.</p>
+<h4 id="the-training-path" class="heading-anchor"><code class="inline-code">chunked_head_cross_entropy_with_z</code> — the training path<a href="#the-training-path" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Signature (real, from source):</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+chunked_head_cross_entropy_with_z(hidden, head_weight, targets, chunk_size=256,
+                                  ignore_index=-100, z_loss_weight=1e-4,
+                                  cross_entropy_impl=&quot;pytorch&quot;)</code></pre></div>
+<p>This is what <code class="inline-code">train.py</code> uses for the training, warmup, and validation losses (<code class="inline-code">train.py</code> call sites, with <code class="inline-code">_head_weight(model)</code> resolving the LM head through EMA/compile wrappers). It never materializes the full logits tensor:</p>
+<ol class="doc-list">
+<li>The input is the <strong>hidden states</strong> <code class="inline-code">[196608, 1024]</code> (flattened from
+<br> <code class="inline-code">[96, 2048, 1024]</code> by the caller) plus the head weight <code class="inline-code">[128000, 1024]</code>.
+</li>
+<li>For each <code class="inline-code">chunk_size</code>-row slice it runs
+<br> <code class="inline-code">checkpoint(_chunk, hidden[start:end], head_weight, targets[start:end], use_reentrant=False)</code> where <code class="inline-code">_chunk</code> computes <code class="inline-code">logits = F.linear(hidden_c, w)</code> — the per-chunk LM head — then the same FP32 CE + masked-z chain as the reference above.
+</li>
+<li>Because each chunk runs inside <code class="inline-code">torch.utils.checkpoint</code>, only one chunk's
+<br> logits are alive at a time: <code class="inline-code">[256, 128000]</code> = 65.5 MB BF16 / 131 MB FP32, instead of the 50.3 GB full tensor. With 196,608 tokens the loop runs exactly 768 chunks. This is the ~0.3 GB loss-memory bound the docstring claims (131 MB FP32 chunk × the handful of tensors the checkpoint keeps alive). Gradients flow to both <code class="inline-code">hidden</code> and <code class="inline-code">head_weight</code> — proven by <code class="inline-code">tests/test_model.py::TestChunkedHeadCrossEntropyWithZ::test_gradients_flow_to_hidden_and_head</code> (the head gets a grad, and the <em>embedding</em> gets a grad, which proves flow through the non-leaf hidden tensor).
+</li>
+<li>Results are accumulated as sums (<code class="inline-code">total_ce</code>, <code class="inline-code">total_count</code>, <code class="inline-code">z_accum</code>,
+<br> <code class="inline-code">n_z</code>) and averaged at the end — so the chunked result is <strong>exactly</strong> equal to the dense loss, not an approximation (<code class="inline-code">test_matches_dense_ce_plus_z</code> asserts equality at 1e-5 with <code class="inline-code">z_loss_weight=1e-4</code>).
+</li>
+</ol>
+<p>The Triton variant differs: with <code class="inline-code">cross_entropy_impl=&quot;triton&quot;</code> and triton importable (<code class="inline-code">HAS_TRITON</code>), each chunk returns the fused kernel's scalar loss and the per-chunk losses are <em>averaged</em> — exact only because the chunks are equal-sized (256 divides 196,608). If <code class="inline-code">cross_entropy_impl=&quot;triton&quot;</code> but triton is missing, the function raises <code class="inline-code">ImportError</code> at entry rather than silently falling back (per AGENTS.md hard rule 7). The averaging branch is documented in the function docstring.</p>
+<p><strong>Why two functions?</strong> <code class="inline-code">chunked_cross_entropy_with_z</code> bounds the FP32 loss chain but still requires the caller to own a full logits tensor; it is the reference implementation that the numerical-equivalence tests compare against. <code class="inline-code">chunked_head_cross_entropy_with_z</code> additionally bounds the logits themselves, which is what makes training at batch 96 fit in 80 GB. The CE chunk size is a config knob (<code class="inline-code">config.py:get_config</code> → <code class="inline-code">ce_chunk_size: 256</code>); the <a href="#config-reference-configpyget_config" class="doc-link">Config Reference</a> below documents the knob, <a href="../guides/troubleshooting.html" class="doc-link">troubleshooting.md</a> the OOM symptoms of raising it.</p>
+<h3 id="factory-and-diagnostics" class="heading-anchor"><code class="inline-code">build_transformer</code> — Factory and Diagnostics<a href="#factory-and-diagnostics" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">model.py:build_transformer</code> is a thin, keyword-explicit factory:</p>
+<div class="code-wrapper" data-lines="6"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+build_transformer(vocab_size=128256, d_model=1024, n_layers=16, n_heads=8,
+                  n_kv_heads=4, head_dim=128, d_ff=4096, max_seq_len=2048,
+                  rope_theta=500000.0, rms_norm_eps=1e-5,
+                  gradient_checkpointing=False, qknorm=True,
+                  rmsnorm_impl=&quot;pytorch&quot;, swiglu_impl=&quot;pytorch&quot;) -&gt; Transformer</code></pre></div>
+<p>Note the default <code class="inline-code">vocab_size=128256</code> (the Meta Llama-3 tokenizer vocabulary), while production passes the config value <code class="inline-code">128000</code> from <code class="inline-code">config.py:get_config</code> (see <a href="../training.html" class="doc-link">training.md</a> for the <code class="inline-code">build_transformer</code> call site). After construction it prints the diagnostics that appear in every training log:</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>Total params: 513,840,128 (513.8M)
+Non-embedding params: 251,696,128 (251.7M)</code></pre></div>
+<p>plus <code class="inline-code">Gradient checkpointing: ENABLED</code> when the flag is set, and a <code class="inline-code">Triton kernels active: rmsnorm, swiglu</code> line when either <code class="inline-code">*_impl</code> is <code class="inline-code">&quot;triton&quot;</code>. <code class="inline-code">total</code> is the plain parameter sum; <code class="inline-code">non_embed</code> uses <code class="inline-code">model.get_num_params(non_embedding=True)</code> (both embedding tables subtracted).</p>
+<h3 id="end-to-end-tensor-shape-trace" class="heading-anchor">End-to-End Tensor Shape Trace<a href="#end-to-end-tensor-shape-trace" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>The full data flow, from token ids to scalar loss, at the production shape <code class="inline-code">[96, 2048]</code>:</p>
+<div class="code-wrapper collapsed" data-lines="33"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 33 lines" onclick="toggleCode(this)">expand ▾ · 33 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>ids [96, 2048] int64
+   │
+   ▼
+input_embedding
+   │
+   ▼
+hidden [96, 2048, 1024]
+   │
+   ▼
+grad_ckpt AND training?
+   ├─ yes → checkpoint(DecoderBlock) × 16
+   └─ no  → Decoder: 16 × DecoderBlock → final RMSNorm
+   │
+   ▼
+hidden [96, 2048, 1024]
+   │
+   ▼
+return_hidden?
+   ├─ yes → hidden [96, 2048, 1024] → flatten [196608, 1024]
+   │         │
+   │         ▼
+   │      chunked_head_cross_entropy_with_z × 768 chunks [256, 128000]
+   │         │
+   │         ▼
+   │      scalar loss (FP32)
+   │
+   └─ no  → output_proj → logits [96, 2048, 128000]
+              │
+              ▼
+           chunked_cross_entropy_with_z (reference / eval)
+              │
+              ▼
+           scalar loss (FP32)</code></pre></div>
+<p>One decoder block in detail (per-token shapes after <code class="inline-code">B=96, S=2048</code>):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Step</th><th>Operation</th><th>Output shape</th></tr></thead><tbody><tr><td>0</td><td>input token ids</td><td><code class="inline-code">[96, 2048]</code> int64</td></tr><tr><td>1</td><td><code class="inline-code">input_embedding</code> (<code class="inline-code">model.py:Transformer.forward</code>)</td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>2</td><td><code class="inline-code">attention_norm</code> (RMSNorm)</td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>3</td><td><code class="inline-code">q_proj</code> / <code class="inline-code">k_proj</code> / <code class="inline-code">v_proj</code> then <code class="inline-code">view</code></td><td>Q <code class="inline-code">[96, 2048, 8, 128]</code>, K/V <code class="inline-code">[96, 2048, 4, 128]</code></td></tr><tr><td>4</td><td>QK-norm <code class="inline-code">q_norm</code> / <code class="inline-code">k_norm</code> (per-head)</td><td>same shapes as step 3</td></tr><tr><td>5</td><td><code class="inline-code">transpose(1, 2)</code> + RoPE</td><td>Q <code class="inline-code">[96, 8, 2048, 128]</code>, K <code class="inline-code">[96, 4, 2048, 128]</code></td></tr><tr><td>6</td><td>GQA expand (<code class="inline-code">n_rep=2</code>)</td><td>K/V <code class="inline-code">[96, 8, 2048, 128]</code> (view, no copy)</td></tr><tr><td>7</td><td><code class="inline-code">F.scaled_dot_product_attention(..., is_causal=True)</code></td><td><code class="inline-code">[96, 8, 2048, 128]</code></td></tr><tr><td>8</td><td><code class="inline-code">transpose</code> + <code class="inline-code">contiguous().view</code> + <code class="inline-code">out_proj</code></td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>9</td><td>residual add</td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>10</td><td><code class="inline-code">ffn_norm</code> (RMSNorm)</td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>11</td><td><code class="inline-code">gate_up_proj</code></td><td><code class="inline-code">[96, 2048, 8192]</code></td></tr><tr><td>12</td><td><code class="inline-code">silu(gate) * up</code> (chunk to 2×4096, gate, multiply)</td><td><code class="inline-code">[96, 2048, 4096]</code></td></tr><tr><td>13</td><td><code class="inline-code">down_proj</code> + residual add</td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>14</td><td>final <code class="inline-code">decoder.norm</code></td><td><code class="inline-code">[96, 2048, 1024]</code></td></tr><tr><td>15</td><td><code class="inline-code">output_proj</code> (full path only)</td><td><code class="inline-code">[96, 2048, 128000]</code></td></tr><tr><td>16</td><td>loss (training path)</td><td>scalar FP32</td></tr></tbody></table></div>
+<p>Dtype note: the suite runs FP32 on CPU and BF16 on GPU (the conftest <code class="inline-code">dtype</code> fixture); in training, autocast downcasts matmuls to BF16 on CUDA while the loss chain upcasts per chunk to FP32 (see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>).</p>
+<h3 id="parameter-budget" class="heading-anchor">Parameter Budget<a href="#parameter-budget" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Derived at the production config (<code class="inline-code">config.py:get_config</code>: <code class="inline-code">vocab_size=128000</code>, <code class="inline-code">d_model=1024</code>, <code class="inline-code">n_heads=8</code>, <code class="inline-code">n_kv_heads=4</code>, <code class="inline-code">head_dim=128</code>, <code class="inline-code">d_ff=4096</code>, <code class="inline-code">n_layers=16</code>). Every row is <code class="inline-code">numel</code> arithmetic; RoPE contributes 0 (buffers).</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Component</th><th>Formula</th><th>Params</th></tr></thead><tbody><tr><td><code class="inline-code">input_embedding</code></td><td>128,000 × 1024</td><td>131,072,000</td></tr><tr><td>Per layer — attention: <code class="inline-code">q_proj</code></td><td>1024 × (8·128) = 1024×1024</td><td>1,048,576</td></tr><tr><td>Per layer — <code class="inline-code">k_proj</code></td><td>1024 × (4·128) = 1024×512</td><td>524,288</td></tr><tr><td>Per layer — <code class="inline-code">v_proj</code></td><td>1024 × 512</td><td>524,288</td></tr><tr><td>Per layer — <code class="inline-code">out_proj</code></td><td>(8·128) × 1024</td><td>1,048,576</td></tr><tr><td>Per layer — <code class="inline-code">q_norm</code> + <code class="inline-code">k_norm</code></td><td>128 + 128</td><td>256</td></tr><tr><td>Per layer — attention subtotal</td><td></td><td><strong>3,145,984</strong></td></tr><tr><td>Per layer — <code class="inline-code">gate_up_proj</code></td><td>1024 × (2·4096)</td><td>8,388,608</td></tr><tr><td>Per layer — <code class="inline-code">down_proj</code></td><td>4096 × 1024</td><td>4,194,304</td></tr><tr><td>Per layer — <code class="inline-code">attention_norm</code> + <code class="inline-code">ffn_norm</code></td><td>1024 + 1024</td><td>2,048</td></tr><tr><td>Per layer — FFN subtotal</td><td></td><td><strong>12,584,960</strong></td></tr><tr><td>Per layer — block total</td><td>3,145,984 + 12,584,960</td><td><strong>15,730,944</strong></td></tr><tr><td>16 blocks</td><td>× 16</td><td>251,695,104</td></tr><tr><td>Final <code class="inline-code">decoder.norm</code></td><td>1024</td><td>1,024</td></tr><tr><td><strong>Non-embedding total</strong></td><td><code class="inline-code">get_num_params(non_embedding=True)</code></td><td><strong>251,696,128 (251.7M)</strong></td></tr><tr><td><code class="inline-code">output_proj</code> (untied head)</td><td>1024 × 128,000</td><td>131,072,000</td></tr><tr><td><strong>Grand total</strong></td><td>131,072,000 × 2 + 251,696,128</td><td><strong>513,840,128 (513.8M)</strong></td></tr></tbody></table></div>
+<p>Two numbers to keep straight: the exact derived totals above, and the README's headline approximations <code class="inline-code">~515M</code> / <code class="inline-code">~252M</code>, which <code class="inline-code">tests/test_model.py::TestTransformerParamCount::test_full_model_total_params</code> and <code class="inline-code">test_get_num_params_definition_mismatch</code> check within a 1% tolerance — the README rounds the verified 513,840,128 total and 251,696,128 non-embedding counts to two significant figures. The budget structure is worth internalizing: embeddings + untied head are 131M × 2 = 262M (51% of the model), the 16 blocks 251.7M, of which the FFN (<code class="inline-code">gate_up_proj</code> + <code class="inline-code">down_proj</code>) is 12.58M per block — 80% of each block's weights. QK-norm costs 256 params per layer (16 × 128 × 2), pinned by <code class="inline-code">tests/test_model.py::TestQKNorm::test_param_count_increases_when_enabled</code>.</p>
+<h3 id="design-decisions-and-pitfalls" class="heading-anchor">Design Decisions and Pitfalls<a href="#design-decisions-and-pitfalls" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><strong>Untied embeddings.</strong> The input embedding and the LM head are separate
+<br> <code class="inline-code">[128000, 1024]</code> matrices. Weight tying would save 131M params and is a common small-model trick, but this model deliberately does not do it (config has no <code class="inline-code">tie_embeddings</code> key) — the 513.8M figure includes both.
+</li>
+<li><strong>No mask parameter in attention.</strong> <code class="inline-code">model.py:GroupedQueryAttention.forward</code>
+<br> takes only <code class="inline-code">x</code>; causality comes from <code class="inline-code">is_causal=True</code> inside SDPA. A stale <code class="inline-code">mask=None</code> argument in earlier walkthroughs does not exist in the current code.
+</li>
+<li><strong>Gradient checkpointing applies the final norm explicitly.</strong> The
+<br> checkpointed branch of <code class="inline-code">model.py:Transformer.forward</code> calls <code class="inline-code">self.decoder.norm(x)</code> after the layer loop, matching the non-checkpointed path. (Historical note: an earlier version of the loop bypassed the final RMSNorm in training; the equivalence test now covers both modes.)
+</li>
+<li><strong>Chunk-averaging in the Triton head loss.</strong> The triton variant of
+<br> <code class="inline-code">chunked_head_cross_entropy_with_z</code> averages per-chunk losses; this equals the dense loss only because 256 divides 196,608 evenly. A non-divisor <code class="inline-code">ce_chunk_size</code> would introduce a small bias in the triton path (the PyTorch path stays exact via sum/count accumulation).
+</li>
+<li><strong>Ignore-index semantics.</strong> Training uses <code class="inline-code">ignore_index=-100</code> (no padding;
+<br> EOS separators must stay learnable) and both losses exclude ignored tokens from CE <em>and</em> z-loss means — z-loss masking is pinned by <code class="inline-code">tests/test_model.py::TestChunkedCrossEntropyWithZ::test_z_loss_ignores_ignore_index_positions</code>.
+</li>
+<li><strong>Triton is opt-in with silent-ish fallback.</strong> Each kernel path guards on
+<br> <code class="inline-code">ImportError</code>/<code class="inline-code">ValueError</code>; RMSNorm and SwiGLU warn once per module, the CE function prints per call. On Mac/CPU nothing breaks, it just runs eager PyTorch. See <a href="data-reference.html" class="doc-link">data-reference.md</a> and
+<br> <a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a>.
+</li>
+</ul>
+<h2 id="rope-implementation-deep-dive" class="heading-anchor">RoPE Implementation Deep Dive<a href="#rope-implementation-deep-dive" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>The reference companion to the theory doc</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>. This</p>
+<p>section walks the exact <code class="inline-code">RoPE</code> implementation in <code class="inline-code">model.py:RoPE</code>, derives every number at this project's scale (head_dim 128, max_seq_len 2048, batch 96, 16 layers), and explains the design decisions around it. The general theory — why positions at all, the three position-encoding families, NTK/YaRN extensions — lives in the theory doc; this section cross-links instead of duplicating.</p>
+<h3 id="why-position-information-is-needed" class="heading-anchor">Why Position Information is Needed<a href="#why-position-information-is-needed" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>A vanilla attention layer computes</p>
+<div class="math-block">$$
+\text{Attention}(Q, K, V) = \operatorname{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V .
+$$</div>
+<p>The dot product <span class="math-inline">$q \cdot k$</span> depends only on the <strong>content</strong> of the two vectors, not on <em>where</em> they appear in the sequence. Permute the input sequence and the outputs permute identically: the layer cannot tell <code class="inline-code">&quot;the cat sat&quot;</code> from <code class="inline-code">&quot;sat cat the&quot;</code>. Language is order-dependent — "the dog bit the man" and "the man bit the dog" share every word — so the model must be told where each token sits.</p>
+<p>Three things matter:</p>
+<ul class="doc-list">
+<li><strong>Order</strong> — which token came first.
+</li>
+<li><strong>Distance</strong> — how far apart two tokens are.
+</li>
+<li><strong>Relative position</strong> — "the verb is two words after the subject", not
+<br> "the verb is at position 17".
+</li>
+</ul>
+<p>Position encodings inject this information. The full landscape of how to do that — absolute additive (sinusoidal/learned), relative additive (T5/ALiBi), and rotary — is covered in <a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>; here we implement the rotary family.</p>
+<h3 id="what-rope-does-intuitively" class="heading-anchor">What RoPE Does, Intuitively<a href="#what-rope-does-intuitively" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Picture each head's query/key vector of length <code class="inline-code">head_dim</code> as a sequence of <code class="inline-code">head_dim / 2</code> <strong>independent 2-D points</strong>:</p>
+<div class="code-wrapper" data-lines="3"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>x = [x0, x1, x2, x3, x4, x5, ..., x_{D-2}, x_{D-1}]
+      |--|  |--|  |--|        |------|
+     plane0 plane1 plane2     plane D/2-1</code></pre></div>
+<p>RoPE rotates each of those 2-D points by an angle proportional to the token's absolute position <span class="math-inline">$m$</span>:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>RoPE(x, m) = [ R(m·ω0)·[x0, x1],  R(m·ω1)·[x2, x3],  ...,  R(m·ω_{D/2-1})·[x_{D-2}, x_{D-1}] ]</code></pre></div>
+<p>where <span class="math-inline">$R(\phi) = \begin{bmatrix} \cos\phi &amp; -\sin\phi \\ \sin\phi &amp; \cos\phi \end{bmatrix}$</span> is the standard 2-D rotation matrix.</p>
+<p>Different planes spin at <strong>different frequencies</strong> <span class="math-inline">$\omega_i$</span>, so the rotated vector carries a multi-scale "fingerprint" of position: fast planes encode fine-grained nearby-token offsets, slow planes encode long-range structure.</p>
+<div class="code-wrapper" data-lines="7"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>token at position m
+   │
+   ├── plane 0 — fast       ω0 = 1 rad/token
+   ├── plane 1              ω1 ≈ 0.815 rad/token
+   ├── plane 2              ω2 ≈ 0.664 rad/token
+   ├── ...
+   └── plane D/2−1 — slow   ω_{D/2−1} ≈ 2.5e-6 rad/token</code></pre></div>
+<p>For <code class="inline-code">head_dim = 128</code> the spectrum spans from 1 radian per token (a full turn every <span class="math-inline">$2\pi \approx 6.3$</span> tokens) down to <span class="math-inline">$2.46\times 10^{-6}$</span> radians per token (a full turn every ~2.56M tokens) — roughly <strong>six orders of magnitude</strong> of timescales.</p>
+<h3 id="the-mathematical-foundation" class="heading-anchor">The Mathematical Foundation<a href="#the-mathematical-foundation" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="the-2-d-rotation" class="heading-anchor">The 2-D rotation<a href="#the-2-d-rotation" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>For a single 2-D point <span class="math-inline">$(x_{2i},\, x_{2i+1})$</span> at position <span class="math-inline">$m$</span>, RoPE applies:</p>
+<div class="math-block">$$
+\begin{bmatrix} x'_{2i} \\ x'_{2i+1} \end{bmatrix} =
+\begin{bmatrix} \cos(m\,\omega_i) &amp; -\sin(m\,\omega_i) \\ \sin(m\,\omega_i) &amp; \cos(m\,\omega_i) \end{bmatrix}
+\begin{bmatrix} x_{2i} \\ x_{2i+1} \end{bmatrix}
+$$</div>
+<p>i.e. <span class="math-inline">$x'_{2i} = x_{2i}\cos\phi_i - x_{2i+1}\sin\phi_i$</span> and <span class="math-inline">$x'_{2i+1} = x_{2i}\sin\phi_i + x_{2i+1}\cos\phi_i$</span> with <span class="math-inline">$\phi_i = m\,\omega_i$</span>. This is exactly the arithmetic in <code class="inline-code">model.py:RoPE.forward</code>:</p>
+<div class="code-wrapper" data-lines="5"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+x1, x2 = x[..., ::2], x[..., 1::2]                      # x1 = even features, x2 = odd features
+rotated = torch.stack([x1 * cos - x2 * sin,             # x&#x27;_{2i}   = x_{2i} cos - x_{2i+1} sin
+                       x1 * sin + x2 * cos], dim=-1)    # x&#x27;_{2i+1} = x_{2i} sin + x_{2i+1} cos
+return rotated.flatten(-2)</code></pre></div>
+<h4 id="inverse-frequencies" class="heading-anchor">Inverse frequencies<a href="#inverse-frequencies" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The frequencies <span class="math-inline">$\omega_i$</span> follow a geometric schedule over the head:</p>
+<div class="math-block">$$
+\omega_i = \theta_{\text{base}}^{-2i / \text{head\_dim}}, \qquad i = 0, 1, \dots, \tfrac{\text{head\_dim}}{2}-1
+$$</div>
+<p><code class="inline-code">model.py:RoPE.__init__</code> builds the inverse frequencies in one line:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python">inv_freq = 1.0 / (theta ** (torch.arange(0, head_dim, 2).float() / head_dim))</code></pre></div>
+<p>Unpacking for <code class="inline-code">head_dim = D</code>:</p>
+<ul class="doc-list">
+<li><code class="inline-code">torch.arange(0, D, 2).float()</code> → <code class="inline-code">[0, 2, 4, ..., D-2]</code> (shape <code class="inline-code">[D/2]</code>)
+</li>
+<li><code class="inline-code">/ D</code> → <code class="inline-code">[0, 2/D, 4/D, ..., (D-2)/D]</code>
+</li>
+<li><code class="inline-code">theta ** (...)</code> → <code class="inline-code">[θ^0, θ^{2/D}, θ^{4/D}, ..., θ^{(D-2)/D}]</code>
+</li>
+<li><code class="inline-code">1.0 / (...)</code> → <code class="inline-code">[θ^0, θ^{-2/D}, θ^{-4/D}, ..., θ^{-(D-2)/D}]</code>
+</li>
+</ul>
+<p>So <code class="inline-code">inv_freq[i] = θ^{-2i/D} = ω_i</code>, exactly the schedule above. Note these are <strong>frequencies</strong> (radians per token position), not wavelengths; a smaller value means a slower spin. Because the exponent <code class="inline-code">2i/D</code> increases with <code class="inline-code">i</code>, <code class="inline-code">inv_freq</code> is strictly decreasing — <code class="inline-code">tests/test_model.py::TestRoPE.test_inv_freq_monotonic</code> asserts exactly that (<code class="inline-code">inv_freq[:-1] &gt; inv_freq[1:]</code> elementwise).</p>
+<h4 id="the-angle-matrix" class="heading-anchor">The angle matrix<a href="#the-angle-matrix" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The per-plane angle at position <span class="math-inline">$m$</span> is <span class="math-inline">$m \cdot \omega_i$</span>, which is one row of an <strong>outer product</strong> between the position vector and the inverse frequencies:</p>
+<div class="code-wrapper" data-lines="5"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>            ω0         ω1        ...    ω_{D/2-1}
+m=0    [    0          0         ...       0       ]
+m=1    [   ω0         ω1         ...    ω_{D/2-1}  ]
+m=2    [  2ω0        2ω1         ...   2ω_{D/2-1}  ]
+...</code></pre></div>
+<p><code class="inline-code">model.py:RoPE.__init__</code> materializes this matrix for every position up to <code class="inline-code">max_seq_len</code>:</p>
+<div class="code-wrapper" data-lines="5"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+t = torch.arange(max_seq_len).float()        # positions [0, 1, ..., max_seq_len-1]
+freqs = torch.outer(t, inv_freq)             # [max_seq_len, D/2]; freqs[m, i] = m * ω_i
+self.register_buffer(&#x27;cos_cached&#x27;, freqs.cos().unsqueeze(0).unsqueeze(0))
+self.register_buffer(&#x27;sin_cached&#x27;, freqs.sin().unsqueeze(0).unsqueeze(0))</code></pre></div>
+<h4 id="why" class="heading-anchor">Why <code class="inline-code">unsqueeze(0).unsqueeze(0)</code>?<a href="#why" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><code class="inline-code">freqs.cos()</code> has shape <code class="inline-code">[S, D/2]</code> where <code class="inline-code">S = max_seq_len</code>. The two unsqueezes push it to <code class="inline-code">[1, 1, S, D/2]</code> so it broadcasts against an input of shape <code class="inline-code">[B, H, S, D/2]</code> (batch, head). The leading singleton dims align the cache with the <code class="inline-code">[B, H, S, D]</code> layout that attention uses after the transpose in <code class="inline-code">model.py:GroupedQueryAttention.forward</code>.</p>
+<h3 id="the-relative-position-property-the-big-payoff" class="heading-anchor">The Relative-Position Property (The Big Payoff)<a href="#the-relative-position-property-the-big-payoff" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>The reason to build all this machinery is one identity. Let <span class="math-inline">$R(\phi)$</span> be the 2-D rotation and <span class="math-inline">$q_i, k_i$</span> the <span class="math-inline">$i$</span>-th 2-D block of <span class="math-inline">$q, k$</span>. The attention score between position <span class="math-inline">$m$</span> and position <span class="math-inline">$n$</span> is</p>
+<div class="math-block">$$
+\langle \mathrm{RoPE}(q, m),\, \mathrm{RoPE}(k, n) \rangle
+= \sum_i \langle R(m\,\omega_i)\, q_i,\; R(n\,\omega_i)\, k_i \rangle
+= \sum_i \langle q_i,\; R((n - m)\,\omega_i)\, k_i \rangle .
+$$</div>
+<p>The second equality uses two facts about rotation matrices:</p>
+<ul class="doc-list">
+<li><span class="math-inline">$R(\alpha)^\top = R(-\alpha)$</span> (rotations are orthogonal),
+</li>
+<li><span class="math-inline">$R(-\alpha)\,R(\beta) = R(\beta - \alpha)$</span> (rotations compose by angle
+<br> addition).
+</li>
+</ul>
+<p>The absolute positions <span class="math-inline">$m$</span> and <span class="math-inline">$n$</span> survive only through their <strong>difference</strong> <span class="math-inline">$n - m$</span>. The score depends on the relative offset alone:</p>
+<div class="math-block">$$
+\langle \mathrm{RoPE}(q,m), \mathrm{RoPE}(k,n) \rangle = g(q, k, m - n) .
+$$</div>
+<p><strong>Consequence:</strong> the model has no way to distinguish "token A is at position 7" from "token A is at position 107, exactly 100 tokens after B at position 7" — the attention score is identical in both cases. That is precisely the desired semantics: attention should be a function of <strong>content</strong> plus <strong>relative distance</strong>, not of absolute location.</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>RoPE(q, m) ──► ⟨ · , · ⟩ ──► score depends only on m − n
+RoPE(k, n) ──►</code></pre></div>
+<p>The test <code class="inline-code">tests/test_model.py::TestRoPE.test_relative_position_property</code> checks a degenerate instance of this: the inner product of a fixed pair of orthogonal unit vectors placed at offsets <code class="inline-code">(0, 0)</code> and <code class="inline-code">(5, 5)</code> must be identical (both equal the unrotated inner product, since the rotation is applied to both arguments). A stronger, offset-varying version — that <code class="inline-code">⟨RoPE(q, 0), RoPE(k, d)⟩</code> equals <code class="inline-code">⟨RoPE(q, 5), RoPE(k, 5+d)⟩</code> for any content <code class="inline-code">q, k</code> — follows from the same algebra; the orthogonality of every plane is asserted directly by <code class="inline-code">tests/test_model.py::TestRoPE.test_rotation_is_orthogonal</code>.</p>
+<h3 id="frequency-schedule--why" class="heading-anchor">Frequency Schedule — Why <code class="inline-code">theta = 500000</code><a href="#frequency-schedule--why" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">theta</code> is the <strong>base</strong> of the geometric progression of frequencies: <span class="math-inline">$\omega_i = \theta^{-2i/D}$</span>. It is the single most load-bearing RoPE hyperparameter in this repo — <code class="inline-code">AGENTS.md</code> rule 5 states it as a hard rule: <em>RoPE θ=500K is load-bearing for long-context extrapolation; reducing it to 10K cuts context quality dramatically.</em> The value flows from <code class="inline-code">config.py:get_config</code> (<code class="inline-code">&#x27;rope_theta&#x27;: 500000.0</code>) through <code class="inline-code">model.py:build_transformer</code> into every <code class="inline-code">GroupedQueryAttention</code>'s <code class="inline-code">model.py:GroupedQueryAttention.__init__</code>, which constructs the shared <code class="inline-code">RoPE(head_dim, max_seq_len, rope_theta)</code>.</p>
+<h4 id="what-it-controls" class="heading-anchor">What it controls<a href="#what-it-controls" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>For a fixed plane index <span class="math-inline">$i$</span>, raising the base <span class="math-inline">$\theta$</span> lowers <span class="math-inline">$\omega_i$</span>, which <strong>lengthens the wavelength</strong> <span class="math-inline">$2\pi / \omega_i$</span>. A larger base pushes every plane's turning point further out, so position information stays unambiguous over longer distances. LLaMA-3 chose 500,000 vs LLaMA-2's 10,000 — a 50× jump.</p>
+<h4 id="the-spectrum-at-this-projects-scale-head_dim-128-theta-500000" class="heading-anchor">The spectrum at this project's scale (head_dim 128, theta 500000)<a href="#the-spectrum-at-this-projects-scale-head_dim-128-theta-500000" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Derived from <code class="inline-code">inv_freq[i] = 500000^(-2i/128)</code>, with wavelength <span class="math-inline">$\lambda_i = 2\pi / \omega_i$</span> and rotation over the training context <span class="math-inline">$S = 2048$</span> (i.e. <span class="math-inline">$2048 \cdot \omega_i$</span> radians):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Plane <span class="math-inline">$i$</span></th><th>Features <span class="math-inline">$(2i, 2i+1)$</span></th><th><span class="math-inline">$\omega_i$</span> (rad/token)</th><th>Wavelength (tokens)</th><th>Rotation over 2048-token context</th></tr></thead><tbody><tr><td>0</td><td>(0, 1)</td><td>1.000</td><td>6.3</td><td>2048 rad ≈ <strong>326 turns</strong></td></tr><tr><td>1</td><td>(2, 3)</td><td>0.815</td><td>7.7</td><td>1668 rad ≈ 265 turns</td></tr><tr><td>16</td><td>(32, 33)</td><td>0.0376</td><td>167</td><td>77.0 rad ≈ 12.3 turns</td></tr><tr><td>32</td><td>(64, 65)</td><td>1.414e-3</td><td>4,443</td><td>2.90 rad ≈ 166°</td></tr><tr><td>38</td><td>(76, 77)</td><td>4.133e-4</td><td>15,204</td><td>0.85 rad ≈ 48°</td></tr><tr><td>63</td><td>(126, 127)</td><td>2.455e-6</td><td>2,559,196</td><td>5.0e-3 rad ≈ <strong>0.29°</strong></td></tr></tbody></table></div>
+<p>Derived facts worth internalizing:</p>
+<ul class="doc-list">
+<li>The <strong>fastest</strong> plane (index 0, <span class="math-inline">$\omega_0 = 1$</span>) turns 326 full rotations
+<br> over the training context and rotates a full radian (~57°) per token position — adjacent tokens are maximally distinguishable in this plane.
+</li>
+<li>The <strong>slowest</strong> plane (index 63, <span class="math-inline">$\omega_{63} = 2.455\times10^{-6}$</span>)
+<br> rotates only <strong>0.29 degrees</strong> over the entire 2048-token training context. It is effectively position-invariant during training — the headroom is what makes long-context extrapolation work. Over a 128K-token context it has still only turned 18.4°, less than a quarter turn, so no aliasing.
+</li>
+<li>Counting planes that rotate at least 1 radian over the training context:
+<br> <span class="math-inline">$\omega_i \ge 1/2048 \iff i \le \ln(2048)/(2\ln\theta \cdot 128^{-1}) \approx 37.2$</span>, so planes 0–37 are informative within training while <strong>26 of 64 planes (41%)</strong> barely move at 2048 tokens. This is by design: those planes are reserved for longer contexts.
+</li>
+<li>Plane 32 has wavelength 4,443 tokens ≈ 2.2× the training context — the
+<br> first plane whose full turn lands just outside what training ever saw.
+</li>
+</ul>
+<p>For comparison, with LLaMA-2's <span class="math-inline">$\theta = 10{,}000$</span> the slowest wavelength is <span class="math-inline">$2\pi \cdot 10{,}000^{126/128} \approx 54{,}410$</span> tokens — 47× shorter than 2.56M — which is why the 50× base jump buys LLaMA-3 its long-context capability. Full derivation and the NTK/YaRN extension landscape live in</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.</p>
+<h3 id="implementation-walkthrough" class="heading-anchor">Implementation Walkthrough<a href="#implementation-walkthrough" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">model.py:RoPE</code> is 17 lines and every one of them is doing real work. The full class, verbatim and runnable:</p>
+<div class="code-wrapper collapsed" data-lines="22"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 22 lines" onclick="toggleCode(this)">expand ▾ · 22 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+import torch
+import torch.nn as nn
+
+
+class RoPE(nn.Module):
+    &quot;&quot;&quot;Rotary Position Embeddings with precomputed cos/sin buffers.&quot;&quot;&quot;
+    def __init__(self, head_dim: int, max_seq_len: int, theta: float = 500000.0):
+        super().__init__()
+        inv_freq = 1.0 / (theta ** (torch.arange(0, head_dim, 2).float() / head_dim))
+        self.register_buffer(&#x27;inv_freq&#x27;, inv_freq)
+        t = torch.arange(max_seq_len).float()
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer(&#x27;cos_cached&#x27;, freqs.cos().unsqueeze(0).unsqueeze(0))
+        self.register_buffer(&#x27;sin_cached&#x27;, freqs.sin().unsqueeze(0).unsqueeze(0))
+
+    def forward(self, x, seq_len: int):
+        cos = self.cos_cached[:, :, :seq_len, :]
+        sin = self.sin_cached[:, :, :seq_len, :]
+        x1, x2 = x[..., ::2], x[..., 1::2]
+        rotated = torch.stack([x1 * cos - x2 * sin, x1 * sin + x2 * cos], dim=-1)
+        return rotated.flatten(-2)</code></pre></div>
+<h4 id="construction" class="heading-anchor">Construction (<code class="inline-code">model.py:RoPE.__init__</code>)<a href="#construction" class="anchor-link" aria-label="Link to section">#</a></h4>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Step</th><th>Code</th><th>Output</th></tr></thead><tbody><tr><td>1</td><td><code class="inline-code">inv_freq = 1.0 / (theta ** (torch.arange(0, head_dim, 2).float() / head_dim))</code></td><td><code class="inline-code">[D/2]</code> float32, decreasing geometric schedule</td></tr><tr><td>2</td><td><code class="inline-code">self.register_buffer(&#x27;inv_freq&#x27;, inv_freq)</code></td><td>non-learnable buffer, follows device + state_dict</td></tr><tr><td>3</td><td><code class="inline-code">t = torch.arange(max_seq_len).float()</code></td><td><code class="inline-code">[max_seq_len]</code> positions</td></tr><tr><td>4</td><td><code class="inline-code">freqs = torch.outer(t, inv_freq)</code></td><td><code class="inline-code">[max_seq_len, D/2]</code> angle matrix, <code class="inline-code">freqs[m, i] = m·ω_i</code></td></tr><tr><td>5</td><td><code class="inline-code">freqs.cos().unsqueeze(0).unsqueeze(0)</code> (and <code class="inline-code">.sin()</code>)</td><td><code class="inline-code">[1, 1, max_seq_len, D/2]</code> each, registered as buffers</td></tr></tbody></table></div>
+<h4 id="forward" class="heading-anchor">Forward (<code class="inline-code">model.py:RoPE.forward</code>)<a href="#forward" class="anchor-link" aria-label="Link to section">#</a></h4>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Step</th><th>Code</th><th>Output</th></tr></thead><tbody><tr><td>1</td><td><code class="inline-code">cos = self.cos_cached[:, :, :seq_len, :]</code> (and <code class="inline-code">sin</code>)</td><td><code class="inline-code">[1, 1, S, D/2]</code> view, sliced to the actual sequence length</td></tr><tr><td>2</td><td><code class="inline-code">x1, x2 = x[..., ::2], x[..., 1::2]</code></td><td>two <code class="inline-code">[B, H, S, D/2]</code> strided views (even / odd features)</td></tr><tr><td>3</td><td><code class="inline-code">torch.stack([x1*cos - x2*sin, x1*sin + x2*cos], dim=-1)</code></td><td><code class="inline-code">[B, H, S, D/2, 2]</code> — the rotation, all planes in parallel</td></tr><tr><td>4</td><td><code class="inline-code">rotated.flatten(-2)</code></td><td><code class="inline-code">[B, H, S, D]</code> — interleaved back to the original layout</td></tr></tbody></table></div>
+<h4 id="where-the-caller-supplies" class="heading-anchor">Where the caller supplies <code class="inline-code">seq_len</code><a href="#where-the-caller-supplies" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The <code class="inline-code">seq_len</code> argument is the <strong>actual</strong> input length, not <code class="inline-code">max_seq_len</code>: <code class="inline-code">model.py:GroupedQueryAttention.forward</code> unpacks <code class="inline-code">B, S, _ = x.shape</code> from the hidden state and calls <code class="inline-code">self.rope(q, S)</code> and <code class="inline-code">self.rope(k, S)</code>. In training <code class="inline-code">S == 2048 == max_seq_len</code>, so the slice in step 1 is a full-tensor view (a no-op); for shorter sequences (validation prompts, generation) only the first <code class="inline-code">S</code> cache rows are read. Slicing a tensor produces a view, so this costs no copy.</p>
+<h4 id="placement-in-the-attention-pipeline" class="heading-anchor">Placement in the attention pipeline<a href="#placement-in-the-attention-pipeline" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Inside <code class="inline-code">model.py:GroupedQueryAttention.forward</code>, the order is:</p>
+<ol class="doc-list">
+<li><code class="inline-code">q_proj</code>, <code class="inline-code">k_proj</code>, <code class="inline-code">v_proj</code> → <code class="inline-code">[B, S, n_heads*head_dim]</code> etc.
+</li>
+<li><code class="inline-code">view</code> into <code class="inline-code">[B, S, n_heads, head_dim]</code> (KV heads use <code class="inline-code">n_kv_heads</code>).
+</li>
+<li>Per-head QK-norm <code class="inline-code">q_norm</code> / <code class="inline-code">k_norm</code> (RMSNorm over <code class="inline-code">head_dim</code>) —
+<br> <strong>before</strong> the transpose, so the norm sees <code class="inline-code">head_dim</code> as the last axis.
+</li>
+<li><code class="inline-code">transpose(1, 2)</code> → <code class="inline-code">[B, n_heads, S, head_dim]</code>.
+</li>
+<li><code class="inline-code">q = self.rope(q, S)</code>, <code class="inline-code">k = self.rope(k, S)</code> — <strong>V is not rotated</strong>.
+</li>
+<li>GQA replication (<code class="inline-code">expand</code> + <code class="inline-code">reshape</code>) for <code class="inline-code">n_rep = n_heads // n_kv_heads</code>.
+</li>
+<li><code class="inline-code">F.scaled_dot_product_attention(q, k, v, is_causal=True)</code>.
+</li>
+</ol>
+<h3 id="tensor-shape-trace" class="heading-anchor">Tensor Shape Trace<a href="#tensor-shape-trace" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Concrete run with <code class="inline-code">head_dim = 8</code>, <code class="inline-code">max_seq_len = 5</code>, <code class="inline-code">batch = 2</code>, <code class="inline-code">heads = 3</code>, <code class="inline-code">seq_len = 4</code> (these are the shapes the CPU tests exercise via <code class="inline-code">tests/test_model.py::TestRoPE.test_buffer_shapes</code> and <code class="inline-code">test_rotation_is_orthogonal</code>, scaled up):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Step</th><th>Tensor</th><th>Shape</th></tr></thead><tbody><tr><td>1</td><td><code class="inline-code">inv_freq</code> (after construction)</td><td><code class="inline-code">[4]</code></td></tr><tr><td>2</td><td><code class="inline-code">t</code> (after construction)</td><td><code class="inline-code">[5]</code></td></tr><tr><td>3</td><td><code class="inline-code">freqs</code> (after construction)</td><td><code class="inline-code">[5, 4]</code></td></tr><tr><td>4</td><td><code class="inline-code">cos_cached</code>, <code class="inline-code">sin_cached</code> (after construction)</td><td><code class="inline-code">[1, 1, 5, 4]</code></td></tr><tr><td>5</td><td><code class="inline-code">cos</code>, <code class="inline-code">sin</code> (sliced to <code class="inline-code">seq_len=4</code>)</td><td><code class="inline-code">[1, 1, 4, 4]</code></td></tr><tr><td>6</td><td><code class="inline-code">x</code> (input from caller)</td><td><code class="inline-code">[2, 3, 4, 8]</code></td></tr><tr><td>7</td><td><code class="inline-code">x1</code>, <code class="inline-code">x2</code> (even/odd split)</td><td><code class="inline-code">[2, 3, 4, 4]</code> each</td></tr><tr><td>8</td><td><code class="inline-code">rotated</code> (stack)</td><td><code class="inline-code">[2, 3, 4, 4, 2]</code></td></tr><tr><td>9</td><td>output (<code class="inline-code">flatten(-2)</code>)</td><td><code class="inline-code">[2, 3, 4, 8]</code></td></tr></tbody></table></div>
+<div class="code-wrapper collapsed" data-lines="15"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 15 lines" onclick="toggleCode(this)">expand ▾ · 15 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>x — [B, H, S, D]
+   │
+   ├──► x[..., ::2] — [B, H, S, D/2] ──┐
+   │                                   │
+   └──► x[..., 1::2] — [B, H, S, D/2] ─┤
+                                        │
+   cos — [1, 1, S, D/2] ────────────────┼──► x1·cos − x2·sin — [B, H, S, D/2] ──┐
+                                        │                                        │
+                                        └──► x1·sin + x2·cos — [B, H, S, D/2] ──┤
+                                                                                 │
+                                                                                 ▼
+                                                          stack(dim=-1) — [B, H, S, D/2, 2]
+                                                                                 │
+                                                                                 ▼
+                                                          flatten(-2) — [B, H, S, D]</code></pre></div>
+<p>Note that input and output have <strong>identical shape and dtype</strong>: RoPE is a pointwise, shape-preserving transformation. This is one of its nicest properties — it slots into any layer that already produces (or consumes) a <code class="inline-code">[B, H, S, D]</code> tensor, which is why <code class="inline-code">model.py:GroupedQueryAttention.forward</code> can insert it between the QK-norm transpose and the GQA expansion with no other shape bookkeeping.</p>
+<h3 id="why-evenodd-pairing-why" class="heading-anchor">Why Even/Odd Pairing, Why <code class="inline-code">stack</code> + <code class="inline-code">flatten</code><a href="#why-evenodd-pairing-why" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="the-choice-of-pairs" class="heading-anchor">The choice of pairs<a href="#the-choice-of-pairs" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>RoPE rotates <strong>adjacent</strong> pairs: <span class="math-inline">$(x_0, x_1), (x_2, x_3), \dots$</span></p>
+<ol class="doc-list">
+<li><strong>Contiguity</strong> — adjacent features are contiguous in memory; the slices
+<br> <code class="inline-code">x[..., ::2]</code> and <code class="inline-code">x[..., 1::2]</code> are strided <strong>views</strong>, so the split costs zero data movement.
+</li>
+<li><strong>Independence</strong> — pairs of distinct indices never share a feature, so
+<br> rotating them independently cannot entangle them.
+</li>
+<li><strong>Convention</strong> — every mainstream RoPE implementation (RoFormer, GPT-NeoX,
+<br> LLaMA) pairs the same way. The exact pairing is not mathematically critical as long as it is consistent, but matching the ecosystem's convention matters for weight compatibility.
+</li>
+</ol>
+<h4 id="why----instead-of-two-strided-writes" class="heading-anchor">Why <code class="inline-code">stack</code> + <code class="inline-code">flatten(-2)</code> instead of two strided writes?<a href="#why----instead-of-two-strided-writes" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The naive alternative is:</p>
+<div class="code-wrapper" data-lines="6"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative — the two-write formulation this code avoids
+out_even = x1 * cos - x2 * sin    # [B, H, S, D/2]
+out_odd  = x1 * sin + x2 * cos    # [B, H, S, D/2]
+output = torch.empty_like(x)
+output[..., ::2] = out_even       # strided scatter write
+output[..., 1::2] = out_odd       # strided scatter write</code></pre></div>
+<p>The <code class="inline-code">stack</code> + <code class="inline-code">flatten(-2)</code> formulation:</p>
+<ul class="doc-list">
+<li>Allocates exactly <strong>one</strong> output tensor (the stack), instead of two scratch
+<br> tensors plus a pre-allocated <code class="inline-code">output</code>.
+</li>
+<li>Avoids two non-contiguous scatter writes, which are slow on GPU.
+</li>
+<li><code class="inline-code">flatten(-2)</code> is a <strong>view</strong> — it only changes the tensor metadata.
+</li>
+<li>Lets <code class="inline-code">torch.compile</code> fuse the entire rotation (split → four FMAs → stack)
+<br> into a single kernel, and lets the stack itself fuse with the downstream consumer.
+</li>
+</ul>
+<p><strong>Layout check</strong> for <code class="inline-code">D = 4</code>, one plane, rotation angle <span class="math-inline">$\phi$</span>:</p>
+<div class="code-wrapper" data-lines="3"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>input pair:      (a, b)
+stack:           [..., 0] = a·cosφ − b·sinφ        [..., 1] = a·sinφ + b·cosφ
+after flatten:   output[0] = a·cosφ − b·sinφ        output[1] = a·sinφ + b·cosφ</code></pre></div>
+<p>The even-position features of the input stay at even positions of the output and odd at odd — the rotation happens <strong>within each pair</strong> while the interleaved layout is preserved, so downstream code sees an ordinary <code class="inline-code">[B, H, S, D]</code> tensor.</p>
+<h3 id="precomputed-buffers--why" class="heading-anchor">Precomputed Buffers — Why <code class="inline-code">register_buffer</code><a href="#precomputed-buffers--why" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="three-ways-to-store-constants-in-pytorch" class="heading-anchor">Three ways to store constants in PyTorch<a href="#three-ways-to-store-constants-in-pytorch" class="anchor-link" aria-label="Link to section">#</a></h4>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Mechanism</th><th>Trainable?</th><th>In <code class="inline-code">state_dict()</code>?</th><th>Follows <code class="inline-code">.to(device)</code>?</th><th>Used here?</th></tr></thead><tbody><tr><td><code class="inline-code">nn.Parameter</code></td><td>yes</td><td>yes</td><td>yes</td><td>no (would be learned)</td></tr><tr><td>plain attribute <code class="inline-code">self.x = tensor</code></td><td>no</td><td>no</td><td><strong>no</strong> (stranded on CPU)</td><td>no</td></tr><tr><td><code class="inline-code">register_buffer</code></td><td>no</td><td>yes</td><td>yes</td><td><strong>yes</strong></td></tr></tbody></table></div>
+<p><code class="inline-code">cos_cached</code>, <code class="inline-code">sin_cached</code> and <code class="inline-code">inv_freq</code> are:</p>
+<ul class="doc-list">
+<li><strong>Not learnable</strong> — they are derived from <code class="inline-code">theta</code> and <code class="inline-code">head_dim</code>, not from
+<br> data. <code class="inline-code">register_buffer</code> guarantees <code class="inline-code">requires_grad=False</code> (verified: the buffers expose <code class="inline-code">requires_grad == False</code> and never appear in <code class="inline-code">model.parameters()</code>).
+</li>
+<li><strong>Device-resident</strong> — they must follow <code class="inline-code">.to(device)</code> with the rest of the
+<br> model, or every forward would be a CPU↔GPU copy. Buffers move with the module.
+</li>
+<li><strong>Checkpointed</strong> — a saved <code class="inline-code">state_dict()</code> must contain the exact cos/sin
+<br> tables so a resumed run reproduces identical rotations. Buffers are saved alongside parameters.
+</li>
+</ul>
+<p><code class="inline-code">register_buffer</code> is the only mechanism that satisfies all three. Verified behavior: after <code class="inline-code">RoPE(...).half()</code> (or <code class="inline-code">.to(device=..., dtype=...)</code>), the buffers carry the new dtype and appear under the keys <code class="inline-code">inv_freq</code>, <code class="inline-code">cos_cached</code>, <code class="inline-code">sin_cached</code> in <code class="inline-code">state_dict()</code>.</p>
+<h4 id="one-time-cost" class="heading-anchor">One-time cost<a href="#one-time-cost" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The trig (<code class="inline-code">cos</code>, <code class="inline-code">sin</code>) is computed <strong>once</strong> at module construction; the forward pass never calls <code class="inline-code">torch.cos</code>/<code class="inline-code">torch.sin</code> — it only multiplies precomputed values. For <code class="inline-code">max_seq_len = 2048</code>, <code class="inline-code">head_dim = 128</code>:</p>
+<ul class="doc-list">
+<li><code class="inline-code">cos_cached.numel() = 2048 × 64 = 131,072</code> floats = <strong>512 KiB</strong>.
+</li>
+<li><code class="inline-code">sin_cached</code> same → <strong>512 KiB</strong>; <code class="inline-code">inv_freq</code> is negligible (64 floats).
+</li>
+<li>Total <strong>~1 MiB</strong> per RoPE module; at 16 layers (one RoPE per
+<br> <code class="inline-code">model.py:DecoderBlock</code>, shared across all 8 query heads of that layer) that is <strong>~16 MiB</strong> of tables across the whole model — cheap.
+</li>
+</ul>
+<h3 id="applied-to-q-and-k-but-not-v" class="heading-anchor">Applied to Q and K, but Not V<a href="#applied-to-q-and-k-but-not-v" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>In <code class="inline-code">model.py:GroupedQueryAttention.forward</code> the rotation is applied to exactly two of the three projections:</p>
+<div class="code-wrapper" data-lines="4"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative
+q = self.rope(q, S)
+k = self.rope(k, S)
+# v is deliberately not rotated</code></pre></div>
+<h4 id="why-q-and-k" class="heading-anchor">Why Q and K?<a href="#why-q-and-k" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Attention scores are <span class="math-inline">$Q K^\top$</span>. The relative-position identity of §5 holds only when <strong>both</strong> vectors in the dot product are rotated:</p>
+<div class="math-block">$$
+\langle \mathrm{RoPE}(q,m),\, \mathrm{RoPE}(k,n) \rangle = g(q,k,m-n).
+$$</div>
+<p>Rotating only one side leaves a residual absolute-position term in the score and breaks the clean relative semantics — the model would be able to (and would be forced to) memorize absolute positions, which hurts generalization to unseen lengths.</p>
+<h4 id="why-not-v" class="heading-anchor">Why not V?<a href="#why-not-v" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>The value vector is what the scores <strong>weight</strong>:</p>
+<div class="math-block">$$
+\text{output}[i] = \sum_j \alpha_{ij}\, v[j] .
+$$</div>
+<p>Position has already been baked into the weights via the rotated <code class="inline-code">q, k</code>; the values only need to carry content. Rotating <code class="inline-code">v</code> would add no information, waste the same compute as the Q/K rotations, and make the output's coordinate frame position-dependent in a way that complicates the residual stream for no benefit. LLaMA, GPT-NeoX and RoFormer all follow the rotate-Q-and-K-only convention.</p>
+<h3 id="interaction-with-gqa-and-flash-attention-2" class="heading-anchor">Interaction with GQA and Flash Attention 2<a href="#interaction-with-gqa-and-flash-attention-2" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper collapsed" data-lines="33"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 33 lines" onclick="toggleCode(this)">expand ▾ · 33 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>hidden x — [B, S, 1024]
+   │
+   ├───────────────► q_proj — [B, S, 8·128]
+   │                  │
+   │                  ▼
+   │               view + q_norm + transpose — [B, 8, S, 128]
+   │                  │
+   │                  ▼
+   │               RoPE(q, S) — [B, 8, S, 128] ──► q — [B, 8, S, 128] ──────────────┐
+   ├───────────────► k_proj — [B, S, 4·128]                                          │
+   │                  │                                                             │
+   │                  ▼                                                             │
+   │               view + k_norm + transpose — [B, 4, S, 128]                       │
+   │                  │                                                             │
+   │                  ▼                                                             │
+   │               RoPE(k, S) — [B, 4, S, 128] ──► expand + reshape                 │
+   │                                                → [B, 8, S, 128] ──────────────┼──┐
+   └───────────────► v_proj — [B, S, 4·128]                                         │  │
+                      │                                                            │  │
+                      ▼                                                            │  │
+                  view + transpose — [B, 4, S, 128]                                 │  │
+                      │                                                            │  │
+                      ▼                                                            │  │
+                  (no RoPE) ──► expand + reshape → [B, 8, S, 128] ─────────────────┼──┼──┐
+                                                                                   │  │  │
+                                                                   ┌───────────────▼──▼──▼──┐
+                                                                   │ F.scaled_dot_product_ │
+                                                                   │ attention(q, k, v,    │
+                                                                   │   is_causal=True)      │
+                                                                   └───────────┬───────────┘
+                                                                               ▼
+                                                          transpose + view + out_proj
+                                                          → [B, S, 1024]</code></pre></div>
+<p>Three interactions worth spelling out:</p>
+<ol class="doc-list">
+<li><strong>RoPE runs on the un-replicated KV heads.</strong> With GQA, <code class="inline-code">n_kv_heads = 4</code>
+<br> and <code class="inline-code">n_heads = 8</code> (<code class="inline-code">n_rep = 2</code>), so RoPE is applied to the 4 shared KV head vectors <strong>before</strong> the <code class="inline-code">expand</code>+<code class="inline-code">reshape</code> replication in <code class="inline-code">model.py:GroupedQueryAttention.forward</code>. All replicated copies therefore carry the identical rotation — one rotation pass per KV head instead of per query head, halving the K-side RoPE cost.
+</li>
+<li><strong>FA2 is agnostic.</strong> Flash Attention 2 sees two <code class="inline-code">[B, H, S, D]</code> tensors and
+<br> computes the causal scaled dot-product; it does not care that Q/K were rotated. The relative-position property holds inside the flash kernel because it is a property of the inner product, not of the kernel.
+</li>
+<li><strong>Orthogonality leaves the attention geometry intact.</strong> Since every plane
+<br> is an orthogonal transform, RoPE preserves the norms of q and k; the softmax logits are reshuffled by position but their scale is unchanged, so FA2's numerical behavior (e.g. its online-softmax rescaling) is unaffected. This is asserted directly by <code class="inline-code">tests/test_model.py::TestRoPE.test_rotation_is_orthogonal</code>.
+</li>
+</ol>
+<p>The causality of the whole attention path (which RoPE never interferes with) is defended by <code class="inline-code">tests/test_model.py::TestGroupedQueryAttention.test_causality</code>.</p>
+<h3 id="length-extrapolation--interpolation" class="heading-anchor">Length Extrapolation &amp; Interpolation<a href="#length-extrapolation--interpolation" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="what-extrapolation-means-here" class="heading-anchor">What extrapolation means here<a href="#what-extrapolation-means-here" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>A model trained at <code class="inline-code">seq_len = 2048</code> asked to process <code class="inline-code">seq_len = 4096</code>: with <strong>absolute</strong> embeddings this usually fails — positions 2048–4095 were never seen and have no embedding. With <strong>RoPE</strong> it partially works, because the rotation angle <span class="math-inline">$m \cdot \omega_i$</span> is well-defined for any integer <span class="math-inline">$m$</span>; the question is only whether the slowest planes have aliased by then.</p>
+<p>At this project's scale: the slowest plane's wavelength is 2.56M tokens, so within any context up to ~2.56M tokens no plane completes a full turn that it has not already been "trained on" in some sense. In practice the well-behaved range is much shorter than the naive wavelength (the model must also generalize the <em>content</em> patterns), which is why long-context work typically adds fine-tuning — see</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a> for</p>
+<p>the NTK/YaRN extension landscape.</p>
+<h4 id="what-the-code-does-and-does-not-do" class="heading-anchor">What the code does and does not do<a href="#what-the-code-does-and-does-not-do" class="anchor-link" aria-label="Link to section">#</a></h4>
+<ul class="doc-list">
+<li>The cache is built for <code class="inline-code">max_seq_len</code> at construction time, so a forward
+<br> with <code class="inline-code">S &gt; max_seq_len</code> fails <strong>loudly</strong> (see the numerical-properties section) rather than silently degrading — the safe failure mode.
+</li>
+<li>There is <strong>no KV-cache path</strong> in <code class="inline-code">model.py:GroupedQueryAttention.forward</code>
+<br> and <strong>no position interpolation</strong> implemented: training runs at <code class="inline-code">seq_len = 2048</code> with <code class="inline-code">theta = 500000</code> as-is. To extend context the module must be rebuilt with a larger <code class="inline-code">max_seq_len</code> (buffers are sized at construction), and long-context fine-tuning would optionally rescale the rotation angles.
+</li>
+</ul>
+<h4 id="why--is-load-bearing" class="heading-anchor">Why <code class="inline-code">theta = 500000</code> is load-bearing<a href="#why--is-load-bearing" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Reducing the base to 10,000 shrinks the slowest wavelength from 2.56M to 54.4K tokens (47×), so the plane-index-32 band — wavelength ~4.4K, already just past the training context — and everything slower aliases far sooner. This is why <code class="inline-code">AGENTS.md</code> rule 5 makes the value a hard rule: it is the difference between a 2K-trained model that can stretch toward 128K contexts and one whose long-range planes are mush beyond ~8K tokens.</p>
+<h3 id="gradient-flow-through-rope" class="heading-anchor">Gradient Flow Through RoPE<a href="#gradient-flow-through-rope" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>RoPE has <strong>no learnable parameters</strong> — the rotation coefficients are constants. All gradients pass through the rotation into the Q/K projections.</p>
+<h4 id="backward-of-the-rotation" class="heading-anchor">Backward of the rotation<a href="#backward-of-the-rotation" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>For one plane with angle <span class="math-inline">$\phi = m\,\omega_i$</span>:</p>
+<div class="math-block">$$
+\begin{bmatrix} x'_1 \\ x'_2 \end{bmatrix} =
+\begin{bmatrix} \cos\phi &amp; -\sin\phi \\ \sin\phi &amp; \cos\phi \end{bmatrix}
+\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}, \qquad
+\begin{bmatrix} \frac{\partial L}{\partial x_1} \\[2pt] \frac{\partial L}{\partial x_2} \end{bmatrix} =
+\begin{bmatrix} \cos\phi &amp; \sin\phi \\ -\sin\phi &amp; \cos\phi \end{bmatrix}
+\begin{bmatrix} g_1 \\ g_2 \end{bmatrix},
+$$</div>
+<p>where <span class="math-inline">$(g_1, g_2)$</span> is the incoming gradient on the rotated pair. The backward matrix is the <strong>transpose</strong> of the forward rotation — itself a rotation by <span class="math-inline">$-\phi$</span>.</p>
+<h4 id="implications-for-training" class="heading-anchor">Implications for training<a href="#implications-for-training" class="anchor-link" aria-label="Link to section">#</a></h4>
+<ul class="doc-list">
+<li><strong>No vanishing/exploding gradients.</strong> Every singular value of the forward
+<br> and backward Jacobians is 1 (an orthogonal matrix), so the gradient norm is preserved exactly through the rotation: <span class="math-inline">$\|\partial L/\partial x\| = \|\partial L/\partial x'\|\cdot$</span> <code class="inline-code">tests/test_model.py::TestRoPE.test_rotation_is_orthogonal</code> verifies the forward half of this contract.
+</li>
+<li><strong>Gradients reach the projections.</strong> The rotation is applied after
+<br> <code class="inline-code">q_proj</code>/<code class="inline-code">k_proj</code>, so <span class="math-inline">$\partial L/\partial q$</span> flows back through the rotation into the projection weights uniformly across all positions.
+</li>
+<li><strong>No gradient through the schedule.</strong> Because <code class="inline-code">cos_cached</code>/<code class="inline-code">sin_cached</code>
+<br> are buffers, <code class="inline-code">theta</code> and <code class="inline-code">head_dim</code> are not (and cannot be) tuned by gradient descent — the schedule is a fixed design choice, asserted as a hard rule rather than a learned quantity.
+</li>
+</ul>
+<div class="code-wrapper" data-lines="8"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>L (loss)
+   │
+   ├──► g1 = ∂L/∂x&#x27;_1 ──► ∂L/∂x1 = g1·cos + g2·sin ──┐
+   │                                                   │
+   └──► g2 = ∂L/∂x&#x27;_2 ──► ∂L/∂x2 = −g1·sin + g2·cos ──┤
+                                                       │
+                                                       ▼
+                                             ∂L/∂q_proj weights</code></pre></div>
+<h3 id="numerical-properties--edge-cases" class="heading-anchor">Numerical Properties &amp; Edge Cases<a href="#numerical-properties--edge-cases" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="dtype-of-the-cache-and-promotion" class="heading-anchor">Dtype of the cache and promotion<a href="#dtype-of-the-cache-and-promotion" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><code class="inline-code">inv_freq</code>, <code class="inline-code">freqs</code>, and the cos/sin tables are computed in <strong>float32</strong> (<code class="inline-code">torch.arange(...).float()</code>, <code class="inline-code">.cos()</code>, <code class="inline-code">.sin()</code>). Buffers do not auto-cast: <code class="inline-code">cos_cached</code> stays FP32 in storage regardless of autocast, and moves to whatever dtype the module is explicitly moved to (<code class="inline-code">.half()</code> / <code class="inline-code">.to(dtype=...)</code>). In the rotation itself, PyTorch binary-op promotion applies: <code class="inline-code">x1 * cos</code> with a BF16 <code class="inline-code">x1</code> and an FP32 <code class="inline-code">cos</code> promotes to FP32, so the rotation arithmetic never loses precision to the BF16 mantissa — a benign detail under the autocast path, and exact FP32 in the CPU test path (the <code class="inline-code">dtype</code> fixture is <code class="inline-code">torch.float32</code> on CPU, <code class="inline-code">bfloat16</code> only on GPU — see <code class="inline-code">tests/conftest.py:dtype</code>). Deeper autocast mechanics live in</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>.</p>
+<h4 id="position-0-is-the-identity" class="heading-anchor">Position 0 is the identity<a href="#position-0-is-the-identity" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>At <span class="math-inline">$m = 0$</span>, every angle is 0, so <span class="math-inline">$\cos = 1$</span>, <span class="math-inline">$\sin = 0$</span> and the rotation is the identity:</p>
+<div class="math-block">$$
+\mathrm{RoPE}(x, 0) = x .
+$$</div>
+<p>The first token of any sequence passes through unchanged — correct behavior (no "position 0 twist"), and asserted by <code class="inline-code">tests/test_model.py::TestRoPE.test_position_zero_is_identity</code>.</p>
+<h4 id="adjacent-positions-are-distinct" class="heading-anchor">Adjacent positions are distinct<a href="#adjacent-positions-are-distinct" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>At <span class="math-inline">$m = 1$</span> the fastest plane has already rotated 1 radian (~57°), so the second token is clearly separated from the first in the high-frequency planes — a 1-position offset produces a distinct fingerprint. Combined with the norm-preservation property, this guarantees the code cannot collapse positions 0 and 1 in any plane.</p>
+<h4 id="sequence-longer-than---loud-failure" class="heading-anchor">Sequence longer than <code class="inline-code">max_seq_len</code> — loud failure<a href="#sequence-longer-than---loud-failure" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><code class="inline-code">cos_cached[:, :, :seq_len, :]</code> with <code class="inline-code">seq_len &gt; max_seq_len</code> does <strong>not</strong> index out of bounds: Python-style slicing clamps, returning the full <code class="inline-code">[1, 1, max_seq_len, D/2]</code> cache. The failure happens one step later, when that cache broadcasts against <code class="inline-code">x1</code> of shape <code class="inline-code">[B, H, S, D/2]</code> with <code class="inline-code">S &gt; max_seq_len</code> — PyTorch raises a <code class="inline-code">RuntimeError</code> ("size of tensor a must match size of tensor b at non-singleton dimension 2"). Either way the model <strong>crashes loudly rather than silently producing wrong outputs</strong>; the mechanism is a broadcast mismatch, not an OOB read. To serve longer sequences, rebuild the module with a larger <code class="inline-code">max_seq_len</code>.</p>
+<h4 id="odd---loud-failure-not-silent-truncation" class="heading-anchor">Odd <code class="inline-code">head_dim</code> — loud failure, not silent truncation<a href="#odd---loud-failure-not-silent-truncation" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p><code class="inline-code">torch.arange(0, head_dim, 2)</code> on an odd <code class="inline-code">head_dim</code> (e.g. 7) yields 4 even indices but <code class="inline-code">x[..., 1::2]</code> yields only 3 odd indices, so <code class="inline-code">x1</code> and <code class="inline-code">x2</code> have different final-dim sizes and the <code class="inline-code">stack</code> raises a <code class="inline-code">RuntimeError</code>. The implementation therefore does <strong>not</strong> silently drop the last feature (a behavior that would quietly corrupt every head); it fails at construction/ forward time. LLaMA-3-Lite uses <code class="inline-code">head_dim = 128</code>, even by construction (<code class="inline-code">config.py:get_config</code>), so this never fires in practice — but it is a guaranteed loud bug for anyone who changes the config to an odd value.</p>
+<h3 id="memory--compute-cost" class="heading-anchor">Memory &amp; Compute Cost<a href="#memory--compute-cost" class="anchor-link" aria-label="Link to section">#</a></h3>
+<h4 id="compute" class="heading-anchor">Compute<a href="#compute" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>Per token, per head-vector, the rotation costs 4 multiplications and 2 additions per plane (counting each mul/add as one FLOP):</p>
+<ul class="doc-list">
+<li>Per vector: <span class="math-inline">$64 \text{ planes} \times 6 = 384$</span> FLOPs (<span class="math-inline">$640$</span> under the
+<br> FMA-counts-as-2 convention).
+</li>
+<li>Per step: q has $B \cdot n\_heads \cdot S = 96 \cdot 8 \cdot 2048 =
+<br> 1{,}572{,}864<span class="math-inline">$vectors, k has$</span>96 \cdot 4 \cdot 2048 = 786{,}432<span class="math-inline">$(GQA halves the K side; see the GQA interaction section). Per layer that is$</span>(1.57M + 0.79M) \times 384 \approx 0.91$ GFLOPs; at 16 layers ≈ <strong>14.5 GFLOPs per training step</strong>.
+</li>
+<li>Compare with the total step cost of the model,
+<br> <span class="math-inline">$6 N B S = 6 \times 513.8\text{M} \times 196{,}608 \approx 606$</span> TFLOPs (forward + backward): RoPE is <strong>~0.002% of step FLOPs</strong> — effectively free. It is dwarfed by the projection matmuls (<code class="inline-code">O(B S D^2)</code> per linear).
+</li>
+</ul>
+<h4 id="memory" class="heading-anchor">Memory<a href="#memory" class="anchor-link" aria-label="Link to section">#</a></h4>
+<ul class="doc-list">
+<li><strong>No activation blow-up:</strong> input and output have identical <code class="inline-code">[B, H, S, D]</code>
+<br> shape; the stack allocates one tensor of the same size as <code class="inline-code">x</code>, and the split is view-only. Per layer at batch 96: q+k activation memory is dominated by the SDPA path, not by RoPE (see
+<br> <a href="../training.html" class="doc-link">training.md</a>).
+</li>
+<li><strong>Cache reads:</strong> each layer reads <span class="math-inline">$2 \times S \times (D/2)$</span> floats
+<br> (cos + sin, sliced to <code class="inline-code">S</code>): <span class="math-inline">$2 \times 2048 \times 64 \times 4\text{B} = 1$</span> MiB per layer per forward. The tables themselves are 16 MiB total across the model (see the buffer section) and stay resident.
+</li>
+<li><strong>Gradient memory:</strong> the rotation is differentiable with no saved state —
+<br> autograd keeps only the (small) input/output tensors; the backward is computed from the FP32 cache, which is a constant.
+</li>
+</ul>
+<h4 id="wall-clock" class="heading-anchor">Wall-clock<a href="#wall-clock" class="anchor-link" aria-label="Link to section">#</a></h4>
+<p>RoPE is a few elementwise FMAs plus one stack; on an A100 it is a rounding error next to the QKV projections and Flash Attention (tens of µs vs milliseconds per layer). It is not a bottleneck at any batch size this config can afford (see <a href="../training.html" class="doc-link">training.md</a> for the 92→20 GB derivation, which includes RoPE's ~1 MiB-per-layer tables as a line item).</p>
+<h3 id="common-pitfalls--how-this-code-avoids-them" class="heading-anchor">Common Pitfalls &amp; How This Code Avoids Them<a href="#common-pitfalls--how-this-code-avoids-them" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Pitfall</th><th>What goes wrong</th><th>How this code avoids it</th></tr></thead><tbody><tr><td>Rotating only Q or only K</td><td>Asymmetric rotation leaks absolute position into the score; relative property breaks</td><td>Both <code class="inline-code">q = self.rope(q, S)</code> and <code class="inline-code">k = self.rope(k, S)</code> in <code class="inline-code">model.py:GroupedQueryAttention.forward</code></td></tr><tr><td>Rotating V</td><td>Wasted compute; position-dependent output frame</td><td>Only Q and K are passed to <code class="inline-code">self.rope</code></td></tr><tr><td>Wrong pairing convention</td><td>Model silently incompatible with pretrained weights</td><td>Even/odd adjacent pairing, the standard convention</td></tr><tr><td>Recomputing <code class="inline-code">cos</code>/<code class="inline-code">sin</code> every forward</td><td>Massive wasted trig</td><td><code class="inline-code">register_buffer</code> precomputes once</td></tr><tr><td>FP32 cache with BF16 forward</td><td>Precision loss or dtype surprise</td><td>Buffers stay FP32; binary-op promotion lifts the rotation to FP32 (verified); no downcast inside RoPE</td></tr><tr><td>Strided scatter writes (<code class="inline-code">x[..., ::2] = ...</code>)</td><td>Slow, non-contiguous GPU writes</td><td><code class="inline-code">stack</code> + <code class="inline-code">flatten(-2)</code>; flatten is a view</td></tr><tr><td>One <code class="inline-code">inv_freq</code> per head</td><td>Breaks the uniform relative-position geometry</td><td>One shared <code class="inline-code">RoPE</code> per attention layer (built in <code class="inline-code">model.py:GroupedQueryAttention.__init__</code>), reused across all heads</td></tr><tr><td>Naive broadcasting</td><td>Shape mismatch</td><td><code class="inline-code">unsqueeze(0).unsqueeze(0)</code> gives <code class="inline-code">[1, 1, S, D/2]</code> which broadcasts against <code class="inline-code">[B, H, S, D/2]</code></td></tr><tr><td>Rotating the full <code class="inline-code">max_seq_len</code> cache for short inputs</td><td>Wasted bandwidth</td><td><code class="inline-code">[:, :, :seq_len, :]</code> slice in <code class="inline-code">model.py:RoPE.forward</code>; slicing is a view</td></tr><tr><td>Forgetting <code class="inline-code">requires_grad=False</code> on the frequency tables</td><td>Schedule becomes learnable / optimizer picks it up</td><td><code class="inline-code">register_buffer</code> guarantees non-learnable buffers, excluded from <code class="inline-code">parameters()</code></td></tr><tr><td>Odd <code class="inline-code">head_dim</code></td><td>Last feature silently dropped in some implementations</td><td>Loud <code class="inline-code">RuntimeError</code> from the <code class="inline-code">x1</code>/<code class="inline-code">x2</code> size mismatch (verified); config uses even <code class="inline-code">head_dim = 128</code></td></tr><tr><td><code class="inline-code">S &gt; max_seq_len</code></td><td>Silent truncation in some implementations</td><td>Loud broadcast <code class="inline-code">RuntimeError</code> (verified); cache is sized at construction</td></tr></tbody></table></div>
+<h2 id="config-reference-configpyget_config" class="heading-anchor">Config Reference (config.py:get_config)<a href="#config-reference-configpyget_config" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>Code-keyed walkthrough of every key in <code class="inline-code">config.py:get_config</code>, grouped by concern, with defaults, consumers, and a worked memory budget.</p>
+<h3 id="how-the-config-flows" class="heading-anchor">How the config flows<a href="#how-the-config-flows" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="code-wrapper" data-lines="9"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>config.py:get_config()
+   │
+   ├──► train.py:train_model ──► model.py:build_transformer
+   │                    │
+   │                    ├──► torch.optim.AdamW + SequentialLR
+   │                    └──► EMA (AveragedModel)
+   ├──► data/shared_data/loader.py ──► DataLoader (workers, prefetch, pin_memory)
+   ├──► workspace LLM/shared_data pipeline (outside this repo)
+   └──► tests (tests/test_config.py REQUIRED_KEYS)</code></pre></div>
+<p>Consumers mostly read through <code class="inline-code">config.get(key, default)</code> rather than <code class="inline-code">config[key]</code>, which is what lets tests inject a partial <code class="inline-code">tiny_config</code> (<code class="inline-code">tests/conftest.py</code>) and have everything fall back to sane values. The values below are the production defaults from <code class="inline-code">config.py:get_config</code> unless stated otherwise.</p>
+<h3 id="architecture-group" class="heading-anchor">Architecture group<a href="#architecture-group" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>These keys fix the model topology. They are consumed in <code class="inline-code">train.py:train_model</code> (passed positionally into <code class="inline-code">model.py:build_transformer</code>) and in the full-config model tests (<code class="inline-code">tests/test_model.py</code>). All are load-bearing: changing any of them changes the parameter count and the FLOPs at every step.</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">d_model</code></td><td><code class="inline-code">1024</code></td><td>Hidden width of the residual stream</td><td>Width of every projection; the "currency" of the transformer</td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">model.py:build_transformer</code></td></tr><tr><td><code class="inline-code">n_layers</code></td><td><code class="inline-code">16</code></td><td>Number of <code class="inline-code">DecoderBlock</code>s</td><td>Depth; 16 layers × 1024-wide is the classic 500M-param regime</td><td>same</td></tr><tr><td><code class="inline-code">n_heads</code></td><td><code class="inline-code">8</code></td><td>Number of query heads</td><td>Attention parallelism; <code class="inline-code">8 × 128 = 1024 = d_model</code></td><td>same</td></tr><tr><td><code class="inline-code">n_kv_heads</code></td><td><code class="inline-code">4</code></td><td>Number of KV heads (GQA)</td><td>KV projection width <code class="inline-code">4 × 128 = 512</code>, half of <code class="inline-code">d_model</code>; <code class="inline-code">n_rep = 8 / 4 = 2</code></td><td>same</td></tr><tr><td><code class="inline-code">head_dim</code></td><td><code class="inline-code">128</code></td><td>Per-head width</td><td>Scales QK dot products (<code class="inline-code">÷ √128</code>); RoPE buffer shape</td><td>same</td></tr><tr><td><code class="inline-code">d_ff</code></td><td><code class="inline-code">4096</code></td><td>SwiGLU hidden width</td><td><code class="inline-code">4× d_model</code>; fused <code class="inline-code">gate_up_proj</code> is <code class="inline-code">2·d_ff = 8192</code> wide</td><td>same</td></tr><tr><td><code class="inline-code">vocab_size</code></td><td><code class="inline-code">128000</code></td><td>Embedding / LM-head vocabulary</td><td>Floor on vocab: <code class="inline-code">real_vocab_size = max(vocab_size, len(tokenizer))</code> in <code class="inline-code">train.py:train_model</code>, so the real LLaMA-3 tokenizer (128,256) wins when loaded</td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">data/shared_data/loader.py:_SyntheticTokenizerStub</code></td></tr><tr><td><code class="inline-code">seq_len</code></td><td><code class="inline-code">2048</code></td><td>Context window</td><td>RoPE buffer length; dataloader chunks are <code class="inline-code">seq_len + 1</code> (next-token shift); tokens/step <code class="inline-code">= batch × seq</code></td><td><code class="inline-code">model.py:RoPE</code>, <code class="inline-code">data/shared_data/loader.py:PackedDataset</code>, <code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">rope_theta</code></td><td><code class="inline-code">500000.0</code></td><td>RoPE base frequency</td><td><code class="inline-code">inv_freq = 1 / θ^(2i/head_dim)</code>; high θ slows rotation so long-range positions stay resolvable — see <a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a></td><td><code class="inline-code">model.py:RoPE</code></td></tr><tr><td><code class="inline-code">rms_norm_eps</code></td><td><code class="inline-code">1e-5</code></td><td>RMSNorm epsilon</td><td>Prevents divide-by-zero in <code class="inline-code">x·rsqrt(mean(x²) + eps)</code>; note the QK-norm instances in <code class="inline-code">model.py:GroupedQueryAttention</code> hardcode <code class="inline-code">1e-5</code> rather than reading this key</td><td><code class="inline-code">model.py:RMSNorm</code> via <code class="inline-code">model.py:DecoderBlock</code>, <code class="inline-code">model.py:Decoder</code></td></tr></tbody></table></div>
+<p>Parameter anatomy at these values (derived, consistent with <code class="inline-code">model.py:Transformer.get_num_params</code>):</p>
+<ul class="doc-list">
+<li>Input embedding: <code class="inline-code">128000 × 1024 = 131,072,000</code> (131.1M).
+</li>
+<li>Output projection: <code class="inline-code">1024 × 128000 = 131,072,000</code> (131.1M) — <strong>untied</strong> (see below).
+</li>
+<li>Per <code class="inline-code">DecoderBlock</code>: attention <code class="inline-code">3,145,728</code> (q/k/v/out: <code class="inline-code">1024² + 2·1024·512 + 1024²</code>) + QK-norm <code class="inline-code">256</code> + SwiGLU <code class="inline-code">12,582,912</code> (<code class="inline-code">1024·8192 + 4096·1024</code>) + two norms <code class="inline-code">2,048</code> = <code class="inline-code">15,730,944</code>.
+</li>
+<li>16 blocks + final norm: <code class="inline-code">251,696,128</code> ≈ 251.7M non-embedding; total <strong>513.8M</strong> (the <code class="inline-code">llama3-515M</code> filename rounds this up).
+</li>
+</ul>
+<p><strong><code class="inline-code">tie_embeddings</code> is deliberately absent.</strong> There is no weight sharing: <code class="inline-code">model.py:Transformer</code> builds <code class="inline-code">output_proj</code> as an independent <code class="inline-code">nn.Linear(d_model, vocab_size)</code>, so the LM head costs a full 131.1M parameters. Untied heads are standard for LLaMA-3-style models (the input and output embeddings live in different gradient regimes), but the cost is real — see <a href="#model-reference-modelpy" class="doc-link">§ Model Reference (model.py)</a> and</p>
+<p><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.</p>
+<h3 id="training--optimizer-group" class="heading-anchor">Training &amp; optimizer group<a href="#training--optimizer-group" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">batch_size</code></td><td><code class="inline-code">96</code></td><td>Micro-batch (tokens per step <code class="inline-code">= 96 × 2048 = 196,608</code>)</td><td>Sized so that 96×2048×1024 activations + BF16 fit one A100 80GB</td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">data/shared_data/loader.py:build_training_data</code></td></tr><tr><td><code class="inline-code">gradient_accumulation</code></td><td><code class="inline-code">1</code></td><td>Number of micro-batches per optimizer step</td><td>Set &gt;1 to emulate a larger batch on smaller GPUs; loss is divided by it and the optimizer steps only on <code class="inline-code">(step+1) % grad_accum == 0</code></td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">train.py:save_checkpoint</code> (tokens_seen math)</td></tr><tr><td><code class="inline-code">max_steps</code></td><td><code class="inline-code">42000</code></td><td>Total optimizer steps</td><td>42K × 196,608 tokens/step = <strong>8.26B tokens</strong> consumed, slightly over the 8B corpus — see the interaction note below</td><td><code class="inline-code">train.py:train_model</code> (loop bound, scheduler <code class="inline-code">T_max</code>)</td></tr><tr><td><code class="inline-code">learning_rate</code></td><td><code class="inline-code">3e-4</code></td><td>Peak AdamW LR</td><td>Standard for ~500M-param LLMs with 8B tokens</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">min_lr</code></td><td><code class="inline-code">3e-5</code></td><td>Final LR (cosine floor)</td><td><code class="inline-code">min_lr / lr = 0.1</code> — the cosine anneals 10× down; also sets the warmup start factor</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">warmup_steps</code></td><td><code class="inline-code">2000</code></td><td>Linear warmup length</td><td>~5% of the run; avoids early-step instability with large gradients</td><td><code class="inline-code">train.py:train_model</code> (LinearLR + SequentialLR milestone)</td></tr><tr><td><code class="inline-code">weight_decay</code></td><td><code class="inline-code">0.1</code></td><td>AdamW decoupled decay</td><td>Applied <strong>only to 2-D+ parameters</strong> (all <code class="inline-code">nn.Linear</code>/<code class="inline-code">nn.Embedding</code> weights); 1-D gains/biases get <code class="inline-code">0.0</code> — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">max_grad_norm</code></td><td><code class="inline-code">1.0</code></td><td>Gradient clipping norm</td><td><code class="inline-code">clip_grad_norm_</code> on every optimizer step; keeps BF16 training stable</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">optimizer</code></td><td><code class="inline-code">&#x27;AdamW&#x27;</code></td><td><strong>Informational</strong></td><td>Documented intent only: <code class="inline-code">train.py:train_model</code> hardcodes <code class="inline-code">torch.optim.AdamW</code> and W&amp;B logs the literal string. Changing this key changes nothing.</td><td>none (logged to W&amp;B)</td></tr><tr><td><code class="inline-code">beta1</code></td><td><code class="inline-code">0.9</code></td><td>Adam first moment decay</td><td>Standard; near-unity β2 is what makes AdamW work for LLM pretraining</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">beta2</code></td><td><code class="inline-code">0.95</code></td><td>Adam second moment decay</td><td>Lower than the classic 0.999: shorter moment memory suits 42K-step runs with heavy LR decay — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">eps</code></td><td><code class="inline-code">1e-8</code></td><td>Adam epsilon</td><td>Denominator guard; harmless to leave at default</td><td><code class="inline-code">train.py:train_model</code></td></tr></tbody></table></div>
+<p><strong>Interaction — <code class="inline-code">max_steps</code> vs the corpus.</strong> 42,000 × 196,608 = 8.2575B tokens exceeds <code class="inline-code">target_tokens</code> (8B) minus the 5% validation holdout. <code class="inline-code">train.py:_next_batch</code> catches <code class="inline-code">StopIteration</code> and restarts the sampler with a fresh permutation (<code class="inline-code">ShuffledRangeSampler.set_epoch</code>) instead of crashing — the run wraps around into the training split once, printing a warning. This is by design; do not "fix" it by shrinking <code class="inline-code">max_steps</code>.</p>
+<p><strong>Test invariants.</strong> <code class="inline-code">tests/test_config.py::TestGetConfig.test_learning_rate_schedule_invariants</code> pins <code class="inline-code">0 &lt; min_lr &lt; learning_rate</code>, <code class="inline-code">0 &lt; warmup_steps &lt; max_steps</code>, <code class="inline-code">weight_decay &gt;= 0</code>, <code class="inline-code">max_grad_norm &gt; 0</code> — the schedule math assumes all of them.</p>
+<h3 id="precision-compilation--memory-group" class="heading-anchor">Precision, compilation &amp; memory group<a href="#precision-compilation--memory-group" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">tf32</code></td><td><code class="inline-code">True</code></td><td>TF32 matmul mode</td><td><code class="inline-code">torch.backends.cuda.matmul.allow_tf32</code> + <code class="inline-code">cudnn.allow_tf32</code>: 10-bit mantissa matmuls on Ampere, ~2× throughput for a tiny accuracy cost — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:setup_gpu_optimizations</code></td></tr><tr><td><code class="inline-code">cudnn_benchmark</code></td><td><code class="inline-code">True</code></td><td>cuDNN autotuning</td><td>Picks the fastest conv/GEMM algorithm for fixed shapes (all shapes are fixed here: 96×2048×d)</td><td><code class="inline-code">train.py:setup_gpu_optimizations</code></td></tr><tr><td><code class="inline-code">cuda_alloc_conf</code></td><td><code class="inline-code">&#x27;expandable_segments:True&#x27;</code></td><td>CUDA caching allocator</td><td><code class="inline-code">PYTORCH_CUDA_ALLOC_CONF</code> env var, set before any CUDA work; lets the allocator grow segments and return them to the OS — matters for the loss's checkpointed chunk churn</td><td><code class="inline-code">train.py:setup_gpu_optimizations</code></td></tr><tr><td><code class="inline-code">compile_model</code></td><td><code class="inline-code">True</code></td><td><code class="inline-code">torch.compile</code></td><td>Wraps the model after build; a warmup forward+backward captures CUDA graphs before the loop</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">compile_mode</code></td><td><code class="inline-code">&#x27;reduce-overhead&#x27;</code></td><td>Compile mode</td><td>CUDA-graph capture; that mode owns the device stream, which is why the training loop's H2D copies must be <code class="inline-code">non_blocking=True</code></td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">gradient_checkpointing</code></td><td><code class="inline-code">True</code></td><td>Per-layer activation recomputation</td><td><code class="inline-code">model.py:Transformer.forward</code> wraps each block in <code class="inline-code">torch.utils.checkpoint.checkpoint(layer, x, use_reentrant=False)</code> when training; this is what makes batch 96 fit 80GB — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">model.py:Transformer.forward</code></td></tr><tr><td><code class="inline-code">ce_chunk_size</code></td><td><code class="inline-code">256</code></td><td>LM-head chunk rows</td><td><code class="inline-code">chunked_head_cross_entropy_with_z</code> computes <code class="inline-code">hidden @ head_weight.T</code> in slices of 256 rows and runs each slice inside <code class="inline-code">checkpoint</code> — the single biggest memory lever in the run; see the worked memory budget below and <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">train.py:validate</code> → <code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code></td></tr><tr><td><code class="inline-code">rmsnorm_impl</code></td><td><code class="inline-code">&#x27;pytorch&#x27;</code></td><td>RMSNorm backend</td><td><code class="inline-code">&#x27;triton&#x27;</code> swaps in <code class="inline-code">kernels/rmsnorm_triton.py</code>; only honored when <code class="inline-code">ENABLE_TRITON_KERNELS=1</code> (see below)</td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">model.py:RMSNorm</code></td></tr><tr><td><code class="inline-code">swiglu_impl</code></td><td><code class="inline-code">&#x27;pytorch&#x27;</code></td><td>SwiGLU backend</td><td><code class="inline-code">&#x27;triton&#x27;</code> swaps in <code class="inline-code">kernels/swiglu_triton.py</code>; same env gate</td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">model.py:SwiGLUFFN</code></td></tr><tr><td><code class="inline-code">cross_entropy_impl</code></td><td><code class="inline-code">&#x27;pytorch&#x27;</code></td><td>Loss backend</td><td><code class="inline-code">&#x27;triton&#x27;</code> swaps in <code class="inline-code">kernels/cross_entropy_triton.py</code>; same env gate</td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">train.py:validate</code> → <code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code></td></tr></tbody></table></div>
+<p><strong>The Triton gate.</strong> Setting any <code class="inline-code">*_impl</code> to <code class="inline-code">&#x27;triton&#x27;</code> without <code class="inline-code">ENABLE_TRITON_KERNELS=1</code> makes <code class="inline-code">train.py:train_model</code> print a warning and force <strong>all three</strong> back to <code class="inline-code">&#x27;pytorch&#x27;</code> — a default run never silently takes a fused path. Even with the env var set, each kernel falls back to its PyTorch reference on <code class="inline-code">ImportError</code>/<code class="inline-code">ValueError</code> (e.g. Mac/CPU). See</p>
+<p><a href="data-reference.html" class="doc-link">data-reference.md</a> and</p>
+<p><a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a>.</p>
+<p><strong>Stability levers</strong> (the "extra two knobs" beyond vanilla LLaMA-3):</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">use_z_loss</code></td><td><code class="inline-code">True</code></td><td><strong>Load-bearing switch</strong></td><td><code class="inline-code">False</code> zeroes the z term: <code class="inline-code">train.py:train_model</code> / <code class="inline-code">train.py:validate</code> compute <code class="inline-code">z_loss_weight = config[&#x27;z_loss_weight&#x27;] if use_z_loss else 0.0</code>. <code class="inline-code">z_loss_weight</code> still scales the term when on</td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">train.py:validate</code></td></tr><tr><td><code class="inline-code">z_loss_weight</code></td><td><code class="inline-code">1e-4</code></td><td>Z-loss strength</td><td>Penalizes <code class="inline-code">(logsumexp logits)²</code> over non-ignored tokens to stop late-run softmax collapse; passed into every loss call — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code>, <code class="inline-code">train.py:validate</code></td></tr><tr><td><code class="inline-code">qknorm</code></td><td><code class="inline-code">True</code></td><td>Per-head Q/K RMSNorm</td><td>Adds <code class="inline-code">q_norm</code>/<code class="inline-code">k_norm</code> (<code class="inline-code">RMSNorm(head_dim)</code>) after projection, before RoPE; bounds attention-logit growth (Qwen2/Gemma2 refinement). Adds <code class="inline-code">16 × 2 × 128 = 4,096</code> params; <code class="inline-code">False</code> swaps in <code class="inline-code">nn.Identity</code> for a bit-identical A/B — see <a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a></td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">model.py:GroupedQueryAttention</code></td></tr><tr><td><code class="inline-code">use_ema</code></td><td><code class="inline-code">True</code></td><td>Exponential moving-average shadow</td><td><code class="inline-code">AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))</code>; validation and generation run on the EMA copy (<code class="inline-code">train.py:validate</code>, <code class="inline-code">train.py:generate_samples</code>), which is the noise-free center of the recent trajectory; deep-copies the FP32 model, so it costs one full FP32 copy (~2.06 GB) — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">ema_decay</code></td><td><code class="inline-code">0.999</code></td><td>EMA update factor</td><td>Right scale for 42K-step runs; 0.9999 suits &gt;100K steps</td><td><code class="inline-code">train.py:train_model</code></td></tr></tbody></table></div>
+<h3 id="data-pipeline-group" class="heading-anchor">Data pipeline group<a href="#data-pipeline-group" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Two distinct consumers exist. <strong>This repo's loader</strong> reads a small subset to build dataloaders over the token cache; the <strong>workspace pipeline</strong> (<code class="inline-code">LLM/shared_data</code>, outside this repo, invoked by <code class="inline-code">data/prepare_data.py:main</code>) is what actually downloads, filters, dedups, tokenizes, and packs the corpus. Keys the loader does not read are pass-through documentation of that pipeline — they have no effect on <code class="inline-code">train.py</code> runs in this repo, but they are part of the config contract and are test-enforced.</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">data_sources</code></td><td>6 sources (below)</td><td>Corpus mixture</td><td>Weighted mixture of FineWeb-Edu, The Stack, Wikipedia, StackOverflow-QA. <strong>No consumer in this repo</strong> — it documents the workspace pipeline's mixture; locally it is only validated by <code class="inline-code">tests/test_config.py::TestGetConfig.test_data_source_weights_positive</code></td><td>workspace pipeline (out of repo); test-only locally</td></tr><tr><td><code class="inline-code">num_workers</code></td><td><code class="inline-code">6</code></td><td>DataLoader worker count</td><td>6 workers × <code class="inline-code">prefetch_factor 16</code> keeps the GPU fed at ~200K tokens/step; <code class="inline-code">persistent_workers=True</code></td><td><code class="inline-code">data/shared_data/loader.py:build_training_data</code>, <code class="inline-code">build_synthetic_data</code></td></tr><tr><td><code class="inline-code">prefetch_factor</code></td><td><code class="inline-code">16</code></td><td>Batches buffered per worker</td><td>Async CPU→GPU prefetch; passed as <code class="inline-code">None</code> when <code class="inline-code">num_workers == 0</code></td><td>same</td></tr><tr><td><code class="inline-code">pin_memory</code></td><td><code class="inline-code">True</code></td><td>Pinned host memory</td><td>Enables <code class="inline-code">non_blocking=True</code> H2D copies — the only async transfer compatible with CUDA-graph stream ownership</td><td>same, plus <code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">target_tokens</code></td><td><code class="inline-code">8_000_000_000</code></td><td><strong>Pass-through</strong></td><td>Total corpus size for the workspace pipeline (8B × 4 B uint32 = 32 GB cache on disk). Informational in this repo</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">data_cache_dir</code></td><td><code class="inline-code">&#x27;data_cache&#x27;</code></td><td>Cache directory</td><td><code class="inline-code">build_training_data</code> mmaps <code class="inline-code">data_cache/tokens.bin</code> and raises <code class="inline-code">FileNotFoundError</code> with a <code class="inline-code">prepare_data.py</code> hint if missing</td><td><code class="inline-code">data/shared_data/loader.py:build_training_data</code>, <code class="inline-code">train.py:train_model</code> (fallback message)</td></tr><tr><td><code class="inline-code">data_cache_filename</code></td><td><code class="inline-code">&#x27;tokens.bin&#x27;</code></td><td>Cache file name</td><td>Raw little-endian uint32, no header</td><td>same</td></tr><tr><td><code class="inline-code">reuse_data_cache</code></td><td><code class="inline-code">True</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: reuse the cache on subsequent runs rather than rebuilding. The local loader always mmaps whatever exists</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">shuffle_documents</code></td><td><code class="inline-code">True</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: within-source document shuffle for diversity</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">shuffle_seed</code></td><td><code class="inline-code">42</code></td><td>Sampler RNG seed</td><td>Seeding <code class="inline-code">ShuffledRangeSampler</code> (<code class="inline-code">np.random.default_rng(seed + offset)</code>) makes the training permutation reproducible run to run; the only data key the <strong>local</strong> loader consumes for ordering</td><td><code class="inline-code">data/shared_data/loader.py:build_training_data</code>, <code class="inline-code">build_synthetic_data</code></td></tr><tr><td><code class="inline-code">dedup</code></td><td><code class="inline-code">True</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: SHA-256 exact-dedup on raw text</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">dedup_hash_bytes</code></td><td><code class="inline-code">256</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: hash prefix length (tokenizer-version-independent dedup)</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">min_doc_tokens</code></td><td><code class="inline-code">16</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: drop documents shorter than this after tokenization</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">max_doc_tokens</code></td><td><code class="inline-code">8192</code></td><td><strong>Pass-through</strong></td><td>Workspace pipeline: truncate any single document to this many tokens</td><td>workspace pipeline</td></tr><tr><td><code class="inline-code">tokenizer_name</code></td><td><code class="inline-code">&#x27;NousResearch/Meta-Llama-3-8B&#x27;</code></td><td>HF tokenizer id</td><td><code class="inline-code">AutoTokenizer.from_pretrained</code> in <code class="inline-code">data/shared_data/loader.py:build_tokenizer</code>; pad falls back to EOS. The load is best-effort — on failure the loader drops to <code class="inline-code">_SyntheticTokenizerStub</code> (byte ⇄ id) and warns that generation samples will be meaningless</td><td><code class="inline-code">data/shared_data/loader.py:build_tokenizer</code></td></tr><tr><td><code class="inline-code">tokenizer_cache_dir</code></td><td><code class="inline-code">None</code></td><td>HF cache location</td><td><code class="inline-code">None</code> = default HF cache; set to pin the tokenizer download</td><td>same</td></tr><tr><td><code class="inline-code">val_split</code></td><td><code class="inline-code">0.05</code></td><td>Validation holdout</td><td>Last 5% of the token stream, aligned to <code class="inline-code">seq_len + 1</code> chunks (<code class="inline-code">split // chunk * chunk</code>), held out in both real and synthetic paths</td><td><code class="inline-code">data/shared_data/loader.py:build_training_data</code>, <code class="inline-code">build_synthetic_data</code></td></tr></tbody></table></div>
+<p>The mixture (<code class="inline-code">data_sources</code>) with weights summing to 0.95:</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Source key</th><th>weight</th><th>HF dataset</th><th>Notes</th></tr></thead><tbody><tr><td><code class="inline-code">fineweb_edu</code></td><td>0.5</td><td><code class="inline-code">HuggingFaceFW/fineweb-edu</code></td><td>Educational web text, majority share</td></tr><tr><td><code class="inline-code">fineweb_code</code></td><td>0.1</td><td><code class="inline-code">HuggingFaceFW/fineweb-edu</code> (same repo!)</td><td>Word-filtered <code class="inline-code">&#x27;code&#x27;</code> subset via <code class="inline-code">filter_mode: &#x27;word&#x27;</code></td></tr><tr><td><code class="inline-code">the_stack_python</code></td><td>0.2</td><td><code class="inline-code">bigcode/the-stack</code></td><td>Python only</td></tr><tr><td><code class="inline-code">the_stack_multilang</code></td><td>0.05</td><td><code class="inline-code">bigcode/the-stack</code></td><td>9 languages (JS, TS, Rust, Go, C, C++, Java, SQL, Shell)</td></tr><tr><td><code class="inline-code">wikipedia</code></td><td>0.05</td><td><code class="inline-code">wikimedia/wikipedia</code></td><td><code class="inline-code">20231101.en</code> snapshot</td></tr><tr><td><code class="inline-code">stackoverflow_qa</code></td><td>0.05</td><td><code class="inline-code">open-phi/StackOverflow-QA</code></td><td>Q/A pairs</td></tr></tbody></table></div>
+<p>Note <code class="inline-code">fineweb_code</code> points at the same HuggingFace repo as <code class="inline-code">fineweb_edu</code> and relies on the pipeline's word filter — the two entries are distinct <em>mixture components</em>, not distinct downloads. The sum 0.95 (not 1.0) is intentional slack; the test only requires <code class="inline-code">0.5 &lt; sum ≤ 1.0</code>.</p>
+<h3 id="checkpointing-evaluation--logging-group" class="heading-anchor">Checkpointing, evaluation &amp; logging group<a href="#checkpointing-evaluation--logging-group" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Key</th><th>Default</th><th>Controls</th><th>Why</th><th>Consumed by</th></tr></thead><tbody><tr><td><code class="inline-code">model_folder</code></td><td><code class="inline-code">&#x27;weights&#x27;</code></td><td>Checkpoint directory</td><td>Created on demand; all artifacts land here</td><td><code class="inline-code">train.py:save_checkpoint</code>, <code class="inline-code">train.py:load_checkpoint</code>, <code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">model_filename</code></td><td><code class="inline-code">&#x27;llama3-515M&#x27;</code></td><td>Artifact name stem</td><td>Produces <code class="inline-code">&lt;stem&gt;_step_N.pt</code>, <code class="inline-code">&lt;stem&gt;_best.pt</code>, <code class="inline-code">&lt;stem&gt;_final_model_full.pt</code>, <code class="inline-code">&lt;stem&gt;_final_model_weights.pt</code></td><td>same</td></tr><tr><td><code class="inline-code">checkpoint_interval</code></td><td><code class="inline-code">5000</code></td><td>Periodic save cadence</td><td>Every 5K steps; step 0 and the final save are handled separately</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">keep_last_n_checkpoints</code></td><td><code class="inline-code">3</code></td><td>Retention policy</td><td>Deletes <code class="inline-code">_step_*.pt</code> files older than the newest 3 (<code class="inline-code">_best.pt</code> and final files don't match the pattern, so they survive)</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">async_checkpoint</code></td><td><code class="inline-code">True</code></td><td>Background save</td><td><code class="inline-code">torch.save</code> runs in a daemon <code class="inline-code">threading.Thread</code> (it releases the GIL); the loop joins the thread before exit. The final save is always synchronous — see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a></td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">train.py:save_checkpoint</code></td></tr><tr><td><code class="inline-code">preload</code></td><td><code class="inline-code">None</code></td><td>Cold-start vs resume</td><td>Any non-<code class="inline-code">None</code> value triggers <code class="inline-code">train.py:load_checkpoint</code>, which auto-globs the <strong>latest</strong> <code class="inline-code">_step_*.pt</code> — the value itself is not used as a path today, so it behaves as a boolean flag (<code class="inline-code">[INFERENCE]</code> about intent from the name)</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">val_interval</code></td><td><code class="inline-code">2000</code></td><td>Validation cadence</td><td><code class="inline-code">step % 2000 == 0</code>; runs the chunked loss over the held-out split <strong>on the EMA model</strong>; a new best saves <code class="inline-code">&lt;stem&gt;_best.pt</code></td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">train.py:validate</code></td></tr><tr><td><code class="inline-code">val_max_batches</code></td><td><code class="inline-code">100</code></td><td>Validation cap</td><td>Bounds validation time; 100 batches × 196,608 tokens = 19.7M tokens per eval</td><td><code class="inline-code">train.py:validate</code></td></tr><tr><td><code class="inline-code">generation_interval</code></td><td><code class="inline-code">20000</code></td><td>Sample cadence</td><td>Every 20K steps, 5 fixed prompts decoded on the EMA model and logged as a W&amp;B table</td><td><code class="inline-code">train.py:train_model</code> → <code class="inline-code">train.py:generate_samples</code></td></tr><tr><td><code class="inline-code">generation_max_tokens</code></td><td><code class="inline-code">128</code></td><td>Sample length</td><td>Cap per prompt; generation stops early on EOS</td><td><code class="inline-code">train.py:generate_samples</code></td></tr><tr><td><code class="inline-code">generation_temperature</code></td><td><code class="inline-code">0.8</code></td><td>Sampling temperature</td><td>Logits divided by temperature before top-k/top-p</td><td><code class="inline-code">train.py:generate_samples</code> → <code class="inline-code">train.py:top_k_top_p_sampling</code></td></tr><tr><td><code class="inline-code">generation_top_k</code></td><td><code class="inline-code">50</code></td><td>Top-k truncation</td><td>Restricts the sampling pool; note <code class="inline-code">top_p=0.9</code> is hardcoded in <code class="inline-code">train.py:generate_samples</code>, not configurable</td><td>same</td></tr><tr><td><code class="inline-code">wandb_project</code></td><td><code class="inline-code">&#x27;langgpt-llama3-pretrain&#x27;</code></td><td>W&amp;B project</td><td>Run name is generated as <code class="inline-code">llama3-515M-&lt;device&gt;-&lt;epoch&gt;</code>; a config snapshot is logged at init</td><td><code class="inline-code">train.py:train_model</code></td></tr><tr><td><code class="inline-code">wandb_entity</code></td><td><code class="inline-code">None</code></td><td>W&amp;B team/entity</td><td><code class="inline-code">None</code> = the API key's default entity</td><td>same</td></tr><tr><td><code class="inline-code">wandb_tags</code></td><td><code class="inline-code">[&#x27;llama3&#x27;,&#x27;515M&#x27;,&#x27;a100&#x27;,&#x27;pretrain&#x27;,&#x27;code&#x27;]</code></td><td>W&amp;B tags</td><td>Run discoverability</td><td>same</td></tr><tr><td><code class="inline-code">log_interval</code></td><td><code class="inline-code">50</code></td><td>Metric cadence</td><td><code class="inline-code">step % 50 == 0</code> (and past the resume step): loss, LR, grad norm, step time, tokens/sec, data-wait time, GPU memory/utilization → W&amp;B</td><td><code class="inline-code">train.py:train_model</code></td></tr></tbody></table></div>
+<p>Checkpoints are full state: model, optimizer (Adam moments), scheduler, step, tokens seen, best val loss, Python/NumPy/PyTorch/CUDA RNG, the config dict itself, and the EMA shadow when present — see <code class="inline-code">train.py:save_checkpoint</code> / <code class="inline-code">train.py:load_checkpoint</code> and <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>.</p>
+<h3 id="worked-memory-budget-a100-80gb-config-defaults" class="heading-anchor">Worked memory budget (A100 80GB, config defaults)<a href="#worked-memory-budget-a100-80gb-config-defaults" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Every number below is derived from the config values (the architecture, training and data groups above) unless marked measured. Full derivation and the technique-by-technique breakdown live in</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a> and its summary</p>
+<p>table in <a href="../training.html" class="doc-link">training.md</a>.</p>
+<p><strong>Constants.</strong> Batch 96, seq 2048, d_model 1024, vocab 128,000, 16 layers, 513.8M params, BF16 compute under <code class="inline-code">torch.autocast</code>. Parameters stay FP32 in memory (no <code class="inline-code">.bfloat16()</code> anywhere in <code class="inline-code">train.py</code>), so the <em>storage</em> rows below are FP32; the BF16 rows describe the compute-profile (weights as they appear in matmuls), not resident storage.</p>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Component</th><th>Arithmetic</th><th>Size</th></tr></thead><tbody><tr><td>Weights (FP32, resident)</td><td><code class="inline-code">513.8M × 4 B</code></td><td>2.06 GB</td></tr><tr><td>Gradients (FP32, resident)</td><td><code class="inline-code">513.8M × 4 B</code></td><td>2.06 GB</td></tr><tr><td>AdamW moments (FP32)</td><td><code class="inline-code">2 × 513.8M × 4 B</code></td><td>4.11 GB</td></tr><tr><td>EMA shadow (FP32, deep copy)</td><td><code class="inline-code">513.8M × 4 B</code></td><td>2.06 GB</td></tr><tr><td>Stored block inputs (<code class="inline-code">gradient_checkpointing=True</code>)</td><td><code class="inline-code">16 × 96 × 2048 × 1024 × 2 B</code></td><td>6.44 GB</td></tr><tr><td>Single-block recompute peak (during backward)</td><td><code class="inline-code">gate_up 3.22 + gate 1.61 + up 1.61 + down-input 1.61 + Q/K/V ≈ 0.8 GB</code></td><td>≈ 8.9 GB</td></tr><tr><td>LM-head logits, one chunk</td><td><code class="inline-code">256 rows × 128,000 × 2 B = 65.5 MB</code> (131 MB FP32 after upcast)</td><td>≈ 0.2 GB</td></tr><tr><td><strong>Peak total</strong></td><td>sum ≈ 25.8 GB (10.29 model state + 6.44 stored + 8.9 recompute + 0.2 logits), of which ≈ 9 GB is transient</td><td><strong>≈ 26 GB</strong></td></tr></tbody></table></div>
+<p>Two claims in the project docs now check out against this budget:</p>
+<ul class="doc-list">
+<li><strong>The chunked head is the difference between fitting and not fitting.</strong>
+<br> Full logits for one step are <code class="inline-code">96 × 2048 = 196,608</code> rows × 128,000 columns = 25.2B elements: 50.3 GB in BF16, 100.6 GB in FP32 — impossible on 80GB. <code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code> instead slices hidden into <code class="inline-code">ce_chunk_size</code>-row chunks (768 chunks at 256) and runs each chunk inside <code class="inline-code">checkpoint</code>, so only ~0.2 GB of logits is ever alive. This is the single largest line item removed.
+</li>
+<li><strong>The 92 GB → 20 GB headline.</strong> With checkpointing off, all 16 layers'
+<br> FFN intermediates live simultaneously: <code class="inline-code">16 × ≈6.4 GB ≈ 100 GB</code> derived, exceeding 80 GB; the 92 GB figure in AGENTS.md is a stale estimate for that configuration (nothing has been measured — no training run has completed and <code class="inline-code">.benchmarks/</code> is empty). With checkpointing on, the FP32-resident budget above lands at ≈26 GB including the EMA copy [derived], i.e. the "~20 GB" headline assumes BF16 parameter storage (the design profile) rather than the FP32 storage this repo actually uses; the docs' own honest accounting gives 20 GB with ~20% variance / 24–26 GB strict. The 78% headline is <code class="inline-code">(92 − 20) / 92 ≈ 78.3%</code> against the stale 92 GB figure.
+</li>
+</ul>
+<p><code class="inline-code">cuda_alloc_conf=&#x27;expandable_segments:True&#x27;</code> matters here: the checkpointed loss chunks allocate and free repeatedly, and expandable segments let the caching allocator release that memory back to the OS instead of pinning peak-reserved segments.</p>
+<p><strong>Off-GPU.</strong> The 8B-token corpus is 32 GB of uint32 on disk (<code class="inline-code">data_cache/tokens.bin</code>), but the loader mmaps it, so resident RAM is page-sized, not 32 GB. Host-side prefetch: <code class="inline-code">6 workers × 16 batches × 3.15 MB/batch (input+target longs)</code> ≈ 0.3 GB pinned.</p>
+<h3 id="informational-vs-load-bearing" class="heading-anchor">Informational vs load-bearing<a href="#informational-vs-load-bearing" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Class</th><th>Keys</th><th>Consequence of changing</th></tr></thead><tbody><tr><td>Load-bearing (numerics)</td><td><code class="inline-code">d_model</code>, <code class="inline-code">n_layers</code>, <code class="inline-code">n_heads</code>, <code class="inline-code">n_kv_heads</code>, <code class="inline-code">head_dim</code>, <code class="inline-code">d_ff</code>, <code class="inline-code">vocab_size</code>, <code class="inline-code">seq_len</code>, <code class="inline-code">rope_theta</code>, <code class="inline-code">rms_norm_eps</code>, <code class="inline-code">batch_size</code>, <code class="inline-code">gradient_accumulation</code>, <code class="inline-code">max_steps</code>, <code class="inline-code">learning_rate</code>, <code class="inline-code">min_lr</code>, <code class="inline-code">warmup_steps</code>, <code class="inline-code">weight_decay</code>, <code class="inline-code">max_grad_norm</code>, <code class="inline-code">beta1</code>, <code class="inline-code">beta2</code>, <code class="inline-code">eps</code>, <code class="inline-code">use_z_loss</code>, <code class="inline-code">z_loss_weight</code>, <code class="inline-code">qknorm</code>, <code class="inline-code">use_ema</code>, <code class="inline-code">ema_decay</code></td><td>Changes the loss, memory, or schedule every run</td></tr><tr><td>Load-bearing (memory/perf)</td><td><code class="inline-code">compile_model</code>, <code class="inline-code">compile_mode</code>, <code class="inline-code">gradient_checkpointing</code>, <code class="inline-code">ce_chunk_size</code>, <code class="inline-code">tf32</code>, <code class="inline-code">cudnn_benchmark</code>, <code class="inline-code">cuda_alloc_conf</code>, <code class="inline-code">rmsnorm_impl</code>, <code class="inline-code">swiglu_impl</code>, <code class="inline-code">cross_entropy_impl</code></td><td>Changes peak memory, throughput, or kernel selection</td></tr><tr><td>Load-bearing (I/O)</td><td><code class="inline-code">num_workers</code>, <code class="inline-code">prefetch_factor</code>, <code class="inline-code">pin_memory</code>, <code class="inline-code">data_cache_dir</code>, <code class="inline-code">data_cache_filename</code>, <code class="inline-code">shuffle_seed</code>, <code class="inline-code">tokenizer_name</code>, <code class="inline-code">tokenizer_cache_dir</code>, <code class="inline-code">val_split</code>, <code class="inline-code">val_interval</code>, <code class="inline-code">val_max_batches</code>, <code class="inline-code">generation_*</code>, <code class="inline-code">model_folder</code>, <code class="inline-code">model_filename</code>, <code class="inline-code">checkpoint_interval</code>, <code class="inline-code">keep_last_n_checkpoints</code>, <code class="inline-code">async_checkpoint</code>, <code class="inline-code">preload</code>, <code class="inline-code">wandb_*</code>, <code class="inline-code">log_interval</code></td><td>Changes data loading, evaluation, artifacts, or logging</td></tr><tr><td>Informational / pass-through</td><td><code class="inline-code">optimizer</code>, <code class="inline-code">data_sources</code>, <code class="inline-code">target_tokens</code>, <code class="inline-code">reuse_data_cache</code>, <code class="inline-code">shuffle_documents</code>, <code class="inline-code">dedup</code>, <code class="inline-code">dedup_hash_bytes</code>, <code class="inline-code">min_doc_tokens</code>, <code class="inline-code">max_doc_tokens</code></td><td>No effect on local <code class="inline-code">train.py</code> runs; documents the workspace pipeline or W&amp;B intent</td></tr></tbody></table></div>
+<p>The three most dangerous to change casually: <code class="inline-code">ce_chunk_size</code> (raise it and the loss memory grows linearly — 65.5 MB × <code class="inline-code">chunk/256</code>), <code class="inline-code">gradient_checkpointing</code> (off ⇒ OOM at batch 96), and <code class="inline-code">rope_theta</code> (any deviation from 500K changes the positional frequency schedule the whole run is built around).</p>
+<h3 id="design-decisions" class="heading-anchor">Design decisions<a href="#design-decisions" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><strong>Plain dict, not a dataclass.</strong> <code class="inline-code">config.py:get_config</code> returns a fresh
+<br> dict; consumers use <code class="inline-code">config.get(key, default)</code>, so a partial config (the test <code class="inline-code">tiny_config</code> in <code class="inline-code">tests/conftest.py</code>, or the <code class="inline-code">e2e_gpu_smoke.py</code> override dict) behaves sensibly without re-specifying every key.
+</li>
+<li><strong>The test suite is the schema.</strong> <code class="inline-code">tests/test_config.py::TestGetConfig.test_has_all_required_keys</code>
+<br> guards against deletions, <code class="inline-code">test_no_extra_unknown_keys</code> against undocumented additions (its failure message says exactly that: "add tests or extend REQUIRED_KEYS"), <code class="inline-code">test_known_values</code> pins the nine core architecture/loss values, <code class="inline-code">test_gqa_heads_divide_evenly</code> enforces <code class="inline-code">n_heads % n_kv_heads == 0</code>, and <code class="inline-code">test_data_source_weights_positive</code> keeps the mixture sane. See
+<br> <a href="training-reference.html" class="doc-link">training-reference.md</a> for the fixture story.
+</li>
+<li><strong>Defaults favor the reference run.</strong> 515M params, 8B tokens, 1× A100
+<br> 80GB, 42K steps: per <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a> this sits near the Chinchilla-optimal token/param ratio for this budget, and every memory lever is pre-armed so the run fits out of the box.
+</li>
+<li><strong>Honest pass-throughs.</strong> Several data keys describe the workspace
+<br> <code class="inline-code">LLM/shared_data</code> pipeline that <code class="inline-code">data/prepare_data.py:main</code> invokes; they are documented here as the config contract because the pipeline consumes them from the same conceptual config, but this repo's code never reads them. Treat them as build-parameters for <code class="inline-code">python data/prepare_data.py</code>, not as knobs that affect <code class="inline-code">train.py</code> in this repo.
+</li>
+</ul>
+<h2 id="ema-internals--the-canonical-treatment" class="heading-anchor">EMA internals — the canonical treatment<a href="#ema-internals--the-canonical-treatment" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>The EMA shadow is <code class="inline-code">torch.optim.swa_utils.AveragedModel</code> with an</p>
+<p>exponential update function (<code class="inline-code">train.py:train_model</code>):</p>
+<div class="code-wrapper" data-lines="2"><div class="code-header"><span class="code-lang">python</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-python"># illustrative — verbatim excerpt from train.py:train_model
+ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get(&#x27;ema_decay&#x27;, 0.999)))</code></pre></div>
+<p><strong>What <code class="inline-code">AveragedModel</code> is.</strong> It wraps the live model and maintains a shadow</p>
+<p>copy under <code class="inline-code">ema.module</code> — a deep copy taken at construction — plus an</p>
+<p>internal averaging counter (<code class="inline-code">n_averaged</code>). The shadow is <strong>not</strong> a</p>
+<p><code class="inline-code">state_dict</code> or a set of buffers: it is a full <code class="inline-code">nn.Module</code> with the same</p>
+<p>named parameters as the live model. That is why resolving the LM head</p>
+<p>through the wrapper needs the <code class="inline-code">train.py:_head_weight</code> helper</p>
+<p>(<code class="inline-code">model.output_proj</code> if present, else <code class="inline-code">model.module.output_proj</code>) — a</p>
+<p>plain attribute access on <code class="inline-code">ema</code> returns the <em>live</em> model's head, not the</p>
+<p>shadow's.</p>
+<p><strong>The update rule.</strong> <code class="inline-code">get_ema_multi_avg_fn(decay)</code> returns an update</p>
+<p>function that <code class="inline-code">train_model</code> calls once per optimizer step via</p>
+<p><code class="inline-code">ema.update_parameters(model)</code>. With <code class="inline-code">decay = 0.999</code>, each step applies</p>
+<div class="math-block">$$
+W_{t+1}^{\text{EMA}} = 0.999 \cdot W_t^{\text{EMA}} + 0.001 \cdot W_{t+1}^{\text{model}}
+$$</div>
+<p>i.e. the shadow is an exponentially weighted moving average of the online</p>
+<p>weights, initialized to a copy of the model at <code class="inline-code">AveragedModel</code></p>
+<p>construction (step 0). At decay 0.999, the shadow's effective memory is</p>
+<p>~1/(1−0.999) = 1000 optimizer steps ≈ 196.6M tokens at 196,608</p>
+<p>tokens/step — the right scale for a 42K-step run. The shadow lags the</p>
+<p>online weights by design; that lag is why the LR floor matters (see</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>): a zero-LR</p>
+<p>tail freezes the online weights while the EMA keeps blending stale</p>
+<p>snapshots, so the shadow converges to the final weights only if they keep</p>
+<p>moving.</p>
+<p><strong>Why validation and generation use it.</strong> <code class="inline-code">train.py:validate</code> and</p>
+<p><code class="inline-code">train.py:generate_samples</code> run on the EMA copy when present. The EMA</p>
+<p>center of the recent weight trajectory is the noise-free estimate of the</p>
+<p>optimizer's target — the online weights oscillate around it at batch 96,</p>
+<p>so the shadow's loss is smoother and its samples are more representative</p>
+<p>than a single noisy step. The <code class="inline-code">val/loss</code> vs <code class="inline-code">train/loss</code> gap is therefore</p>
+<p>not a pure generalization measurement (train loss is live-weights, val</p>
+<p>loss is EMA-weights).</p>
+<p><strong>The 2.06 GB cost.</strong> <code class="inline-code">AveragedModel</code> deep-copies the model at</p>
+<p>construction and <code class="inline-code">train.py</code> never casts it (<code class="inline-code">use_ema</code> construction happens</p>
+<p>after <code class="inline-code">.to(device)</code> with FP32 params), so the shadow is a full FP32 weight</p>
+<p>copy: 513,840,128 × 4 B = <strong>2.06 GB</strong> that nothing else reuses. (The</p>
+<p>older docs' "1.03 GB BF16 shadow" was wrong — there is no <code class="inline-code">.bfloat16()</code></p>
+<p>anywhere in <code class="inline-code">train.py</code>.) The same shadow is serialized into every</p>
+<p>checkpoint via <code class="inline-code">ema.state_dict()</code> in <code class="inline-code">train.py:save_checkpoint</code> and</p>
+<p>restored in <code class="inline-code">train.py:load_checkpoint</code>, so a resumed run's validation</p>
+<p>starts from the saved shadow rather than a fresh copy.</p>
+<h2 id="references" class="heading-anchor">References<a href="#references" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><strong>Concepts:</strong>
+<ul class="doc-list">
+<li><a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a> —
+<br> RoPE theory, attention/GQA/SDPA, the residual-stream view of the transformer; the "why" behind § Model Reference and the RoPE deep dive.
+</li>
+<li><a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a> —
+<br> RMSNorm/QK-norm, SwiGLU, loss functions.
+</li>
+<li><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a> —
+<br> optimization, mixed precision, memory engineering, gradient checkpointing, scaling, reproducibility; the full derivation of the worked memory budget.
+</li>
+<li><a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a> — Triton kernel
+<br> theory and data-engineering theory.
+</li>
+</ul>
+</li>
+<li><strong>References:</strong>
+<ul class="doc-list">
+<li><a href="../training.html" class="doc-link">training.md</a> — how the loop consumes <code class="inline-code">return_hidden</code> +
+<br> <code class="inline-code">chunked_head_cross_entropy_with_z</code>, every training-group key in use, and the 92→20 GB memory-stack summary.
+</li>
+<li><a href="data-reference.html" class="doc-link">data-reference.md</a> — the three Triton kernels
+<br> (<code class="inline-code">rmsnorm</code>, <code class="inline-code">swiglu</code>, cross-entropy) and the loader/tokenizer consumers of the data group.
+</li>
+<li><a href="training-reference.html" class="doc-link">training-reference.md</a> — the test classes cited
+<br> above (<code class="inline-code">TestRoPE</code>, <code class="inline-code">TestGroupedQueryAttention</code>, <code class="inline-code">TestChunked*</code>, <code class="inline-code">TestGetConfig</code>, <code class="inline-code">TestTransformerParamCount</code>, …) and the <code class="inline-code">REQUIRED_KEYS</code> contract.
+</li>
+</ul>
+</li>
+<li><strong>Guides:</strong> <a href="../guides/learning-paths.html" class="doc-link">learning-paths.md</a> (where this
+<br> doc sits in each path), <a href="../guides/glossary.html" class="doc-link">glossary.md</a> (notation: <code class="inline-code">B</code>, <code class="inline-code">S</code>, <code class="inline-code">d</code>, <code class="inline-code">N</code>, <code class="inline-code">V</code>, <code class="inline-code">n_kv</code>), <a href="../guides/troubleshooting.html" class="doc-link">troubleshooting.md</a> (what to check when a run OOMs or diverges).
+</li>
+<li><strong>Docs index:</strong> <a href="../README.html" class="doc-link">README.md</a> — the new nav map for the docs
+<br> tree; <a href="../../README.html" class="doc-link">../../README.md</a> — repo root.
+</li>
+<li><strong>Key source files:</strong> <code class="inline-code">model.py</code> (<code class="inline-code">RoPE</code>, <code class="inline-code">RMSNorm</code>, <code class="inline-code">GroupedQueryAttention</code>,
+<br> <code class="inline-code">SwiGLUFFN</code>, <code class="inline-code">DecoderBlock</code>, <code class="inline-code">Decoder</code>, <code class="inline-code">Transformer</code>, <code class="inline-code">chunked_cross_entropy_with_z</code>, <code class="inline-code">chunked_head_cross_entropy_with_z</code>, <code class="inline-code">build_transformer</code>), <code class="inline-code">config.py:get_config</code>, <code class="inline-code">train.py</code> (<code class="inline-code">train_model</code>, <code class="inline-code">validate</code>, <code class="inline-code">generate_samples</code>, <code class="inline-code">save_checkpoint</code>, <code class="inline-code">load_checkpoint</code>, <code class="inline-code">top_k_top_p_sampling</code>, <code class="inline-code">setup_gpu_optimizations</code>), <code class="inline-code">data/shared_data/loader.py</code> (<code class="inline-code">build_training_data</code>, <code class="inline-code">build_synthetic_data</code>, <code class="inline-code">build_tokenizer</code>, <code class="inline-code">PackedDataset</code>, <code class="inline-code">_SyntheticTokenizerStub</code>), and the contract tests in <code class="inline-code">tests/test_model.py</code>, <code class="inline-code">tests/test_config.py</code>, <code class="inline-code">tests/conftest.py</code>.
+</li>
+</ul>
+                </article>
+
+                <div class="doc-footer-nav">
+                    <a href="../../docs/guides/glossary.html" class="nav-card prev-card"><span class="card-label">← Previous</span><span class="card-title">Glossary — Notation, Acronyms, File Layout</span></a>
+                    <a href="../../docs/references/data-reference.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">Data, Tokenizer & Kernels Reference</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#overview" class="toc-link">Overview</a></li><li class="toc-h2"><a href="#model-reference-modelpy" class="toc-link">Model Reference (model.py)</a></li><li class="toc-h3"><a href="#file-overview-and-module-map" class="toc-link">File Overview and Module Map</a></li><li class="toc-h3"><a href="#block-by-block-walkthrough" class="toc-link">Block-by-Block Walkthrough</a></li><li class="toc-h3"><a href="#the-chunked-losses-reference-vs-training-path" class="toc-link">The Chunked Losses: Reference vs. Training Path</a></li><li class="toc-h3"><a href="#factory-and-diagnostics" class="toc-link"> — Factory and Diagnostics</a></li><li class="toc-h3"><a href="#end-to-end-tensor-shape-trace" class="toc-link">End-to-End Tensor Shape Trace</a></li><li class="toc-h3"><a href="#parameter-budget" class="toc-link">Parameter Budget</a></li><li class="toc-h3"><a href="#design-decisions-and-pitfalls" class="toc-link">Design Decisions and Pitfalls</a></li><li class="toc-h2"><a href="#rope-implementation-deep-dive" class="toc-link">RoPE Implementation Deep Dive</a></li><li class="toc-h3"><a href="#why-position-information-is-needed" class="toc-link">Why Position Information is Needed</a></li><li class="toc-h3"><a href="#what-rope-does-intuitively" class="toc-link">What RoPE Does, Intuitively</a></li><li class="toc-h3"><a href="#the-mathematical-foundation" class="toc-link">The Mathematical Foundation</a></li><li class="toc-h3"><a href="#the-relative-position-property-the-big-payoff" class="toc-link">The Relative-Position Property (The Big Payoff)</a></li><li class="toc-h3"><a href="#frequency-schedule--why" class="toc-link">Frequency Schedule — Why </a></li><li class="toc-h3"><a href="#implementation-walkthrough" class="toc-link">Implementation Walkthrough</a></li><li class="toc-h3"><a href="#tensor-shape-trace" class="toc-link">Tensor Shape Trace</a></li><li class="toc-h3"><a href="#why-evenodd-pairing-why" class="toc-link">Why Even/Odd Pairing, Why  + </a></li><li class="toc-h3"><a href="#precomputed-buffers--why" class="toc-link">Precomputed Buffers — Why </a></li><li class="toc-h3"><a href="#applied-to-q-and-k-but-not-v" class="toc-link">Applied to Q and K, but Not V</a></li><li class="toc-h3"><a href="#interaction-with-gqa-and-flash-attention-2" class="toc-link">Interaction with GQA and Flash Attention 2</a></li><li class="toc-h3"><a href="#length-extrapolation--interpolation" class="toc-link">Length Extrapolation & Interpolation</a></li><li class="toc-h3"><a href="#gradient-flow-through-rope" class="toc-link">Gradient Flow Through RoPE</a></li><li class="toc-h3"><a href="#numerical-properties--edge-cases" class="toc-link">Numerical Properties & Edge Cases</a></li><li class="toc-h3"><a href="#memory--compute-cost" class="toc-link">Memory & Compute Cost</a></li><li class="toc-h3"><a href="#common-pitfalls--how-this-code-avoids-them" class="toc-link">Common Pitfalls & How This Code Avoids Them</a></li><li class="toc-h2"><a href="#config-reference-configpyget_config" class="toc-link">Config Reference (config.py:get_config)</a></li><li class="toc-h3"><a href="#how-the-config-flows" class="toc-link">How the config flows</a></li><li class="toc-h3"><a href="#architecture-group" class="toc-link">Architecture group</a></li><li class="toc-h3"><a href="#training--optimizer-group" class="toc-link">Training & optimizer group</a></li><li class="toc-h3"><a href="#precision-compilation--memory-group" class="toc-link">Precision, compilation & memory group</a></li><li class="toc-h3"><a href="#data-pipeline-group" class="toc-link">Data pipeline group</a></li><li class="toc-h3"><a href="#checkpointing-evaluation--logging-group" class="toc-link">Checkpointing, evaluation & logging group</a></li><li class="toc-h3"><a href="#worked-memory-budget-a100-80gb-config-defaults" class="toc-link">Worked memory budget (A100 80GB, config defaults)</a></li><li class="toc-h3"><a href="#informational-vs-load-bearing" class="toc-link">Informational vs load-bearing</a></li><li class="toc-h3"><a href="#design-decisions" class="toc-link">Design decisions</a></li><li class="toc-h2"><a href="#ema-internals--the-canonical-treatment" class="toc-link">EMA internals — the canonical treatment</a></li><li class="toc-h2"><a href="#references" class="toc-link">References</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="../../assets/portal.js"></script>
+</body>
+</html>

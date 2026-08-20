@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting — FAQ | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="../../index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="../../index.html" class="header-link">Portal</a>
+            <a href="../../README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="../../AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="../../SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="../../docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="../../docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="../../docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="../../docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="../../docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="../../docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="../../docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="../../docs/guides/troubleshooting.html" class="nav-link active" title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="../../docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="../../docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="../../docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="../../docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="../../index.html">Docs</a> &gt; <span>Guides</span> &gt; <span class="current">Troubleshooting — FAQ</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Troubleshooting — FAQ</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> docs/guides/troubleshooting.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 3,308 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~15 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <span class="doc-anchor" id="troubleshooting--llama-3-lite-faq"></span>
+<blockquote><strong>Audience:</strong> beginner–intermediate (anyone running <code class="inline-code">train.py</code> or the test suite).</blockquote>
+<p>This guide is organized by symptom: you hit an error, you look up the message here, and you get the cause, the fix, and how to prevent it next time. Every quoted message is the exact text the code prints. Facts are anchored to symbols in <code class="inline-code">train.py</code>, <code class="inline-code">model.py</code>, <code class="inline-code">config.py</code>, <code class="inline-code">data/shared_data/loader.py</code>, and <code class="inline-code">data/prepare_data.py</code> — see</p>
+<p><a href="../references/model-reference.html" class="doc-link"><code class="inline-code">model.md</code></a> and</p>
+<p><a href="../training.html" class="doc-link"><code class="inline-code">training.md</code></a> for the full walkthroughs, and</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link"><code class="inline-code">memory-engineering.md</code></a> for the memory</p>
+<p>arithmetic behind the OOM entry.</p>
+<p>The two messages that confuse people the most, up front:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">WARN: Token cache not found at data_cache/tokens.bin. Run `python data/prepare_data.py` first (or pass `data_sources` empty + use build_synthetic_data).</code></pre></div>
+<p>vs.</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">LLaMA-3-Lite data prep delegates to the universal pipeline at `LLM/shared_data/` ...</code></pre></div>
+<p>The first is a <strong>runtime warning</strong> from <code class="inline-code">train.py</code> — training still starts on synthetic data. The second is a <strong>hard exit</strong> from <code class="inline-code">data/prepare_data.py</code> — the real corpus cannot be built on this machine at all. They are two different errors; entries 2 and 3 cover them separately.</p>
+<div class="code-wrapper collapsed" data-lines="23"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="expand-btn" data-label="expand ▾ · 23 lines" onclick="toggleCode(this)">expand ▾ · 23 lines</button><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>Run python train.py
+   │
+   ▼
+data_cache/tokens.bin exists?
+   ├─ no  → FileNotFoundError caught in train_model
+   │         │
+   │         ▼
+   │      WARN: no token cache found — falling back to synthetic data
+   │         │
+   │         ▼
+   │      Training runs on random uint32 ids
+   │
+   └─ yes → Real corpus + real tokenizer
+
+Run python data/prepare_data.py
+   │
+   ▼
+workspace LLM/shared_data importable?
+   ├─ no  → SystemExit: universal pipeline not importable
+   │         │
+   │         ▼
+   │      No corpus can be built here
+   └─ yes → (pipeline runs, builds the cache)</code></pre></div>
+<hr class='doc-hr'>
+<h2 id="1-cuda-out-of-memory-at-batch-96" class="heading-anchor">1. CUDA out of memory at batch 96<a href="#1-cuda-out-of-memory-at-batch-96" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> <code class="inline-code">torch.OutOfMemoryError: CUDA out of memory</code> (or a clean process kill by the OOM killer) during the warmup forward or the first training step on an 80 GB A100.</p>
+<p><strong>Cause.</strong> Batch 96 × seq 2048 is the headline configuration, and it only fits because two techniques are on by default. <code class="inline-code">config.py:get_config</code> sets <code class="inline-code">gradient_checkpointing: True</code> and <code class="inline-code">ce_chunk_size: 256</code>; the loss docstring in <code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code> states that chunking plus per-chunk <code class="inline-code">checkpoint</code> "bounds the loss memory to ~0.3 GB at <code class="inline-code">chunk_size=256</code> instead of the ~50 GB a full <code class="inline-code">[N, V]</code> logits tensor would need." README's memory table puts the peak at ~92 GB without these techniques — over the 80 GB budget — versus ~20 GB with them. If either toggle is off, or the chunk size is raised, you are back in OOM territory.</p>
+<p><strong>Fix.</strong> In order of preference:</p>
+<ol class="doc-list">
+<li>Confirm <code class="inline-code">gradient_checkpointing: True</code> in <code class="inline-code">config.py:get_config</code>. It
+<br> must stay on at this batch size; <code class="inline-code">model.py:Transformer.forward</code> only applies <code class="inline-code">checkpoint(layer, x, use_reentrant=False)</code> per layer when the flag is set <strong>and</strong> the model is in training mode.
+</li>
+<li>Lower <code class="inline-code">ce_chunk_size</code> (default 256). Each chunk materializes one
+<br> <code class="inline-code">[chunk_size, 128000]</code> slice at a time: at 256 rows of FP32 logits that is <code class="inline-code">256 × 128000 × 4 B ≈ 0.13 GB</code> live per chunk. Halving it halves that slice.
+</li>
+<li>Reduce <code class="inline-code">batch_size</code> (e.g. 96 → 48) and compensate with
+<br> <code class="inline-code">gradient_accumulation</code> so the optimizer still steps on the same effective batch.
+</li>
+<li>If fragmentation is the culprit rather than steady-state usage, the
+<br> allocator is already configured for it: <code class="inline-code">train.py:setup_gpu_optimizations</code> exports <code class="inline-code">PYTORCH_CUDA_ALLOC_CONF = config[&#x27;cuda_alloc_conf&#x27;]</code>, which is <code class="inline-code">expandable_segments:True</code> by default. If you overrode it, put it back.
+</li>
+</ol>
+<p><strong>Prevention.</strong> Treat the memory budget as a derived quantity, not a guess — <a href="../concepts/training-and-memory.html" class="doc-link">memory-engineering.md</a> derives every line of the stack table including the 92 GB → 20 GB arithmetic. Change one knob at a time and watch <code class="inline-code">gpu/memory_peak_mb</code> in the W&amp;B log dict produced by <code class="inline-code">train.py:train_model</code>.</p>
+<hr class='doc-hr'>
+<h2 id="2---but-training-still-starts" class="heading-anchor">2. <code class="inline-code">Token cache not found at data_cache/tokens.bin</code> — but training still starts<a href="#2---but-training-still-starts" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> <code class="inline-code">train.py</code> prints a <code class="inline-code">WARN:</code> line starting with the <code class="inline-code">FileNotFoundError</code> text and then continues.</p>
+<p><strong>Cause.</strong> <code class="inline-code">train.py:train_model</code> tries <code class="inline-code">build_training_data(config)</code> first; <code class="inline-code">data/shared_data/loader.py:build_training_data</code> raises when <code class="inline-code">data_cache/tokens.bin</code> does not exist:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">Token cache not found at data_cache/tokens.bin. Run `python data/prepare_data.py` first (or pass `data_sources` empty + use build_synthetic_data).</code></pre></div>
+<p><code class="inline-code">train_model</code> catches exactly <code class="inline-code">FileNotFoundError</code> and falls back:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">WARN: no token cache found — falling back to synthetic data. Run `python data/prepare_data.py` to build the real corpus cache at data_cache/tokens.bin.</code></pre></div>
+<p>So this is <strong>not</strong> a crash: it is the smoke-test path. You are training on synthetic random ids (see entry 11 for why the output will look like garbage).</p>
+<p><strong>Fix.</strong> To train on real text, build the corpus first: <code class="inline-code">python data/prepare_data.py</code>, which runs the workspace pipeline and then concatenates the packed shards into the uint32 <code class="inline-code">tokens.bin</code> the loader mmaps (<code class="inline-code">data/shared_data/loader.py:build_training_data</code> documents the layout: "raw <code class="inline-code">uint32</code> little-endian with no header"). Then rerun <code class="inline-code">python train.py</code> — the <code class="inline-code">WARN</code> disappears.</p>
+<p><strong>Prevention.</strong> If you intend a real run, check for <code class="inline-code">data_cache/tokens.bin</code> before launching, and read</p>
+<p><a href="quickstart.html" class="doc-link"><code class="inline-code">quickstart.md</code></a> which walks the build-then-train order.</p>
+<p>A <code class="inline-code">WARN:</code> in the first three lines of a training log means you are on synthetic data; the plan's 42k-step run should never train on it.</p>
+<hr class='doc-hr'>
+<h2 id="3--exits-with-the--systemexit" class="heading-anchor">3. <code class="inline-code">data/prepare_data.py</code> exits with the <code class="inline-code">LLM/shared_data</code> SystemExit<a href="#3--exits-with-the--systemexit" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> Running <code class="inline-code">python data/prepare_data.py</code> prints an error and the process exits non-zero, with text starting:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">LLaMA-3-Lite data prep delegates to the universal pipeline at `LLM/shared_data/` (shared_data.config / shared_data.prepare_data). That workspace package is not importable on this machine (...). This project vendors only the loader (data/shared_data/).</code></pre></div>
+<p><strong>Cause.</strong> <code class="inline-code">data/prepare_data.py</code> is a thin shim: <code class="inline-code">data/prepare_data.py:main</code> calls <code class="inline-code">_apply_llama3_defaults()</code>, which does <code class="inline-code">from shared_data.config import UNIVERSAL_TOTAL_TOKENS</code>. That module lives in the <strong>workspace</strong> package at <code class="inline-code">LLM/shared_data/</code> (sibling of this repo, not inside it). The vendored <code class="inline-code">data/shared_data/</code> contains only the loader (<code class="inline-code">__init__.py</code> + <code class="inline-code">loader.py</code>). When the workspace package is absent (fresh clone, or this repo moved outside the <code class="inline-code">LLM/</code> tree), the import fails with <code class="inline-code">ModuleNotFoundError</code> and <code class="inline-code">data/prepare_data.py:main</code> re-raises it as that <code class="inline-code">SystemExit</code>.</p>
+<p><strong>Fix.</strong> Make the workspace package importable: the repo must sit at <code class="inline-code">…/LLM/LLaMA-3-Lite</code> with the universal pipeline present at <code class="inline-code">…/LLM/shared_data/</code> (which is where <code class="inline-code">data/prepare_data.py</code> inserts into <code class="inline-code">sys.path</code>). If the workspace lives elsewhere, point the shim's <code class="inline-code">_WORKSPACE_ROOT</code> at it.</p>
+<p><strong>Prevention.</strong> Distinguish this from entry 2: this is the <strong>build</strong> step failing, entry 2 is the <strong>train</strong> step warning. On machines without the workspace pipeline you cannot build the real corpus; use the synthetic fallback (entry 2) or prepare <code class="inline-code">tokens.bin</code> elsewhere and copy it in. The two-file vendored reality is documented honestly in</p>
+<p><a href="../training.html" class="doc-link">training.md</a> (the data-pipeline section).</p>
+<hr class='doc-hr'>
+<h2 id="4-triton-import-errors-on-mac--cpu" class="heading-anchor">4. Triton import errors on Mac / CPU<a href="#4-triton-import-errors-on-mac--cpu" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> With <code class="inline-code">rmsnorm_impl: &#x27;triton&#x27;</code> (or <code class="inline-code">swiglu_impl</code> / <code class="inline-code">cross_entropy_impl</code>) set on a box without <code class="inline-code">triton</code> installed, the run crashes with a hard <code class="inline-code">ImportError</code> instead of falling back. Typical error:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">ImportError: cross_entropy_impl=&#x27;triton&#x27; requires the `triton` package. Install with `pip install triton` (Linux + CUDA only) and set ENABLE_TRITON_KERNELS=1, or use cross_entropy_impl=&#x27;pytorch&#x27;.</code></pre></div>
+<p>The <code class="inline-code">RMSNorm</code> / <code class="inline-code">SwiGLUFFN</code> paths surface a similar <code class="inline-code">ImportError</code> from the kernel itself:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">ImportError: triton_rmsnorm requires the `triton` package. Install with `pip install triton` (Linux + CUDA only). Use `rmsnorm_impl=&#x27;pytorch&#x27;` for CPU/Mac.</code></pre></div>
+<p><strong>Cause.</strong> The Triton kernels are opt-in and Linux+CUDA-only. <code class="inline-code">kernels/rmsnorm_triton.py</code>, <code class="inline-code">kernels/swiglu_triton.py</code>, and <code class="inline-code">kernels/cross_entropy_triton.py</code> each guard <code class="inline-code">import triton</code> in a <code class="inline-code">try/except ImportError</code> and set <code class="inline-code">HAS_TRITON</code>; the public entry points then raise <code class="inline-code">ImportError</code> when called. <code class="inline-code">model.py:RMSNorm.forward</code>, <code class="inline-code">model.py:SwiGLUFFN.forward</code>, and <code class="inline-code">model.py:chunked_cross_entropy_with_z</code> make a direct call with no <code class="inline-code">try/except</code> (AGENTS.md hard rule 7), so the kernel's <code class="inline-code">ImportError</code> propagates; <code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code> raises an <code class="inline-code">ImportError</code> at function entry with a remediation message. There is no silent fallback — the run fails loudly. On macOS, <code class="inline-code">pip install triton</code> is not available — Triton requires a CUDA toolchain, so the kernels simply cannot run on a Mac.</p>
+<p><strong>Fix.</strong> On a Mac or CPU box: leave the <code class="inline-code">*_impl</code> keys at their <code class="inline-code">&#x27;pytorch&#x27;</code> defaults; nothing else to do. If you call a kernel entry point directly (e.g. <code class="inline-code">kernels/rmsnorm_triton.py:triton_rmsnorm</code>), it raises <code class="inline-code">ImportError(&quot;triton_rmsnorm requires the </code>triton<code class="inline-code"> package. Install with </code>pip install triton<code class="inline-code"> (Linux + CUDA only).&quot;)</code> — that is the public contract, not a bug. On a Linux box with CUDA: <code class="inline-code">pip install triton</code>, then set <code class="inline-code">ENABLE_TRITON_KERNELS=1</code> (entry 5).</p>
+<p><strong>Prevention.</strong> Default config is <code class="inline-code">&#x27;pytorch&#x27;</code> for all three impls (<code class="inline-code">config.py:get_config</code>), so the only way to hit this on Mac/CPU is to set a <code class="inline-code">*_impl</code> to <code class="inline-code">&#x27;triton&#x27;</code> manually — don't. The <code class="inline-code">HAS_TRITON</code> gate pattern is covered in <a href="../concepts/data-and-kernels.html" class="doc-link">kernel-programming.md</a> and the kernel reference <a href="../references/data-reference.html" class="doc-link"><code class="inline-code">kernels.md</code></a>.</p>
+<hr class='doc-hr'>
+<h2 id="5" class="heading-anchor">5. <code class="inline-code">ENABLE_TRITON_KERNELS != &#x27;1&#x27;; forcing all to &#x27;pytorch&#x27;</code><a href="#5" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> Config says <code class="inline-code">rmsnorm_impl: &#x27;triton&#x27;</code> but training prints:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">WARN: rmsnorm_impl/swiglu_impl/cross_entropy_impl set to &#x27;triton&#x27; but ENABLE_TRITON_KERNELS != &#x27;1&#x27;; forcing all to &#x27;pytorch&#x27;. Set ENABLE_TRITON_KERNELS=1 to enable the fused Triton paths.</code></pre></div>
+<p><strong>Cause.</strong> Per AGENTS.md hard rule 7, a Triton kernel must never silently switch on during a default-config run. The opt-in is <strong>two</strong> switches: the per-kernel config key <strong>and</strong> the <code class="inline-code">ENABLE_TRITON_KERNELS=1</code> environment variable. <code class="inline-code">train.py:train_model</code> checks <code class="inline-code">os.environ.get(&quot;ENABLE_TRITON_KERNELS&quot;, &quot;0&quot;) == &quot;1&quot;</code>; if it is not <code class="inline-code">&quot;1&quot;</code> and any impl requests <code class="inline-code">&#x27;triton&#x27;</code>, all three are force-restored to <code class="inline-code">&#x27;pytorch&#x27;</code> with that warning.</p>
+<p><strong>Fix.</strong> Either intend the fused path — run with <code class="inline-code">ENABLE_TRITON_KERNELS=1 python train.py</code> — or set the impl keys back to <code class="inline-code">&#x27;pytorch&#x27;</code> and the warning goes away.</p>
+<p><strong>Prevention.</strong> Treat the warning as information, not an error: it proves the gate works. If you want Triton on the A100, set both switches; the ≥1.5× speedup rule for enabling a kernel by default is in</p>
+<p><a href="../concepts/data-and-kernels.html" class="doc-link"><code class="inline-code">kernel-programming.md</code></a>.</p>
+<hr class='doc-hr'>
+<h2 id="6--stalls--cuda-graph-re-capture-on-shape-change" class="heading-anchor">6. <code class="inline-code">torch.compile</code> stalls / CUDA-graph re-capture on shape change<a href="#6--stalls--cuda-graph-re-capture-on-shape-change" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> The run appears frozen for 30 seconds to minutes right after the banner — then prints <code class="inline-code">Pre-warmup complete (CUDA graphs captured).</code> and proceeds. Later, slow steps appear around validation or generation.</p>
+<p><strong>Cause.</strong> <code class="inline-code">config.py:get_config</code> sets <code class="inline-code">compile_model: True</code> with <code class="inline-code">compile_mode: &#x27;reduce-overhead&#x27;</code>, which uses CUDA graphs. Compilation and graph capture are deferred work: the code comments in <code class="inline-code">train.py:train_model</code> spell it out — "First step stalls 30s–2min on autotune; warm it up before the loop" and "CUDA graphs recompile on shape change, so the warmup must use real training shapes." The warmup runs one forward + loss + backward before the loop precisely so the stall does not land on step 1 of the progress bar. Two real shape-change hazards remain:</p>
+<ul class="doc-list">
+<li>Validation runs the same compiled model (<code class="inline-code">validate(ema, ...)</code> inside
+<br> <code class="inline-code">train.py:train_model</code>); the val loader uses <code class="inline-code">drop_last=False</code> (<code class="inline-code">data/shared_data/loader.py:build_training_data</code>), so a final partial batch has a different shape and forces one re-capture per val round.
+<br> [INFERENCE: any batch whose row count differs from 96 triggers it.]
+</li>
+<li><code class="inline-code">train.py:generate_samples</code> calls <code class="inline-code">model(generated)</code> with <code class="inline-code">generated</code>
+<br> growing by one token per iteration, so each of the <code class="inline-code">generation_max_tokens</code> (128) steps sees a new shape.
+</li>
+</ul>
+<p><strong>Fix.</strong> Accept the one-time warmup stall — it is the designed trade. For interactive debugging, set <code class="inline-code">compile_model: False</code> in <code class="inline-code">config.py:get_config</code>; the model runs pure eager and every step is uniformly slow instead of bursty. If you need graphs but not the stream ownership, switch <code class="inline-code">compile_mode</code> to <code class="inline-code">&#x27;default&#x27;</code> or <code class="inline-code">&#x27;max-autotune&#x27;</code> (no CUDA-graph re-capture per shape, slightly slower steady-state steps).</p>
+<p><strong>Prevention.</strong> Keep training shapes static: batch 96 and seq 2048 for the whole run, and don't change <code class="inline-code">batch_size</code> mid-run — the warmup comment exists because a shape change recompiles. <code class="inline-code">&#x27;reduce-overhead&#x27;</code> also "owns the stream", which is why the H2D copies in <code class="inline-code">train.py:train_model</code> are <code class="inline-code">non_blocking=True</code> and manual streams are avoided. See</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link"><code class="inline-code">optimization.md</code></a> and</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link"><code class="inline-code">mixed-precision.md</code></a> for the surrounding</p>
+<p>throughput design.</p>
+<hr class='doc-hr'>
+<h2 id="7-checkpoint-not-found-on-resume--partial-checkpoint-after-a-kill" class="heading-anchor">7. Checkpoint "not found" on resume / partial checkpoint after a kill<a href="#7-checkpoint-not-found-on-resume--partial-checkpoint-after-a-kill" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> You set <code class="inline-code">preload</code> to resume and training starts at step 0 as if nothing existed; or a resume crashes with an unpickling/<code class="inline-code">EOFError</code>; or the final save looks missing.</p>
+<p><strong>Cause.</strong> Two distinct behaviors in <code class="inline-code">train.py</code>:</p>
+<ul class="doc-list">
+<li><code class="inline-code">train.py:load_checkpoint</code> globs
+<br> <code class="inline-code">{model_folder}/{model_filename}_step_*.pt</code> and, <strong>if no checkpoint exists, silently returns <code class="inline-code">(0, float(&#x27;inf&#x27;))</code></strong> — no error, training just restarts from scratch. A wrong <code class="inline-code">model_folder</code> therefore looks like "my checkpoint vanished".
+</li>
+<li>Checkpoints are saved on a background thread when
+<br> <code class="inline-code">async_checkpoint: True</code> (<code class="inline-code">train.py:save_checkpoint</code> returns the <code class="inline-code">threading.Thread</code>; the loop prints <code class="inline-code">Checkpoint queued (async): …</code>). The thread is joined at the very end of training (<code class="inline-code">ckpt_thread.join()</code>), but if the process is killed between <code class="inline-code">torch.save</code> starting and finishing, the <code class="inline-code">.pt</code> file is truncated, and the next <code class="inline-code">load_checkpoint</code> fails while unpickling it.
+</li>
+</ul>
+<p><strong>Fix.</strong> For a silent restart: check that <code class="inline-code">model_folder</code> matches where the checkpoints were written and that <code class="inline-code">model_filename</code> is unchanged (<code class="inline-code">weights/llama3-515M_step_*.pt</code>). For a corrupt file: delete the partial <code class="inline-code">_step_N.pt</code> (the loader picks the highest numeric step, so the previous one resumes cleanly) or restore from the <code class="inline-code">_best.pt</code> weights snapshot.</p>
+<p><strong>Prevention.</strong> Never kill training mid-save. If you must, remove the partial file before resuming. For long runs, the atomic-save discipline (<code class="inline-code">.tmp</code> + rename) used elsewhere in the workspace portfolio is a stronger pattern than async threads; until then, <code class="inline-code">keep_last_n_checkpoints</code> limits how many step files accumulate. Checkpoint contents and the RNG-restore contract are documented in <a href="../training.html" class="doc-link"><code class="inline-code">training.md</code></a> and</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link"><code class="inline-code">reproducibility.md</code></a>.</p>
+<hr class='doc-hr'>
+<h2 id="8--vs-the-train-corpus-exhausted-epoch-wrap" class="heading-anchor">8. <code class="inline-code">StopIteration</code> vs the "train corpus exhausted" epoch wrap<a href="#8--vs-the-train-corpus-exhausted-epoch-wrap" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> Either you see a <code class="inline-code">StopIteration</code> traceback while training, or you see a mid-run warning:</p>
+<div class="code-wrapper" data-lines="1"><div class="code-header"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code class="language-text">WARN: train corpus exhausted (epoch 1); restarting the sampler with a fresh permutation. The 42k-step plan (~8.26B tokens) exceeds the prepared corpus.</code></pre></div>
+<p><strong>Cause.</strong> The plan's 42,000 steps at 96 × 2048 tokens/step consume ~8.26B tokens — more than the prepared corpus, and more than <code class="inline-code">target_tokens</code> (8B) implies. <code class="inline-code">train.py:_next_batch</code> exists so the loop never dies at the end of the data: it catches <code class="inline-code">StopIteration</code>, bumps the epoch counter, calls <code class="inline-code">sampler.set_epoch(epoch)</code> for a fresh permutation (<code class="inline-code">data/shared_data/loader.py:ShuffledRangeSampler.set_epoch</code>), and restarts the iterator. The warning is the <strong>expected, designed</strong> message for a longer-than-corpus run.</p>
+<p><strong>Fix.</strong> If you see the <code class="inline-code">WARN:</code> — nothing to fix; that is the wrap working. If you see a real <code class="inline-code">StopIteration</code> traceback, it is coming from your own loop outside <code class="inline-code">train.py:_next_batch</code> (the training loop never raises it) or from <code class="inline-code">next(iter(train_dataloader))</code> after the corpus ran out in a context the wrapper does not cover.</p>
+<p><strong>Prevention.</strong> Size the corpus to at least ~8.26B tokens for a full 42k run, or shorten <code class="inline-code">max_steps</code> to match the corpus. If you want to avoid the wrap entirely, build the larger corpus with <code class="inline-code">data/prepare_data.py</code> (entry 3) and verify <code class="inline-code">data_cache/tokens.bin</code> size first (<a href="../concepts/data-and-kernels.html" class="doc-link"><code class="inline-code">data-engineering.md</code></a> has the tokens-per-byte math).</p>
+<hr class='doc-hr'>
+<h2 id="9--on-a-dev-box" class="heading-anchor">9. <code class="inline-code">ModuleNotFoundError: No module named &#x27;wandb&#x27;</code> on a dev box<a href="#9--on-a-dev-box" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> <code class="inline-code">python train.py</code> crashes at import time with <code class="inline-code">ModuleNotFoundError</code> for <code class="inline-code">wandb</code>; the pytest suite, by contrast, runs fine without W&amp;B installed.</p>
+<p><strong>Cause.</strong> <code class="inline-code">train.py</code> does a module-level <code class="inline-code">import wandb</code>. The test suite never sees the failure because <code class="inline-code">tests/conftest.py</code> injects a minimal <code class="inline-code">wandb</code> stub at import time when the real package is missing — the comment there says it exists "so <code class="inline-code">train.py</code>'s module-level <code class="inline-code">import wandb</code> succeeds on CPU/Mac dev boxes" — and it also exports <code class="inline-code">WANDB_MODE=offline</code> and <code class="inline-code">WANDB_DISABLED=true</code> for the real package. Those protections are pytest session setup; they do not apply to a bare <code class="inline-code">python train.py</code>.</p>
+<p><strong>Fix.</strong> Two options:</p>
+<ul class="doc-list">
+<li><code class="inline-code">pip install wandb</code>, then optionally <code class="inline-code">wandb login</code> (or export
+<br> <code class="inline-code">WANDB_API_KEY</code>) — real runs log to the dashboard;
+</li>
+<li>for offline runs, keep W&amp;B installed and export <code class="inline-code">WANDB_MODE=offline</code>
+<br> (and <code class="inline-code">WANDB_DISABLED=true</code> to skip uploads entirely).
+</li>
+</ul>
+<p><strong>Prevention.</strong> Treat the conftest stub as a test-only shim, not a runtime feature. <code class="inline-code">train.py:train_model</code> calls <code class="inline-code">wandb.init</code> with the project from <code class="inline-code">config.py:get_config</code> (<code class="inline-code">wandb_project</code>), logs <code class="inline-code">gen/samples</code> tables via <code class="inline-code">train.py:generate_samples</code>, and <code class="inline-code">wandb.finish()</code> at the end — all of that is a no-op under the stub. See</p>
+<p><a href="quickstart.html" class="doc-link"><code class="inline-code">quickstart.md</code></a> for the W&amp;B offline recipe.</p>
+<hr class='doc-hr'>
+<h2 id="10" class="heading-anchor">10. <code class="inline-code">TypeError: object of type &#x27;_SyntheticTokenizerStub&#x27; has no len()</code><a href="#10" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> <code class="inline-code">train.py</code> crashes computing <code class="inline-code">real_vocab_size = max(config[&#x27;vocab_size&#x27;], len(tokenizer))</code>.</p>
+<p><strong>Cause.</strong> This is the signature of a <strong>stale loader</strong>. The current <code class="inline-code">data/shared_data/loader.py:_SyntheticTokenizerStub</code> defines <code class="inline-code">__len__</code> returning <code class="inline-code">self._vocab</code>, so <code class="inline-code">len(tokenizer)</code> is always valid — for the synthetic stub and the real tokenizer alike. If you still hit the <code class="inline-code">TypeError</code>, an older copy of <code class="inline-code">loader.py</code> is being imported: a stale <code class="inline-code">__pycache__</code>, or a <code class="inline-code">PYTHONPATH</code> entry pointing at an old <code class="inline-code">shared_data</code>/<code class="inline-code">dataset.py</code> that lacks the method. (In the same class of confusion: the real-tokenizer load path. When <code class="inline-code">build_tokenizer</code> fails — no <code class="inline-code">transformers</code>, no network — <code class="inline-code">data/shared_data/loader.py:build_training_data</code> catches it and prints <code class="inline-code">[data] tokenizer load failed (...); using the byte stub. Generation samples will be meaningless until a real tokenizer is available.</code> The stub still has <code class="inline-code">__len__</code>, so training proceeds.)</p>
+<p><strong>Fix.</strong> Verify the vendored loader is the one on <code class="inline-code">sys.path</code>: <code class="inline-code">data/shared_data/loader.py</code> (the repo vendors exactly this file), clear stale <code class="inline-code">__pycache__</code> under <code class="inline-code">data/</code>, and check <code class="inline-code">PYTHONPATH</code> for an unexpected <code class="inline-code">shared_data</code> package. The historical defect is fixed in the current tree; if you are on an older checkout, pull the current loader.</p>
+<p><strong>Prevention.</strong> Import the stub directly to confirm: <code class="inline-code">from data.shared_data.loader import _SyntheticTokenizerStub; len(_SyntheticTokenizerStub(128000, 0, 0))</code>. The tokenizer contract (pad defaults to EOS in <code class="inline-code">build_tokenizer</code>) is documented in <a href="../references/data-reference.html" class="doc-link"><code class="inline-code">tokenizer.md</code></a>.</p>
+<hr class='doc-hr'>
+<h2 id="11-generation-output-is-garbage" class="heading-anchor">11. Generation output is garbage<a href="#11-generation-output-is-garbage" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><strong>Symptom.</strong> Samples logged at <code class="inline-code">gen/samples</code> are byte-mojibake — wrong characters, replacement glyphs — or nonsense tokens.</p>
+<p><strong>Cause.</strong> Expected whenever you are on the synthetic path. With no <code class="inline-code">tokens.bin</code>, <code class="inline-code">train.py:train_model</code> falls back to <code class="inline-code">data/shared_data/loader.py:build_synthetic_data</code>, whose docstring states: "Synthetic ids are random, so the byte stub is used unconditionally (no HF download)." The model learns a random-id distribution, and the <code class="inline-code">_SyntheticTokenizerStub</code> maps bytes ⇄ ids (clamped to vocab) — so <code class="inline-code">decode</code> of sampled ids is byte-garbage by construction. The same holds when the real tokenizer fails to load (entry 10): the fallback print says explicitly "Generation samples will be meaningless until a real tokenizer is available."</p>
+<p><strong>Fix.</strong> Build the real corpus (<code class="inline-code">python data/prepare_data.py</code>, entry 3), confirm the cache exists (entry 2), and make sure <code class="inline-code">build_tokenizer</code> can load <code class="inline-code">tokenizer_name</code> (<code class="inline-code">NousResearch/Meta-Llama-3-8B</code>) — network or <code class="inline-code">tokenizer_cache_dir</code> access is required the first time. Then generation uses real BPE ids.</p>
+<p><strong>Prevention.</strong> Any training run that started with the <code class="inline-code">WARN: no token cache found</code> line will produce garbage samples; that is the smoke-test contract, not a bug. Real pretraining must start from a real corpus.</p>
+<hr class='doc-hr'>
+<h2 id="appendix-the-known-issues-in-agentsmd" class="heading-anchor">Appendix: the "Known issues" in AGENTS.md<a href="#appendix-the-known-issues-in-agentsmd" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>AGENTS.md lists two known issues worth reading before a long run:</p>
+<ul class="doc-list">
+<li><strong>"Full 8.25B-token run not yet started."</strong> The 42k-step plan is
+<br> validated in pieces (smoke runs, checkpoint/resume tests) but has not run end-to-end on the A100; entry 8 explains the corpus-size interaction you will hit on the real run.
+</li>
+<li>**"The 78% memory reduction headline is the most-tested number in the
+<br> portfolio; do not regress it."** The 92 GB → 20 GB claim is enforced by the memory stack's invariants: <code class="inline-code">gradient_checkpointing</code>, chunked CE at <code class="inline-code">ce_chunk_size: 256</code>, and the mmap loader. If you are tempted to disable any of them for convenience, that is exactly the regression the rule forbids — see entry 1 and
+<br> <a href="../concepts/training-and-memory.html" class="doc-link">memory-engineering.md</a>.
+</li>
+</ul>
+<h2 id="references" class="heading-anchor">References<a href="#references" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><a href="quickstart.html" class="doc-link">quickstart.md</a> — the happy path this guide assumes
+</li>
+<li><a href="../training.html" class="doc-link">training.md</a> — loop, checkpoint, and resume mechanics
+</li>
+<li><a href="../references/model-reference.html" class="doc-link">config.md</a> — every knob referenced above
+</li>
+<li><a href="../concepts/training-and-memory.html" class="doc-link">memory-engineering.md</a> — the OOM arithmetic
+</li>
+<li><a href="glossary.html" class="doc-link">glossary.md</a> — notation and acronyms used here
+</li>
+</ul>
+                </article>
+
+                <div class="doc-footer-nav">
+                    <a href="../../docs/guides/learning-paths.html" class="nav-card prev-card"><span class="card-label">← Previous</span><span class="card-title">Learning Paths — How to Read the Docs</span></a>
+                    <a href="../../docs/guides/glossary.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">Glossary — Notation, Acronyms, File Layout</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#1-cuda-out-of-memory-at-batch-96" class="toc-link">1. CUDA out of memory at batch 96</a></li><li class="toc-h2"><a href="#2---but-training-still-starts" class="toc-link">2.  — but training still starts</a></li><li class="toc-h2"><a href="#3--exits-with-the--systemexit" class="toc-link">3.  exits with the  SystemExit</a></li><li class="toc-h2"><a href="#4-triton-import-errors-on-mac--cpu" class="toc-link">4. Triton import errors on Mac / CPU</a></li><li class="toc-h2"><a href="#5" class="toc-link">5. </a></li><li class="toc-h2"><a href="#6--stalls--cuda-graph-re-capture-on-shape-change" class="toc-link">6.  stalls / CUDA-graph re-capture on shape change</a></li><li class="toc-h2"><a href="#7-checkpoint-not-found-on-resume--partial-checkpoint-after-a-kill" class="toc-link">7. Checkpoint "not found" on resume / partial checkpoint after a kill</a></li><li class="toc-h2"><a href="#8--vs-the-train-corpus-exhausted-epoch-wrap" class="toc-link">8.  vs the "train corpus exhausted" epoch wrap</a></li><li class="toc-h2"><a href="#9--on-a-dev-box" class="toc-link">9.  on a dev box</a></li><li class="toc-h2"><a href="#10" class="toc-link">10. </a></li><li class="toc-h2"><a href="#11-generation-output-is-garbage" class="toc-link">11. Generation output is garbage</a></li><li class="toc-h2"><a href="#appendix-the-known-issues-in-agentsmd" class="toc-link">Appendix: the "Known issues" in AGENTS.md</a></li><li class="toc-h2"><a href="#references" class="toc-link">References</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="../../assets/portal.js"></script>
+</body>
+</html>

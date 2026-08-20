@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLaMA-3-Lite Documentation Portal</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body class="index-portal">
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="README.html" class="header-link">GitHub README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="./README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="./AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="./SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="./docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="./docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="./docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="./docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="./docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="./docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="./docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="./docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="./docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="./docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="./docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="./docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="./docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Portal Content -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="hero-banner">
+                    <div class="hero-margin-ticks" aria-hidden="true"></div>
+
+                    <div class="hero-coords" aria-hidden="true">
+                        <span class="coord">FIG &middot; A0</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">PARAM 513.8M</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">GQA 8Q&middot;4KV</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">SWIGLU 4096</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">RMSNORM 1024</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">ROPE &theta;=500K</span>
+                        <span class="coord-sep">/</span>
+                        <span class="coord">78% VRAM CUT</span>
+                    </div>
+                    <h1 class="hero-title">LLaMA<span class="hero-title-em">-3</span><span class="hero-title-em-accent">-Lite</span><span class="hero-title sr-only" data-title="LLAMA-3-LITE"> — documentation portal</span></h1>
+                    <p class="hero-subtitle">From-scratch PyTorch reproduction of LLaMA-3 at ~513.8M params — Grouped-Query Attention (8Q/4KV), RoPE &theta;=500K, fused SwiGLU, and the 8-technique memory stack achieving 78% peak VRAM reduction (92 GB &rarr; 20 GB). Pure PyTorch with three sanctioned Triton opt-in kernels. Read it like a field notebook: a name, a wiring sketch, then the measurements.</p>
+
+                    <div class="llama-telemetry-ribbon" aria-label="Key LLaMA-3 Architectural Metrics">
+                        <div class="telemetry-card terra">
+                            <div class="tc-badge"><span class="tc-badge-dot"></span> CHUNKED CE</div>
+                            <div class="tc-val">99.4% <span class="unit">LOGIT CUT</span></div>
+                            <div class="tc-desc">Logits 50.3 GB BF16 &rarr; 0.3 GB via 256-row streaming slices + z-loss</div>
+                        </div>
+                        <div class="telemetry-card olive">
+                            <div class="tc-badge"><span class="tc-badge-dot"></span> MEMORY STACK</div>
+                            <div class="tc-val">78% <span class="unit">VRAM SAVED</span></div>
+                            <div class="tc-desc">92 GB &rarr; 20 GB peak activation &amp; gradient cut allowing batch 96 on 1&times; A100</div>
+                        </div>
+                        <div class="telemetry-card gold">
+                            <div class="tc-badge"><span class="tc-badge-dot"></span> GQA 8Q / 4KV</div>
+                            <div class="tc-val">2.0&times; <span class="unit">KV CACHE CUT</span></div>
+                            <div class="tc-desc">4 KV heads shared across 8 Query heads; halving KV projection params &amp; cache</div>
+                        </div>
+                        <div class="telemetry-card ink">
+                            <div class="tc-badge"><span class="tc-badge-dot"></span> ROPE &theta;=500K</div>
+                            <div class="tc-val">50&times; <span class="unit">BASE EXP</span></div>
+                            <div class="tc-desc">&theta;=500,000 high-frequency rotary carrier enables 8K+ context extrapolation</div>
+                        </div>
+                    </div>
+
+                    <div class="hero-figure" id="hero-decode" data-title="LLAMA-3-LITE" data-sub="513.8M &middot; GQA 8Q/4KV &middot; SwiGLU 4096 &middot; RoPE &theta;=500K &middot; 78% VRAM Cut" role="region" aria-label="Figure A0: Grouped-Query Attention (8Q/4KV) and RoPE &theta;=500K Phase-Space Dynamics">
+                        <div class="hero-figure-header">
+                            <div class="fig-badge">
+                                <span class="fig-dot" aria-hidden="true"></span>
+                                <span class="fig-tag">FIG. A0</span>
+                                <span class="fig-sep" aria-hidden="true">/</span>
+                                <span class="fig-title">GQA 8Q / 4KV ATTENTION &amp; ROPE &theta;=500K</span>
+                                <span class="fig-dim">8Q / 4KV &middot; 128 DIMS &middot; &theta;=500,000</span>
+                            </div>
+                            <div class="fig-controls">
+                                <button class="fig-btn active" data-mode="gqa" type="button" title="Grouped-Query Attention (8 Queries to 4 KV Heads)">GQA &middot; ATTENTION</button>
+                                <button class="fig-btn" data-mode="rope" type="button" title="RoPE &theta;=500K Rotary Frequency Phasors">RoPE &middot; PHASORS</button>
+                                <button class="fig-btn" data-mode="chunkce" type="button" title="Chunked Cross-Entropy 256-Row Slices">CHUNKED &middot; CE</button>
+                                <button class="fig-btn" data-mode="memory" type="button" title="8-Technique Memory Stack Allocation">MEMORY &middot; STACK</button>
+                                <button class="fig-btn fig-btn-icon" id="heroSpeedBtn" type="button" title="Simulation Speed" aria-label="Speed: 1x">1&times;</button>
+                                <button class="fig-btn fig-btn-icon" id="heroPauseBtn" type="button" title="Pause / Resume" aria-label="Pause simulation">&#10074;&#10074;</button>
+                            </div>
+                        </div>
+
+                        <div class="fig-canvas-wrap">
+                            <canvas id="heroStateCanvas" class="hero-canvas" aria-hidden="true"></canvas>
+                            <div class="fig-overlay-hud" aria-hidden="true">
+                                <div class="hud-corner top-left">
+                                    <span class="hud-lbl">SIMULATION MODE</span>
+                                    <span class="hud-val" id="hudModeLabel">GQA 8Q / 4KV ATTENTION MANIFOLD</span>
+                                </div>
+                                <div class="hud-corner top-right">
+                                    <span class="hud-lbl">KV CACHE REDUCTION</span>
+                                    <span class="hud-val" id="hudKVCut">2.0&times; <span class="unit">(128 &rarr; 64 MiB/seq)</span></span>
+                                </div>
+                                <div class="hud-corner bottom-left">
+                                    <span class="hud-lbl">HEAD ROUTING</span>
+                                    <span class="hud-val" id="hudGQARouting">8 QUERIES <span class="num">(2:1)</span> &rarr; 4 KV HEADS</span>
+                                </div>
+                                <div class="hud-corner bottom-right">
+                                    <span class="hud-lbl">BASE FREQUENCY</span>
+                                    <span class="hud-val" id="hudRopeFreq">&theta; = 500,000 <span class="unit">RAD/POS</span></span>
+                                </div>
+                                <div class="hud-probe" id="heroProbeHUD" style="opacity: 0;">
+                                    <div class="probe-card">
+                                        <span class="probe-tag" id="probeTag">PROBE &middot; HEAD #00</span>
+                                        <span class="probe-val" id="probeCoords">Query Head Q0 &rarr; KV Head KV0 [128 dims]</span>
+                                        <span class="probe-sub" id="probeDecay">Attention Activity: 84.2%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hero-figure-footer">
+                            <div class="fig-formula" id="heroFormulaBar">
+                                <span class="formula-sym">head<sub class="f-sub">i</sub></span>
+                                <span class="formula-op">=</span>
+                                <span class="formula-term term-a">Softmax(Q<sub class="f-sub">i</sub> K<sub class="f-sub">&lfloor;i/2&rfloor;</sub><sup class="f-sub">&top;</sup> / &radic;d<sub class="f-sub">k</sub>)</span>
+                                <span class="formula-dot">&middot;</span>
+                                <span class="formula-term term-b">V<sub class="f-sub">&lfloor;i/2&rfloor;</sub></span>
+                                <span class="formula-op">&middot;</span>
+                                <span class="formula-sym">RoPE(x<sub class="f-sub">m</sub>, m, &theta;)</span>
+                                <span class="formula-op">=</span>
+                                <span class="formula-term">R<sub class="f-sub">&theta;,m</sub><sup class="f-sub">d</sup> x<sub class="f-sub">m</sub></span>
+                            </div>
+                            <div class="fig-legend">
+                                <span class="legend-item"><span class="legend-swatch terra"></span> <span class="legend-label">8 Query Heads (Q<sub class="f-sub">0..7</sub>)</span></span>
+                                <span class="legend-item"><span class="legend-swatch olive"></span> <span class="legend-label">4 Shared KV Heads (KV<sub class="f-sub">0..3</sub>)</span></span>
+                                <span class="legend-item"><span class="legend-swatch gold"></span> <span class="legend-label">RoPE &theta;=500K Phasors</span></span>
+                                <span class="legend-hint">CLICK: SHOCKWAVE &middot; HOVER: PROBE HUD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-sheet">
+                        <div class="spec-sheet-rule" aria-hidden="true">
+                            <span class="spec-rule-key">DATASHEET</span>
+                            <span class="spec-rule-meta">rev 0.1 &middot; chk bf16 &middot; 8.25B tok / A100-80</span>
+                        </div>
+                        <dl class="spec-grid">
+                            <div class="spec-cell"><dt class="spec-key">01 &middot; params</dt><dd class="spec-val">513.8<span class="unit">M</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">02 &middot; layers</dt><dd class="spec-val">16<span class="unit"> blocks</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">03 &middot; attention</dt><dd class="spec-val">8Q / 4KV<span class="unit"> GQA</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">04 &middot; hidden</dt><dd class="spec-val">1024<span class="unit"> d_model</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">05 &middot; ffn</dt><dd class="spec-val">4096<span class="unit"> SwiGLU</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">06 &middot; vocab</dt><dd class="spec-val">128<span class="unit"> K</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">07 &middot; ctx &amp; rope</dt><dd class="spec-val">2048<span class="unit"> &theta;=500K</span></dd></div>
+                            <div class="spec-cell"><dt class="spec-key">08 &middot; memory cut</dt><dd class="spec-val">78%<span class="unit"> 92&rarr;20GB</span></dd></div>
+                        </dl>
+                    </div>
+
+                    <div class="mechanism-section" aria-label="Interactive LLaMA-3 Core Mechanisms">
+                        <div class="mechanism-section-head">
+                            <span class="mechanism-section-title">&sect; LLAMA-3 CORE MECHANISMS &middot; INTERACTIVE BENCHMARK LABS</span>
+                        </div>
+                        <div class="mechanism-grid">
+                            <!-- Card 1: GQA 8Q/4KV Compression & Interactive Head Router -->
+                            <div class="mechanism-card card-gqa" id="mchCardGqa">
+                                <div class="mechanism-card-head">
+                                    <span class="mch-tag">01 &middot; GQA COMPRESSION</span>
+                                    <span class="mch-title">8Q / 4KV Cache Footprint Analyzer</span>
+                                </div>
+                                <div class="mechanism-card-body">
+                                    <p class="mch-explainer">Compare KV cache footprint between standard Multi-Head Attention (8 Q / 8 KV) and Grouped-Query Attention (8 Q / 4 KV) across context lengths with interactive head routing.</p>
+                                    <div class="mch-control-row">
+                                        <span>Context Length:</span>
+                                        <strong id="gqaContextLabel">32,768 tokens</strong>
+                                    </div>
+                                    <input type="range" id="gqaContextSlider" class="mch-slider" min="2048" max="131072" step="2048" value="32768" aria-label="Context length in tokens">
+                                    <canvas id="gqaRouterCanvas" class="mch-canvas" width="280" height="120" aria-hidden="true"></canvas>
+                                    <div class="mch-stat-box">
+                                        <div class="msb-row">
+                                            <span>Standard MHA (8 KV &times; 128d &times; 16L):</span>
+                                            <span id="statMhaVram">2.00 GB</span>
+                                        </div>
+                                        <div class="msb-row">
+                                            <span>LLaMA-3 GQA (4 KV &times; 128d &times; 16L):</span>
+                                            <span id="statGqaVram">1.00 GB</span>
+                                        </div>
+                                        <div class="msb-row highlight">
+                                            <span>KV Cache Saved:</span>
+                                            <span id="statGqaSaved">1.00 GB (2.00&times; cut &middot; 50% savings)</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="mch-action-btn" id="gqaRouteBtn">&#9654; Cycle Query Head Routing (Q0..Q7 &rarr; KV0..KV3)</button>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Chunked Cross-Entropy 256-Token Logit Slicer & SRAM Simulator -->
+                            <div class="mechanism-card card-chunkce" id="mchCardChunkCe">
+                                <div class="mechanism-card-head">
+                                    <span class="mch-tag">02 &middot; CHUNKED CE</span>
+                                    <span class="mch-title">256-Token Slicer &amp; SRAM Simulator</span>
+                                </div>
+                                <div class="mechanism-card-body">
+                                    <p class="mch-explainer">Avoid materializing the full 196,608 &times; 128,000 logit tensor (50.3 GB BF16). Slicing into 256-token chunks keeps SRAM tile under 0.20 GB with streaming z-loss regularization.</p>
+                                    <div class="mch-control-row">
+                                        <span>Slice Chunk Size:</span>
+                                        <strong id="chunkSizeLabel">256 Tokens</strong>
+                                    </div>
+                                    <input type="range" id="chunkSizeSlider" class="mch-slider" min="64" max="512" step="64" value="256" aria-label="Chunk size in tokens">
+                                    <div class="chunk-pipeline-box" id="chunkStreamDisplay">
+                                        <div class="chunk-stage">
+                                            <span class="chunk-badge scan">FULL TENSOR</span>
+                                            <span>196k &times; 128k = 50.3 GB BF16 (OOM Crash)</span>
+                                        </div>
+                                        <div class="chunk-stage">
+                                            <span class="chunk-badge chunk">SRAM TILE</span>
+                                            <span id="chunkTileText">256 &times; 128k = 65.5 MB SRAM Resident Tile</span>
+                                        </div>
+                                        <div class="chunk-stage">
+                                            <span class="chunk-badge state">Z-LOSS REG</span>
+                                            <span>L = L_ce + 1e-4 &middot; log&sup2;(Z) &middot; Backprop Stream</span>
+                                        </div>
+                                    </div>
+                                    <div class="mch-stat-box">
+                                        <div class="msb-row">
+                                            <span>Peak Logit Memory:</span>
+                                            <span id="chunkPeakMem">65.5 MB SRAM (vs 50.3 GB Full)</span>
+                                        </div>
+                                        <div class="msb-row">
+                                            <span>Logit Memory Reduction:</span>
+                                            <span>99.4% VRAM Cut</span>
+                                        </div>
+                                        <div class="msb-row highlight">
+                                            <span>Batch Capacity on 1&times; A100-80GB:</span>
+                                            <span>Batch 96 with 4&times; Headroom</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="mch-action-btn" id="chunkStreamBtn">&#9654; Stream 256-Token Slice &amp; Verify Gradients</button>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: RoPE θ=500K Extrapolation Explorer & Phase Stability Lab -->
+                            <div class="mechanism-card card-rope" id="mchCardRope">
+                                <div class="mechanism-card-head">
+                                    <span class="mch-tag">03 &middot; ROPE &theta;=500K</span>
+                                    <span class="mch-title">Long-Context Extrapolation Lab</span>
+                                </div>
+                                <div class="mechanism-card-body">
+                                    <p class="mch-explainer">Compare base frequency &theta;=500,000 (LLaMA-3) vs standard &theta;=10,000. Ultra-high base frequency prevents phase wrapping and preserves high-frequency relative position discrimination at 8K+ context.</p>
+                                    <div class="mch-control-row">
+                                        <span>Sequence Position:</span>
+                                        <strong id="ropePosLabel">Position: 2048 / 8192</strong>
+                                    </div>
+                                    <input type="range" id="ropePosSlider" class="mch-slider" min="0" max="8192" step="256" value="2048" aria-label="Sequence position">
+                                    <canvas id="ropeExtrapCanvas" class="mch-canvas" width="280" height="120" aria-hidden="true"></canvas>
+                                    <div class="mch-stat-box">
+                                        <div class="msb-row">
+                                            <span>Base Frequency &theta;:</span>
+                                            <span>500,000 rad/pos (50&times; Expansion)</span>
+                                        </div>
+                                        <div class="msb-row">
+                                            <span>Phase Stability at Pos 8192:</span>
+                                            <span id="ropePhaseStatus">STABLE (No aliasing)</span>
+                                        </div>
+                                        <div class="msb-row highlight">
+                                            <span>Context Extension:</span>
+                                            <span>Zero Fine-Tuning Extrapolation to 8K+</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="mch-action-btn" id="ropeTestBtn">&#9654; Rotate Sequence Coordinates (Step +1024)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pass-widget" id="passWidget" role="region" aria-label="Figure A1: Complete 16-Layer Training Step Pipeline — Forward Activations, Autograd Backward Pass, Gradient Checkpointing Re-computation, and AdamW Step">
+                        <div class="pass-widget-header">
+                            <div class="pass-badge">
+                                <span class="pass-dot" aria-hidden="true"></span>
+                                <span class="pass-tag">FIG. A1</span>
+                                <span class="pass-sep" aria-hidden="true">/</span>
+                                <span class="pass-title">FULL TRAINING STEP &amp; MEMORY PIPELINE</span>
+                                <span class="pass-dim">16 LAYERS &middot; FORWARD &middot; AUTOGRAD &middot; ADAMW</span>
+                            </div>
+                            <div class="pass-controls">
+                                <button class="pass-btn active" data-phase="cycle" type="button" title="Full Forward / Backward / AdamW Cycle">AUTO CYCLE</button>
+                                <button class="pass-btn" data-phase="forward" type="button" title="Inspect Forward Activation Flow">FORWARD</button>
+                                <button class="pass-btn" data-phase="backward" type="button" title="Inspect Backward Gradient Flow">BACKWARD</button>
+                                <button class="pass-btn pass-btn-icon" id="passPauseBtn" type="button" title="Pause / Resume Pipeline" aria-label="Pause pipeline">&#10074;&#10074;</button>
+                            </div>
+                        </div>
+
+                        <div class="pass-canvas-wrap">
+                            <canvas id="passDiagramCanvas" class="pass-canvas" aria-hidden="true"></canvas>
+                            <div class="pass-overlay-hud" aria-hidden="true">
+                                <div class="pass-hud-chip top-left">
+                                    <span class="ph-lbl">CURRENT PHASE</span>
+                                    <span class="ph-val" id="phCurrentPhase">AUTO CYCLE (FWD &rarr; BWD &rarr; ADAMW)</span>
+                                </div>
+                                <div class="pass-hud-chip top-right">
+                                    <span class="ph-lbl">MEMORY CONTRACT</span>
+                                    <span class="ph-val" id="phStepMetrics">8-TECHNIQUE STACK &middot; 78% VRAM SAVED (92&rarr;20GB)</span>
+                                </div>
+                                <div class="pass-stage-tooltip" id="passStageTooltip" style="opacity: 0;">
+                                    <div class="st-card">
+                                        <span class="st-tag" id="stTag">STAGE 03: GQA + ROPE</span>
+                                        <span class="st-op" id="stOp">Attention(Q_8, K_4, V_4) &middot; RoPE &theta;=500K</span>
+                                        <span class="st-shape" id="stShape">Tensor: Q[B, 8, 2048, 128], KV[B, 4, 2048, 128]</span>
+                                        <span class="st-desc" id="stDesc">2&times; KV cache compression; RoPE &theta;=500K long context</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pass-widget-footer">
+                            <div class="pass-status-ticker">
+                                <span class="ticker-beacon" id="passTickerBeacon">&bull;</span>
+                                <span class="ticker-text" id="passTickerText">FORWARD &middot; Tokens x<sub class="f-sub">t</sub> &rarr; Untied Embed &rarr; 16&times; (RMSNorm &middot; GQA &middot; SwiGLU) &rarr; Chunked CE Loss (256 Slices) &rarr; AdamW</span>
+                            </div>
+                            <div class="pass-legend">
+                                <span class="legend-item"><span class="legend-swatch terra"></span> <span class="legend-label">Forward Activations</span></span>
+                                <span class="legend-item"><span class="legend-swatch olive"></span> <span class="legend-label">Backward Gradients (&part;&ell;/&part;&theta;)</span></span>
+                                <span class="legend-item"><span class="legend-swatch gold"></span> <span class="legend-label">AdamW Update (&Delta;&theta;)</span></span>
+                                <span class="legend-hint">CLICK STAGE: INSPECT &middot; HOVER: TENSOR SHAPES</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="portal-content">
+                    
+        <section class="portal-section">
+            <header class="portal-section-head">
+                <span class="portal-section-mark">&sect; core</span>
+                <h2 class="portal-section-title">Core Architecture</h2>
+                <span class="portal-section-meta">6 entries</span>
+            </header>
+            <div class="portal-grid">
+            <a href="README.html" class="portal-card">
+                <span class="card-tag">README</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Project Overview</h3>
+                    <p class="card-desc">513.8M-param pure-PyTorch LLaMA-3 reproduction with an 8-technique memory stack (78% VRAM reduction).</p>
+                </div>
+            </a>
+            
+            <a href="AGENTS.html" class="portal-card">
+                <span class="card-tag">AGENTS</span>
+                <div class="card-body">
+                    <h3 class="card-heading">System Architecture</h3>
+                    <p class="card-desc">Codebase contracts, hard rules, Triton kernel carve-out, and memory optimization rules.</p>
+                </div>
+            </a>
+            
+            <a href="SKILLS.html" class="portal-card">
+                <span class="card-tag">SKILLS</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Skills Map</h3>
+                    <p class="card-desc">Specialized developer workflows, memory engineering tools, and agent competencies.</p>
+                </div>
+            </a>
+            
+            <a href="docs/README.html" class="portal-card">
+                <span class="card-tag">DOCS</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Documentation Index</h3>
+                    <p class="card-desc">A map of the concepts, guides, and API references in this portal.</p>
+                </div>
+            </a>
+            
+            <a href="docs/training.html" class="portal-card">
+                <span class="card-tag">CORE</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Training Pipeline</h3>
+                    <p class="card-desc">Corpus mix, 8-technique memory stack, chunked cross-entropy, and training loop.</p>
+                </div>
+            </a>
+            
+            <a href="docs/AUDIT.html" class="portal-card">
+                <span class="card-tag">CORE</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Docs & Code Audit</h3>
+                    <p class="card-desc">Verified architectural constants, symbol resolution, and codebase invariants.</p>
+                </div>
+            </a>
+            </div>
+        </section>
+        
+        <section class="portal-section">
+            <header class="portal-section-head">
+                <span class="portal-section-mark">&sect; concepts</span>
+                <h2 class="portal-section-title">Architecture & Concepts</h2>
+                <span class="portal-section-meta">4 entries</span>
+            </header>
+            <div class="portal-grid">
+            <a href="docs/concepts/architecture-components.html" class="portal-card">
+                <span class="card-tag">C1</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Architecture Components</h3>
+                    <p class="card-desc">RMSNorm pre-norm, SwiGLU FFN (4096d), chunked cross-entropy, and z-loss formulation.</p>
+                </div>
+            </a>
+            
+            <a href="docs/concepts/attention-and-positional.html" class="portal-card">
+                <span class="card-tag">C2</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Attention & RoPE</h3>
+                    <p class="card-desc">Grouped-Query Attention (8Q/4KV) and RoPE θ=500K for long-context extrapolation up to 8192.</p>
+                </div>
+            </a>
+            
+            <a href="docs/concepts/data-and-kernels.html" class="portal-card">
+                <span class="card-tag">C3</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Data & Triton Kernels</h3>
+                    <p class="card-desc">Disk-backed uint32 token cache, async prefetching, and sanctioned Triton kernel opt-ins.</p>
+                </div>
+            </a>
+            
+            <a href="docs/concepts/training-and-memory.html" class="portal-card">
+                <span class="card-tag">C4</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Training & Memory</h3>
+                    <p class="card-desc">The 8-technique memory stack (92 GB → 20 GB), gradient checkpointing, and numerical stability.</p>
+                </div>
+            </a>
+            </div>
+        </section>
+        
+        <section class="portal-section">
+            <header class="portal-section-head">
+                <span class="portal-section-mark">&sect; guides</span>
+                <h2 class="portal-section-title">Guides & Playbooks</h2>
+                <span class="portal-section-meta">4 entries</span>
+            </header>
+            <div class="portal-grid">
+            <a href="docs/guides/quickstart.html" class="portal-card">
+                <span class="card-tag">G0</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Quickstart</h3>
+                    <p class="card-desc">From zero to a running training loop — installation, verification, synthetic smoke runs.</p>
+                </div>
+            </a>
+            
+            <a href="docs/guides/learning-paths.html" class="portal-card">
+                <span class="card-tag">G1</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Learning Paths</h3>
+                    <p class="card-desc">How to read the docs based on engineering role (Systems, Researcher, Developer).</p>
+                </div>
+            </a>
+            
+            <a href="docs/guides/troubleshooting.html" class="portal-card">
+                <span class="card-tag">G2</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Troubleshooting</h3>
+                    <p class="card-desc">Common failure modes, CUDA OOM mitigation, NaN prevention, and loss divergence.</p>
+                </div>
+            </a>
+            
+            <a href="docs/guides/glossary.html" class="portal-card">
+                <span class="card-tag">G3</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Glossary</h3>
+                    <p class="card-desc">Notation, acronyms, tensor shapes, and workspace file layout reference.</p>
+                </div>
+            </a>
+            </div>
+        </section>
+        
+        <section class="portal-section">
+            <header class="portal-section-head">
+                <span class="portal-section-mark">&sect; refs</span>
+                <h2 class="portal-section-title">API References</h2>
+                <span class="portal-section-meta">4 entries</span>
+            </header>
+            <div class="portal-grid">
+            <a href="docs/references/model-reference.html" class="portal-card">
+                <span class="card-tag">R1</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Model Reference</h3>
+                    <p class="card-desc">LLaMA3Transformer, Block, GQA, SwiGLU, RMSNorm, and RoPE APIs and tensor signatures.</p>
+                </div>
+            </a>
+            
+            <a href="docs/references/data-reference.html" class="portal-card">
+                <span class="card-tag">R2</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Data Reference</h3>
+                    <p class="card-desc">Dataset, Tokenizer, Sharding, and custom Triton kernel contracts.</p>
+                </div>
+            </a>
+            
+            <a href="docs/references/training-reference.html" class="portal-card">
+                <span class="card-tag">R3</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Training Reference</h3>
+                    <p class="card-desc">Train loop, optimizer, cosine LR scheduler, and checkpoint manager.</p>
+                </div>
+            </a>
+            
+            <a href="docs/references/workspace-data.html" class="portal-card">
+                <span class="card-tag">R4</span>
+                <div class="card-body">
+                    <h3 class="card-heading">Workspace Data</h3>
+                    <p class="card-desc">Universal 8B-token data pipeline (shared_data), sharding, and exact dedup.</p>
+                </div>
+            </a>
+            </div>
+        </section>
+        
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="assets/portal.js"></script>
+</body>
+</html>

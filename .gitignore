@@ -31,7 +31,8 @@ env/
 # opencode local tooling
 .opencode/
 
-
+# Local QA screenshot artifacts
+.benchmarks/
 
 # Brainstorming visual companion session artifacts
 .superpowers/

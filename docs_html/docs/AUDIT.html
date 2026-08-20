@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs & Codebase Audit | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="../index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="../index.html" class="header-link">Portal</a>
+            <a href="../README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="../README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="../AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="../SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="../docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="../docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="../docs/AUDIT.html" class="nav-link active" title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="../docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="../docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="../docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="../docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="../docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="../docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="../docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="../docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="../docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="../docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="../docs/references/training-reference.html" class="nav-link " title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="../docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="../index.html">Docs</a> &gt; <span>Core</span> &gt; <span class="current">Docs & Codebase Audit</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Docs & Codebase Audit</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> docs/AUDIT.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 3,555 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~16 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <span class="doc-anchor" id="llama-3-lite--documentation--codebase-audit"></span>
+<blockquote><strong>Scope.</strong> Full audit of the docs↔code alignment and a from-scratch<br>explanation of the codebase, verified against the working tree on<br>2026-08-05. Every claim below was checked by running the code or<br>inspecting the exact source cited. Nothing is asserted from memory.<br><strong>Verification runs.</strong> <code class="inline-code">python3 tests/test_doc_refs.py</code> → OK (16 docs,<br>all citations resolve, no line anchors); <code class="inline-code">python3 -m pytest tests/ -q</code><br>→ 70 passed, 1 skipped (GPU); <code class="inline-code">python benchmark_data.py</code> → <strong>crashes</strong><br>(finding C1); `python3 data/prepare_data.py --stage pretrain<br>--skip-*<code class="inline-code"> → runs but emits </code>data/shards/<code class="inline-code"> + </code>manifest.json`, <strong>never</strong><br><code class="inline-code">data_cache/tokens.bin</code> (finding C2).</blockquote>
+<hr class='doc-hr'>
+<h2 id="1-state-of-the-docs--what-is-already-excellent" class="heading-anchor">1. State of the docs — what is already excellent<a href="#1-state-of-the-docs--what-is-already-excellent" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>The doc corpus was massively expanded and cleaned in the last 5 hours of</p>
+<p>commits (764a7ba, 411a9b4, 13a880e) plus an uncommitted working-tree pass</p>
+<p>(+1,130/−713 lines across 15 files). The current state is unusually good:</p>
+<ul class="doc-list">
+<li><strong>Corpus:</strong> 13 files under <code class="inline-code">docs/</code>, 114,216 words (measured <code class="inline-code">wc -w</code>),
+<br> matching <code class="inline-code">docs/README.md</code>'s own table exactly (119,475 repo-wide).
+</li>
+<li><strong>Structure:</strong> concepts (4) / references (3) / guides (4) / training.md /
+<br> README nav map. The nav map's file→doc table replaces the retired
+<br> <code class="inline-code">CODE_MAP.md</code>; no dead generator remains.
+</li>
+<li><strong>Machine gate:</strong> <code class="inline-code">tests/test_doc_refs.py</code> resolves every
+<br> <code class="inline-code">&lt;module&gt;.py:&lt;symbol&gt;</code> citation by import + hasattr, bans line-number
+<br> anchors, validates intra-repo links, and requires python snippets to be
+<br> marked <code class="inline-code"># illustrative</code> / <code class="inline-code"># verified</code>. It runs in CI
+<br> (<code class="inline-code">.github/workflows/ci.yml</code>). All 16 docs pass.
+</li>
+<li><strong>Symbol coverage:</strong> every public symbol in <code class="inline-code">model.py</code> (18), <code class="inline-code">train.py</code>
+<br> (7), <code class="inline-code">config.py</code> (1), <code class="inline-code">benchmark_data.py</code> (3), all three kernels,
+<br> <code class="inline-code">data/prepare_data.py</code>, and <code class="inline-code">data/shared_data/loader.py</code> (7) is cited
+<br> at least once. Zero gaps (verified by AST scan).
+</li>
+<li><strong>Honesty discipline:</strong> the docs flag their own estimates
+<br> (<code class="inline-code">[INFERENCE]</code>, "measured / derived / estimated" tables in
+<br> <code class="inline-code">docs/concepts/training-and-memory.md</code>), openly reconcile the 78%
+<br> headline against alternative accounting (92→20 = 78.3%; 130→20 = 85%;
+<br> strict ≈ 91%), and call out top-level stale claims rather than
+<br> laundering them.
+</li>
+<li><strong>Numeric claims verified:</strong> 513,840,128 params (513.8M, non-embed
+<br> 251.7M); full logits 50.3 GB BF16 / 100.6 GB FP32 at B·S·V =
+<br> 196,608×128,000; chunk 256 → 65.5 MB BF16 / 131 MB FP32; saved block
+<br> inputs 16 × 402.65 MB = 6.44 GB; model state 2.06 (weights) + 2.06
+<br> (grads) + 4.11 (Adam m/v) + 2.06 (EMA) = 8.23 GB — all re-derived from
+<br> config and confirmed.
+</li>
+</ul>
+<hr class='doc-hr'>
+<h2 id="2-findings-table--docscode-misalignment" class="heading-anchor">2. Findings table — docs↔code misalignment<a href="#2-findings-table--docscode-misalignment" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>#</th><th>Severity</th><th>Where</th><th>Doc claim</th><th>Code reality (verified)</th></tr></thead><tbody><tr><td><strong>C1</strong></td><td><strong>bug</strong></td><td><code class="inline-code">benchmark_data.py:benchmark</code></td><td>Docs (<code class="inline-code">docs/guides/quickstart.md</code>, <code class="inline-code">docs/concepts/training-and-memory.md</code>) present <code class="inline-code">python benchmark_data.py …</code> as a working command</td><td><strong>Crashes immediately</strong>: <code class="inline-code">PackedDataset.__init__() got an unexpected keyword argument &#x27;eos_id&#x27;</code>. The loader's <code class="inline-code">data/shared_data/loader.py:PackedDataset</code> takes only <code class="inline-code">(tokens, seq_len)</code> — no <code class="inline-code">eos_id</code>. The <code class="inline-code">eos_id=0</code> kwarg is a leftover from the pre-consolidation loader. Every documented benchmark invocation fails on line 1 of the loop.</td></tr><tr><td><strong>C2</strong></td><td><strong>bug</strong></td><td><code class="inline-code">docs/training.md</code>, <code class="inline-code">docs/references/data-reference.md</code>, <code class="inline-code">docs/guides/quickstart.md</code></td><td>"the packing stage produces <code class="inline-code">data_cache/tokens.bin</code>"; "<code class="inline-code">data/prepare_data.py:main</code> … produces <code class="inline-code">tokens.bin</code>"; "stored in <code class="inline-code">data_cache/tokens.bin</code>"</td><td><strong>Nothing produces <code class="inline-code">data_cache/tokens.bin</code>.</strong> Verified: the workspace pipeline (<code class="inline-code">LLM/shared_data/scripts/pack_shards.py</code>) writes <code class="inline-code">DATA_ROOT/shards/shard_*.bin</code> + <code class="inline-code">manifest.json</code> (DATA_ROOT = <code class="inline-code">$LLM_DATA_ROOT</code> or <code class="inline-code">$PWD/data</code>); grep for <code class="inline-code">tokens.bin</code>/<code class="inline-code">data_cache</code> in the workspace = 0 hits. The loader <code class="inline-code">data/shared_data/loader.py:build_training_data</code> mmaps <code class="inline-code">data_cache/tokens.bin</code> exclusively. So Mode 2 (real data) is <strong>unwired end-to-end</strong>: <code class="inline-code">train.py:train_model</code> always falls to synthetic. <code class="inline-code">docs/concepts/data-and-kernels.md</code> pitfall 1 already documents this gap correctly — but three other docs (and <code class="inline-code">docs/training.md:899</code>) contradict it.</td></tr><tr><td><strong>C3</strong></td><td>stale</td><td><code class="inline-code">docs/concepts/data-and-kernels.md:795</code></td><td>"AGENTS.md's 'Sanctioned Triton paths' list still reads '(none yet)'"</td><td>AGENTS.md was rewritten (uncommitted): it now lists all three kernels (<code class="inline-code">kernels/rmsnorm_triton.py</code>, <code class="inline-code">kernels/swiglu_triton.py</code>, <code class="inline-code">kernels/cross_entropy_triton.py</code>) with their config keys. The "stale" claim is itself stale. Same text at <code class="inline-code">docs/references/data-reference.md:1041–1042</code> ("still says 'no custom Triton kernels exist'").</td></tr><tr><td><strong>C4</strong></td><td>stale</td><td><code class="inline-code">docs/training.md:735–737</code> ("Why '7 techniques' in AGENTS.md but 8 rows here")</td><td>"AGENTS.md's '7-technique memory stack' … includes <code class="inline-code">channels_last</code> … and 'Fused AdamW'"</td><td>AGENTS.md now says "8-technique memory stack" and its rows are GQA + fused SwiGLU — <code class="inline-code">channels_last</code> / Fused AdamW appear nowhere in the file (grep = 0). The correction paragraph is now wrong on both counts; the 8-row table below it matches AGENTS.md exactly.</td></tr><tr><td><strong>C5</strong></td><td>stale</td><td><code class="inline-code">docs/concepts/data-and-kernels.md:162–163</code></td><td>"The workspace <code class="inline-code">README.md</code> §5 still shows an older five-source recipe (fineweb-edu 0.50 / fineweb 0.20 / the-stack-python 0.15 / openmath 0.10 / arxiv 0.05)"</td><td>That exact recipe lives in sibling-project docs (<code class="inline-code">LLM/Mamba-3-Lite/README.md</code>, <code class="inline-code">LLM/DeepSeek-v3-Lite/AGENTS.md</code>), <strong>not</strong> the workspace README (§5 is "TranslationLM"). The root <code class="inline-code">CoreProjects/README.md</code> §4 LLaMA-3-Lite entry carries a <em>different</em> stale six-source recipe (FineWeb-Edu 0.5 / FineWeb-Code 0.1 / Stack-Python 0.2 / multi-lang 0.05 / Wikipedia 0.05 / SO-QA 0.05) plus <code class="inline-code">channels_last</code>, "fused AdamW", <code class="inline-code">GradScaler</code>, "architecture.md (1,234 lines)", "~16 GB cache" — all false vs. the tree. The citation is wrong in both file and content; the underlying "top-level docs rot" claim is still true, just mislocated.</td></tr><tr><td><strong>C6</strong></td><td>stale</td><td><code class="inline-code">docs/references/model-reference.md:1032</code>, <code class="inline-code">docs/guides/glossary.md:153</code></td><td><code class="inline-code">use_z_loss</code> = "Informational in this repo" / "Informational toggle (behavior follows <code class="inline-code">z_loss_weight</code>)"</td><td><strong>Correct and verified</strong> — but the sibling claim in <code class="inline-code">docs/concepts/training-and-memory.md:1221</code> and <code class="inline-code">:1592</code> ("compare … with a run that disables z-loss (<code class="inline-code">use_z_loss = False</code>)") implies <code class="inline-code">use_z_loss=False</code> disables the term. It does not: <code class="inline-code">z_loss_weight</code> is the only functional switch; <code class="inline-code">train.py:train_model</code> reads <code class="inline-code">use_z_loss</code> only in the startup banner print. Cross-doc inconsistency.</td></tr><tr><td><strong>C7</strong></td><td>stale</td><td><code class="inline-code">docs/references/model-reference.md:1035, 1104–1111</code></td><td>EMA shadow "costs one full BF16 copy (~1.03 GB)"; memory table rows "Weights (BF16) 1.03 GB", "EMA shadow (BF16) 1.03 GB"</td><td><code class="inline-code">AveragedModel</code> deep-copies the model; params are FP32 (no <code class="inline-code">.bfloat16()</code> anywhere in <code class="inline-code">train.py</code> — grep-verified), so the EMA shadow is <strong>2.06 GB</strong> and live weights are 2.06 GB. <code class="inline-code">docs/concepts/training-and-memory.md:867,958</code> state this correctly ("2.06 GB … deep-copies the FP32 model"). model-reference's own "Peak total ≈ 23 GB" (22.9) actually uses the 8.23 GB model-state row, so only the per-row labels are wrong — but they disagree with the concept doc and with the code.</td></tr><tr><td><strong>C8</strong></td><td>stale</td><td><code class="inline-code">docs/references/model-reference.md:1121</code></td><td>"the 92 GB figure in AGENTS.md is the measured value for that configuration [measured]"</td><td><code class="inline-code">.benchmarks/</code> is empty, no training run has ever completed (README status banner + <code class="inline-code">docs/concepts/training-and-memory.md:1033</code> both say so). Nothing was measured. The same doc's "≈23 GB … [measured per project docs]" is likewise unmeasurable today.</td></tr><tr><td><strong>C9</strong></td><td>stale</td><td><code class="inline-code">docs/guides/quickstart.md:16</code></td><td>wandb "imported unconditionally by <code class="inline-code">train.py</code> — install even for offline runs"</td><td>True, but the tests run without wandb because <code class="inline-code">tests/conftest.py</code> installs a stub. The doc's own quickstart "check commands" claim that everything works without wandb on a bare checkout — the stub is conftest-only; a <em>manual</em> <code class="inline-code">python train.py</code> without wandb installed fails at <code class="inline-code">import wandb</code>. Nuance worth one sentence.</td></tr><tr><td><strong>C10</strong></td><td>nit</td><td><code class="inline-code">docs/guides/troubleshooting.md:239</code></td><td>Prevention snippet: <code class="inline-code">from data.shared_data.loader import _SyntheticTokenizerStub</code></td><td>Works (<code class="inline-code">data/</code> has no <code class="inline-code">__init__.py</code> but is a namespace package under Python 3.3+; verified import). Fine as-is — no change needed.</td></tr><tr><td><strong>C11</strong></td><td>nit</td><td><code class="inline-code">docs/concepts/data-and-kernels.md:807–808</code></td><td>"SKILLS.md still teaches adding sources to <code class="inline-code">config.py:get_config</code>"</td><td>SKILLS.md Skill 3 now says the opposite ("Edit the <strong>canonical mixture</strong>, not <code class="inline-code">config.py</code>"). Same stale-claim-about-a-stale-file pattern as C3/C4 — SKILLS.md was fixed in the same working-tree pass.</td></tr><tr><td><strong>C12</strong></td><td>risk</td><td><code class="inline-code">docs/references/model-reference.md:1122</code>, <code class="inline-code">docs/concepts/training-and-memory.md:975</code></td><td>"consistent with the ~20 GB advertised [measured per project docs]"</td><td>No measurement exists anywhere (see C8). The docs' own honest accounting gives 20 GB with ~20% variance / 24–26 GB strict. Recommend deleting every <code class="inline-code">[measured]</code> tag on the headline until a real run exists.</td></tr></tbody></table></div>
+<hr class='doc-hr'>
+<h2 id="3-from-scratch-codebase-explanation" class="heading-anchor">3. From-scratch codebase explanation<a href="#3-from-scratch-codebase-explanation" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="31-the-one-paragraph-view" class="heading-anchor">3.1 The one-paragraph view<a href="#31-the-one-paragraph-view" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>LLaMA-3-Lite is a from-scratch, raw-PyTorch, LLaMA-3-style decoder-only</p>
+<p>transformer (513.8M params, no HF Trainer/Lightning) whose entire design</p>
+<p>revolves around one number: **fitting batch 96 × seq 2048 (196,608</p>
+<p>tokens/step) on a single A100 80 GB** with ~2× headroom. It does that with</p>
+<p>eight cooperating techniques — gradient checkpointing, chunked LM-head CE +</p>
+<p>z-loss, disk-backed mmap token cache, BF16 autocast, FA2 via SDPA, GQA,</p>
+<p>fused SwiGLU (+ three opt-in Triton kernels), TF32 — plus three stability</p>
+<p>features (QK-norm, z-loss, EMA). The full 42,000-step / 8.26B-token run has</p>
+<p>not started; the repo is smoke-tested end to end on synthetic data.</p>
+<h3 id="32-file-map" class="heading-anchor">3.2 File map<a href="#32-file-map" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>File</th><th>Role</th><th>Lines</th></tr></thead><tbody><tr><td><code class="inline-code">config.py</code></td><td>Single source of truth for every hyperparameter + runtime toggle (<code class="inline-code">get_config</code>)</td><td>105</td></tr><tr><td><code class="inline-code">model.py</code></td><td>The transformer: RoPE, RMSNorm, GQA, SwiGLU, Decoder/Transformer, both chunked losses, <code class="inline-code">build_transformer</code></td><td>384</td></tr><tr><td><code class="inline-code">train.py</code></td><td>Training loop, optimizer/scheduler/EMA, validate, generate, checkpoint/RNG restore, Triton gate</td><td>614</td></tr><tr><td><code class="inline-code">dataset.py</code></td><td>32-line re-export shim → <code class="inline-code">data/shared_data/loader.py</code></td><td>32</td></tr><tr><td><code class="inline-code">data/shared_data/loader.py</code></td><td><code class="inline-code">PackedDataset</code> (mmap windows), <code class="inline-code">ShuffledRangeSampler</code>, <code class="inline-code">collate_fn</code>, <code class="inline-code">build_tokenizer</code>, <code class="inline-code">build_training_data</code>, <code class="inline-code">build_synthetic_data</code>, <code class="inline-code">_SyntheticTokenizerStub</code></td><td>209</td></tr><tr><td><code class="inline-code">data/prepare_data.py</code></td><td>CLI shim delegating corpus construction to workspace <code class="inline-code">LLM/shared_data</code></td><td>72</td></tr><tr><td><code class="inline-code">kernels/{rmsnorm,swiglu,cross_entropy}_triton.py</code></td><td>Opt-in Triton kernels + CPU-runnable PyTorch references</td><td>~360 total</td></tr><tr><td><code class="inline-code">benchmark_data.py</code></td><td>Data-pipeline microbenchmark — <strong>currently broken (C1)</strong></td><td>157</td></tr><tr><td><code class="inline-code">tests/</code></td><td>70 passing tests (4 files + conftest) + standalone <code class="inline-code">e2e_gpu_smoke.py</code> + doc gate</td><td>~1,900</td></tr></tbody></table></div>
+<h3 id="33---the-forward-pass" class="heading-anchor">3.3 <code class="inline-code">model.py</code> — the forward pass<a href="#33---the-forward-pass" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ol class="doc-list">
+<li><strong><code class="inline-code">Transformer.forward</code></strong> (<code class="inline-code">model.py:Transformer</code>): embed <code class="inline-code">[B,S]</code> ids →
+<br> <code class="inline-code">[B,S,1024]</code>, run 16 <code class="inline-code">DecoderBlock</code>s, final <code class="inline-code">RMSNorm</code>, then either
+<br> return hidden (training: <code class="inline-code">return_hidden=True</code>) or project to logits
+<br> (generation/validation-free paths). With
+<br> <code class="inline-code">gradient_checkpointing</code> on, each layer is wrapped in
+<br> <code class="inline-code">torch.utils.checkpoint(..., use_reentrant=False)</code>; the final norm is
+<br> applied explicitly in both branches (a historical bug — a skipped final
+<br> norm — is fixed and covered by tests).
+</li>
+<li><strong><code class="inline-code">DecoderBlock</code></strong> (<code class="inline-code">model.py:DecoderBlock</code>): pre-norm residual
+<br> <code class="inline-code">x = x + attn(norm₁(x))</code>, <code class="inline-code">x = x + ffn(norm₂(x))</code>. No dropout anywhere.
+</li>
+<li><strong><code class="inline-code">GroupedQueryAttention</code></strong> (<code class="inline-code">model.py:GroupedQueryAttention</code>): q
+<br> <code class="inline-code">[B,S,8,128]</code>, k/v <code class="inline-code">[B,S,4,128]</code>; per-head <code class="inline-code">RMSNorm(head_dim)</code> (QK-norm,
+<br> Qwen2/Gemma2 style) after projection, before RoPE; RoPE applied in
+<br> head-transposed layout; K/V expanded <code class="inline-code">4→8</code> via
+<br> <code class="inline-code">.expand(...).reshape(...)</code> (the 2×-KV-cache win); <code class="inline-code">F.scaled_dot_product_attention(..., is_causal=True)</code> — FA2 backend on Ampere, O(S) memory, no materialized score matrix. There is no <code class="inline-code">mask</code> parameter; causality lives in <code class="inline-code">is_causal</code>.
+</li>
+<li><strong><code class="inline-code">RoPE</code></strong> (<code class="inline-code">model.py:RoPE</code>): precomputed <code class="inline-code">cos_cached</code>/<code class="inline-code">sin_cached</code>
+<br> <code class="inline-code">[1,1,2048,64]</code> from <code class="inline-code">inv_freq = theta^(-2i/128)</code>, θ=500,000 (LLaMA-3
+<br> long-context choice, AGENTS.md hard rule 5); applies the rotation by
+<br> splitting the last dim into even/odd halves and flattening back.
+</li>
+<li><strong><code class="inline-code">SwiGLUFFN</code></strong> (<code class="inline-code">model.py:SwiGLUFFN</code>): one fused <code class="inline-code">gate_up_proj</code>
+<br> <code class="inline-code">[B,S,8192]</code> GEMM instead of two; <code class="inline-code">silu(gate) * up</code> → <code class="inline-code">down_proj</code>.
+</li>
+<li><strong>Loss</strong> (<code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code>): the memory
+<br> headline. Never materializes <code class="inline-code">[196608, 128000]</code> logits (50.3 GB BF16).
+<br> Slices hidden into <code class="inline-code">ce_chunk_size</code> (256) rows, computes
+<br> <code class="inline-code">F.linear(hidden_c, head_weight)</code> inside <code class="inline-code">checkpoint</code> (each chunk's
+<br> 131 MB FP32 logits is recomputed in backward), applies FP32
+<br> logsumexp/z-loss + CE with <code class="inline-code">ignore_index=-100</code>, accumulates
+<br> (ce_sum, count, z_sum). z-loss = <code class="inline-code">(logsumexp logits)²</code> averaged over
+<br> non-ignored tokens, weight 1e-4 — the PaLM/Gemma2 late-run-collapse
+<br> regularizer. <code class="inline-code">chunked_cross_entropy_with_z</code> is the dense-input variant
+<br> used by tests.
+</li>
+<li><strong><code class="inline-code">build_transformer</code></strong> (<code class="inline-code">model.py:build_transformer</code>): config → model;
+<br> prints param counts (513.8M total / 251.7M non-embed) and active Triton
+<br> paths.
+</li>
+</ol>
+<h3 id="34---the-loop" class="heading-anchor">3.4 <code class="inline-code">train.py</code> — the loop<a href="#34---the-loop" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ol class="doc-list">
+<li><strong>GPU setup</strong> (<code class="inline-code">train.py:setup_gpu_optimizations</code>): TF32 flags gated on
+<br> <code class="inline-code">config[&#x27;tf32&#x27;]</code>, but <code class="inline-code">torch.set_float32_matmul_precision(&#x27;high&#x27;)</code> is
+<br> called unconditionally — so matmul TF32 stays on even with <code class="inline-code">tf32=False</code>
+<br> (documented in training-and-memory.md pitfall; a real footgun).
+</li>
+<li><strong>Data</strong> (<code class="inline-code">train.py:train_model</code>): tries
+<br> <code class="inline-code">data/shared_data/loader.py:build_training_data</code>; on <code class="inline-code">FileNotFoundError</code>
+<br> (always, today — see C2) falls back to synthetic random uint32 with a
+<br> loud WARN. <code class="inline-code">ignore_index = -100</code> hard-coded ("keeps EOS separators
+<br> learnable").
+</li>
+<li><strong>Triton gate</strong>: <code class="inline-code">*_impl=&#x27;triton&#x27;</code> keys are force-restored to
+<br> <code class="inline-code">&#x27;pytorch&#x27;</code> unless <code class="inline-code">ENABLE_TRITON_KERNELS=1</code> (AGENTS.md rule 7 —
+<br> default runs can never silently run a fused path).
+</li>
+<li><strong>Model</strong>: `build_transformer(real_vocab_size = max(config['vocab_size'],
+<br> len(tokenizer)))<code class="inline-code">, </code>.to(device)` — FP32 params, BF16 compute via
+<br> <code class="inline-code">torch.autocast</code>. <code class="inline-code">torch.compile(model, mode=&#x27;reduce-overhead&#x27;)</code>
+<br> (CUDA graphs) with a pre-warmup forward+backward to absorb autotune.
+</li>
+<li><strong>Optimizer/schedule</strong>: AdamW with decay on <code class="inline-code">p.dim() &gt;= 2</code> only (0.1 on
+<br> 2D+, 0.0 on 1D); `SequentialLR(LinearLR 3e-5→3e-4 over 2000, cosine
+<br> 3e-4→3e-5 over 40000)<code class="inline-code">. EMA via </code>torch.optim.swa_utils.AveragedModel`
+<br> + <code class="inline-code">get_ema_multi_avg_fn(0.999)</code> — shadow under <code class="inline-code">ema.module</code>, FP32.
+</li>
+<li><strong>Step</strong>: prefetch next batch first (<code class="inline-code">non_blocking</code> H2D + pinned memory
+<br> — the only async compatible with CUDA-graph stream ownership), forward
+<br> <code class="inline-code">return_hidden</code>, chunked head CE, <code class="inline-code">loss / grad_accum</code>, bare
+<br> <code class="inline-code">loss.backward()</code> (no GradScaler — BF16 keeps FP32 exponent range),
+<br> clip, step, <code class="inline-code">ema.update_parameters</code>, zero-grad, <code class="inline-code">scheduler.step()</code>.
+<br> <code class="inline-code">train.py:_next_batch</code> wraps <code class="inline-code">StopIteration</code> → epoch bump +
+<br> <code class="inline-code">sampler.set_epoch</code> so the 42k-step plan (8.26B tokens) survives a
+<br> 7.6B-token train split (~1.09 passes).
+</li>
+<li><strong>Cadence</strong>: log every 50 (loss, lr, grad norm, tok/s, data wait, GPU
+<br> memory); validate every 2000 on <strong>EMA weights</strong>, chunked loss, PPL
+<br> <code class="inline-code">exp(min(loss, 20))</code>, best-model save; generate every 20000 (5 prompts,
+<br> 128 tokens, top-k 50 / top-p 0.9 / temp 0.8, stop on
+<br> <code class="inline-code">tokenizer.eos_token_id</code>); checkpoint every 5000 (full state + 4 RNG
+<br> streams + EMA), async via <code class="inline-code">threading.Thread</code> (default <code class="inline-code">async_checkpoint</code>
+<br> True) with final <code class="inline-code">join()</code>, prune to <code class="inline-code">keep_last_n_checkpoints</code>.
+</li>
+<li><strong>Resume</strong> (<code class="inline-code">train.py:load_checkpoint</code>): restores model/optim/sched/
+<br> step/best-val/EMA/RNG — but <strong>not</strong> the sampler epoch/offset
+<br> (documented gap: <code class="inline-code">epoch_state</code> restarts, so a resumed run's window
+<br> order differs; the permutation itself is bit-identical thanks to RNG
+<br> restore).
+</li>
+</ol>
+<h3 id="35-data-path" class="heading-anchor">3.5 Data path<a href="#35-data-path" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><strong>Loader</strong> (<code class="inline-code">data/shared_data/loader.py</code>): <code class="inline-code">PackedDataset</code> slices
+<br> <code class="inline-code">seq_len+1</code> windows off an <code class="inline-code">np.memmap(uint32)</code> (page-fault resident RAM
+<br> ≈ 1 MB for an 8B-token corpus), no EOS awareness — windows are
+<br> position-only. <code class="inline-code">ShuffledRangeSampler</code> = deterministic permutation
+<br> <code class="inline-code">default_rng(seed + offset)</code>, <code class="inline-code">set_epoch</code> bumps offset. <code class="inline-code">collate_fn</code>
+<br> stacks. <code class="inline-code">build_tokenizer</code> = <code class="inline-code">AutoTokenizer.from_pretrained</code>, pad→eos
+<br> fallback; failures degrade to <code class="inline-code">_SyntheticTokenizerStub</code> (bytes⇄ids,
+<br> <code class="inline-code">len</code> = vocab).
+</li>
+<li><strong>Pipeline</strong> (workspace <code class="inline-code">LLM/shared_data/</code>): mixture.yaml (7 sources,
+<br> 8.0B tokens: fineweb-edu .40 / dclm-baseline .15 / stack-v2-python .15 /
+<br> stack-v2-jupyter .05 / openmath .10 / arxiv .10 / cosmopedia .05) →
+<br> download → clean+dedup (SHA-256) → tokenize (llama3, EOS 128,009, pad
+<br> 128,002) → <code class="inline-code">pack_shards</code> (50M-token shards, EOS-separated, manifest).
+<br> <strong>Gap (C2):</strong> the loader reads <code class="inline-code">data_cache/tokens.bin</code>; the pipeline
+<br> writes <code class="inline-code">data/shards/*.bin</code> + <code class="inline-code">manifest.json</code>. Concatenating shards in
+<br> manifest order yields exactly the flat stream the loader expects — the
+<br> wiring is a small missing stage, but missing.
+</li>
+<li><strong>Config residue:</strong> <code class="inline-code">config.py:get_config</code>'s <code class="inline-code">data_sources</code> dict (6
+<br> entries summing 0.95) is consumed by nothing — the loader reads only 12
+<br> keys (verified by regex over loader source). Tests pin the surface.
+</li>
+</ul>
+<h3 id="36-kernels-all-opt-in-all-cpu-testable" class="heading-anchor">3.6 Kernels (all opt-in, all CPU-testable)<a href="#36-kernels-all-opt-in-all-cpu-testable" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Each of the three <code class="inline-code">kernels/*_triton.py</code> files: pure-PyTorch reference</p>
+<p>(<code class="inline-code">rmsnorm_pytorch</code>, <code class="inline-code">swiglu_pytorch</code>, <code class="inline-code">cross_entropy_with_z_pytorch</code>),</p>
+<p><code class="inline-code">HAS_TRITON</code> via <code class="inline-code">try: import triton</code>, <code class="inline-code">@triton.jit</code> kernel, a</p>
+<p><code class="inline-code">torch.autograd.Function</code> wrapper whose backward is a **re-compute stub</p>
+<p>through the reference**, and a public entry point that raises</p>
+<p><code class="inline-code">ImportError</code> when Triton is absent. Model dispatch</p>
+<p>(<code class="inline-code">model.py:RMSNorm.forward</code>, <code class="inline-code">model.py:SwiGLUFFN.forward</code>,</p>
+<p><code class="inline-code">model.py:chunked_cross_entropy_with_z</code>,</p>
+<p><code class="inline-code">model.py:chunked_head_cross_entropy_with_z</code>) makes a direct call with</p>
+<p>no <code class="inline-code">try/except</code>; any failure (missing triton, tripped shape guard,</p>
+<p>compile error, OOM) propagates as a hard error — matching AGENTS.md rule</p>
+<p>7's "must surface a clear error, not a silent fallback." Guard rails: <code class="inline-code">_MAX_BLOCK_SIZE = 8192</code> (RMSNorm/SwiGLU rows),</p>
+<p><code class="inline-code">_MAX_VOCAB_BLOCK = 131072</code> (CE vocab axis). No microbenchmark exists</p>
+<p>(<code class="inline-code">scripts/microbench_a100.py</code> referenced by AGENTS.md rule 2 is absent),</p>
+<p>so the 1.5× contract is unmeasured.</p>
+<h3 id="37-tests" class="heading-anchor">3.7 Tests<a href="#37-tests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>70 passed / 1 skipped on CPU (Mac M1, ~20 s): <code class="inline-code">test_config.py</code> (7 —</p>
+<p>REQUIRED_KEYS bijection, production values, invariants), <code class="inline-code">test_model.py</code></p>
+<p>(35 — RMSNorm/RoPE/GQA/SwiGLU math, chunked≡dense CE equivalence,</p>
+<p>grad-ckpt≡eager equivalence, QK-norm identity, param counts),</p>
+<p><code class="inline-code">test_smoke.py</code> (4 — end-to-end steps, loss descent), <code class="inline-code">test_train.py</code> (13</p>
+<p>— sampling, checkpoint round-trip incl. exact RNG restore, async save,</p>
+<p>GPU-setup idempotence; 1 GPU-skipped). <code class="inline-code">e2e_gpu_smoke.py</code> runs 8</p>
+<p>assert-guarded stages on real hardware. <code class="inline-code">conftest.py</code> injects a wandb stub</p>
+<p>and seeds deterministically. CI: import check → full CPU suite → doc-ref</p>
+<p>checker.</p>
+<hr class='doc-hr'>
+<h2 id="4-modification-plan-priority-order" class="heading-anchor">4. Modification plan (priority order)<a href="#4-modification-plan-priority-order" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="p0--fix-broken-real-data-path-blocker-for-the-flagship-use-case" class="heading-anchor">P0 — fix broken real-data path (blocker for the flagship use case)<a href="#p0--fix-broken-real-data-path-blocker-for-the-flagship-use-case" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ol class="doc-list">
+<li><strong>Wire <code class="inline-code">tokens.bin</code> production.</strong> Smallest correct fix: add a stage to
+<br> <code class="inline-code">data/prepare_data.py</code> (or a post-pack step in the shim) that
+<br> concatenates <code class="inline-code">data/shards/shard_*.bin</code> in manifest order into
+<br> <code class="inline-code">data_cache/tokens.bin</code>, honoring <code class="inline-code">data_cache_dir</code>/<code class="inline-code">data_cache_filename</code>
+<br> from <code class="inline-code">config.py:get_config</code>. ~30 lines. Then update the three docs that
+<br> currently <em>claim</em> this already happens (training.md:899,
+<br> data-reference.md:9,231,836, quickstart.md:45,96) to describe the
+<br> explicit concat step.
+</li>
+<li><strong>Fix <code class="inline-code">benchmark_data.py</code>.</strong> Delete the <code class="inline-code">eos_id=0</code> kwarg
+<br> (<code class="inline-code">PackedDataset(data, seq_len=seq_len)</code>) and keep the BOS..EOS buffer
+<br> (it is already position-only data — the eos ids are just tokens).
+<br> Re-run <code class="inline-code">python benchmark_data.py --steps 3 …</code> to prove it works, and
+<br> add the invocation to the docs' verified examples.
+</li>
+<li><strong>Add a regression test</strong> (P0 follows from the docs contract: docs
+<br> ship with code; the two broken commands are documented commands).
+</li>
+</ol>
+<h3 id="p1--excise-stale-claims-about-top-level-docs-self-heal-the-corpus" class="heading-anchor">P1 — excise stale claims about top-level docs (self-heal the corpus)<a href="#p1--excise-stale-claims-about-top-level-docs-self-heal-the-corpus" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>The docs contain three "AGENTS.md/SKILLS.md/README.md is stale" passages</p>
+<p>that are now themselves stale because those files were fixed in the same</p>
+<p>uncommitted pass:</p>
+<ul class="doc-list">
+<li><code class="inline-code">docs/training.md</code> "Why 7 techniques … 8 rows" → rewrite: AGENTS.md now
+<br> lists the same 8 rows; drop the <code class="inline-code">channels_last</code>/Fused-AdamW framing
+<br> entirely.
+</li>
+<li><code class="inline-code">docs/concepts/data-and-kernels.md:795</code> and
+<br> <code class="inline-code">docs/references/data-reference.md:1041</code> → delete the "(none yet)"
+<br> claims; AGENTS.md's sanctioned list is current.
+</li>
+<li><code class="inline-code">docs/concepts/data-and-kernels.md:162,807</code> → fix the citation
+<br> (root <code class="inline-code">CoreProjects/README.md</code> §4 LLaMA-3-Lite entry, not "workspace
+<br> README §5"; recipe is the six-source one, not five) and drop the
+<br> SKILLS.md claim (Skill 3 already points at mixture.yaml).
+</li>
+</ul>
+<h3 id="p2--numeric-honesty-pass" class="heading-anchor">P2 — numeric honesty pass<a href="#p2--numeric-honesty-pass" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><code class="inline-code">docs/references/model-reference.md</code> memory table: rename rows
+<br> "Weights (FP32) 2.06 GB", "EMA shadow (FP32) 2.06 GB" (keep BF16 rows
+<br> only as an explicit "design profile" note); delete <code class="inline-code">[measured]</code> tags on
+<br> 92 GB / 23 GB / 20 GB (nothing measured yet — <code class="inline-code">.benchmarks/</code> empty).
+</li>
+<li>Cross-fix <code class="inline-code">use_z_loss</code>: pick one story. Either (a) code: make
+<br> <code class="inline-code">use_z_loss=False</code> actually zero the z term in
+<br> <code class="inline-code">train.py:train_model</code>/<code class="inline-code">validate</code> (2-line change, makes the flag
+<br> load-bearing), or (b) docs: delete the two "disable with
+<br> <code class="inline-code">use_z_loss=False</code>" implications in <code class="inline-code">docs/concepts/training-and-memory.md</code>.
+<br> Recommend (a) — a documented config key that silently does nothing is
+<br> a trap.
+</li>
+</ul>
+<h3 id="p3--gaps-worth-filling-new-doc-content" class="heading-anchor">P3 — gaps worth filling (new doc content)<a href="#p3--gaps-worth-filling-new-doc-content" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ol class="doc-list">
+<li><strong><code class="inline-code">benchmark_data.py</code> reference section</strong> — the docs cite it but no
+<br> doc walks it line-by-line (only a paragraph in training-and-memory and
+<br> a quickstart one-liner).
+</li>
+<li><strong>Workspace pipeline reference</strong> — <code class="inline-code">LLM/shared_data/</code> stages
+<br> (download→clean→tokenize→pack), manifest schema, shard layout, and the
+<br> data-root resolution rule (<code class="inline-code">LLM_DATA_ROOT</code> &gt; <code class="inline-code">$PWD/data</code>) are
+<br> documented only obliquely; a <code class="inline-code">docs/references/workspace-data.md</code> would
+<br> make the C2 wiring obvious.
+</li>
+<li><strong>EMA internals</strong> — <code class="inline-code">AveragedModel</code> + <code class="inline-code">get_ema_multi_avg_fn</code> mechanics
+<br> are spread across three docs; one canonical section (what
+<br> <code class="inline-code">ema.module</code> is, why val uses EMA, the 2.06 GB cost) would remove
+<br> repeated C7-style drift.
+</li>
+</ol>
+<h3 id="p4--hygiene" class="heading-anchor">P4 — hygiene<a href="#p4--hygiene" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li>Root <code class="inline-code">CoreProjects/README.md</code> §4 LLaMA-3-Lite entry: fix
+<br> <code class="inline-code">channels_last</code>/fused-AdamW/<code class="inline-code">GradScaler</code>/architecture.md-1234/16GB-cache
+<br> (sibling project, but it is the portfolio's front door and the docs
+<br> point at it).
+</li>
+<li>The <code class="inline-code">.gitignore</code>d <code class="inline-code">.vscode/settings.json</code> is tracked; drop it if
+<br> desired.
+</li>
+<li>Consider a <code class="inline-code">scripts/microbench_a100.py</code> so AGENTS.md rule 2 becomes
+<br> enforceable (currently "enforced by rule, not measurement" — stated
+<br> honestly in data-and-kernels.md:449).
+</li>
+</ul>
+<hr class='doc-hr'>
+<h2 id="5-acceptance-criteria-for-audit-complete" class="heading-anchor">5. Acceptance criteria for "audit complete"<a href="#5-acceptance-criteria-for-audit-complete" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li class="task-item"><input type="checkbox" disabled checked> Corpus inventoried (16 docs, 119,475 words) and gate-verified
+<br> (16/16 docs, all citations resolve, no line anchors).
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Every public symbol covered (AST scan: 0 gaps across 10 modules).
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Numeric claims re-derived from config (513.8M, 50.3 GB, 65.5 MB,
+<br> 6.44 GB, 8.23 GB model state).
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Internal links audited (0 dead links incl. #fragments).
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Suite run: 70 passed / 1 GPU-skipped.
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Broken documented commands reproduced (<code class="inline-code">benchmark_data.py</code> crash;
+<br> <code class="inline-code">prepare_data.py</code> never emitting <code class="inline-code">tokens.bin</code>).
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> Stale-claims-about-stale-files identified (C3/C4/C5/C11) with the
+<br> exact current text verified.
+</li>
+<li class="task-item"><input type="checkbox" disabled checked> (Follow-up) P0–P2 applied with tests; docs re-verified; vault sync. Applied 2026-08-05: C1 fixed (<code class="inline-code">benchmark_data.py</code> runs, regression-tested in <code class="inline-code">tests/test_data_pipeline.py</code>), C2 wired (<code class="inline-code">data/prepare_data.py:concat_shards_to_cache</code> produces <code class="inline-code">tokens.bin</code>, verified end-to-end through <code class="inline-code">build_training_data</code>), C3/C4/C5/C11/C6/C7/C8/C9/C12 resolved in the docs, <code class="inline-code">use_z_loss</code> made load-bearing, <code class="inline-code">scripts/microbench_a100.py</code> added. Suite: 76 passed / 1 GPU-skipped; doc gate green; vault mirrored.
+</li>
+</ul>
+                </article>
+
+                <div class="doc-footer-nav">
+                    <a href="../docs/training.html" class="nav-card prev-card"><span class="card-label">← Previous</span><span class="card-title">Training, Memory Stack & Data Pipeline</span></a>
+                    <a href="../docs/concepts/architecture-components.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">Architecture Components — Norm, FFN, Loss</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#1-state-of-the-docs--what-is-already-excellent" class="toc-link">1. State of the docs — what is already excellent</a></li><li class="toc-h2"><a href="#2-findings-table--docscode-misalignment" class="toc-link">2. Findings table — docs↔code misalignment</a></li><li class="toc-h2"><a href="#3-from-scratch-codebase-explanation" class="toc-link">3. From-scratch codebase explanation</a></li><li class="toc-h3"><a href="#31-the-one-paragraph-view" class="toc-link">3.1 The one-paragraph view</a></li><li class="toc-h3"><a href="#32-file-map" class="toc-link">3.2 File map</a></li><li class="toc-h3"><a href="#33---the-forward-pass" class="toc-link">3.3  — the forward pass</a></li><li class="toc-h3"><a href="#34---the-loop" class="toc-link">3.4  — the loop</a></li><li class="toc-h3"><a href="#35-data-path" class="toc-link">3.5 Data path</a></li><li class="toc-h3"><a href="#36-kernels-all-opt-in-all-cpu-testable" class="toc-link">3.6 Kernels (all opt-in, all CPU-testable)</a></li><li class="toc-h3"><a href="#37-tests" class="toc-link">3.7 Tests</a></li><li class="toc-h2"><a href="#4-modification-plan-priority-order" class="toc-link">4. Modification plan (priority order)</a></li><li class="toc-h3"><a href="#p0--fix-broken-real-data-path-blocker-for-the-flagship-use-case" class="toc-link">P0 — fix broken real-data path (blocker for the flagship use case)</a></li><li class="toc-h3"><a href="#p1--excise-stale-claims-about-top-level-docs-self-heal-the-corpus" class="toc-link">P1 — excise stale claims about top-level docs (self-heal the corpus)</a></li><li class="toc-h3"><a href="#p2--numeric-honesty-pass" class="toc-link">P2 — numeric honesty pass</a></li><li class="toc-h3"><a href="#p3--gaps-worth-filling-new-doc-content" class="toc-link">P3 — gaps worth filling (new doc content)</a></li><li class="toc-h3"><a href="#p4--hygiene" class="toc-link">P4 — hygiene</a></li><li class="toc-h2"><a href="#5-acceptance-criteria-for-audit-complete" class="toc-link">5. Acceptance criteria for "audit complete"</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="../assets/portal.js"></script>
+</body>
+</html>

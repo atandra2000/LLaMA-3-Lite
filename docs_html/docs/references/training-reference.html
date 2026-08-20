@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training & Test Reference | LLaMA-3-Lite Documentation</title>
+    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+(function () {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) document.documentElement.classList.add('booting');
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            document.documentElement.classList.remove('booting');
+            var ov = document.getElementById('boot-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+        }, reduced ? 0 : 350);
+    });
+})();
+</script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX for LaTeX Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+    <div id="boot-overlay" aria-hidden="true"><div class="boot-inner"><div class="boot-wordmark">LLAMA-3-LITE</div><div class="boot-line">loading weights <span class="boot-bar">[░░░░░░░░░░░░] 0%</span></div></div></div>
+    <!-- Top Header -->
+    <header class="site-header">
+        <div class="header-left">
+            <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
+            <a href="../../index.html" class="brand-logo">
+                <span class="brand-name">LLaMA-3-Lite</span>
+                <span class="brand-badge">Documentation</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="../../index.html" class="header-link">Portal</a>
+            <a href="../../README.html" class="header-link">README</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>
+<div class="nav-group">
+<div class="nav-group-title">Core</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../README.html" class="nav-link " title="Project Overview (README)"><span class="nav-link-text">Project Overview (README)</span></a></li><li class="nav-item"><a href="../../AGENTS.html" class="nav-link " title="AGENTS & System Architecture"><span class="nav-link-text">AGENTS & System Architecture</span></a></li><li class="nav-item"><a href="../../SKILLS.html" class="nav-link " title="Skills Reference"><span class="nav-link-text">Skills Reference</span></a></li><li class="nav-item"><a href="../../docs/README.html" class="nav-link " title="Documentation Index"><span class="nav-link-text">Documentation Index</span></a></li><li class="nav-item"><a href="../../docs/training.html" class="nav-link " title="Training, Memory Stack & Data Pipeline"><span class="nav-link-text">Training, Memory Stack & Data Pipeline</span></a></li><li class="nav-item"><a href="../../docs/AUDIT.html" class="nav-link " title="Docs & Codebase Audit"><span class="nav-link-text">Docs & Codebase Audit</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Concepts</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/concepts/architecture-components.html" class="nav-link " title="Architecture Components — Norm, FFN, Loss"><span class="nav-link-text">Architecture Components — Norm, FFN, Loss</span></a></li><li class="nav-item"><a href="../../docs/concepts/attention-and-positional.html" class="nav-link " title="Attention & Positional Encoding (GQA, RoPE)"><span class="nav-link-text">Attention & Positional Encoding (GQA, RoPE)</span></a></li><li class="nav-item"><a href="../../docs/concepts/data-and-kernels.html" class="nav-link " title="Data Pipeline & Triton Kernels"><span class="nav-link-text">Data Pipeline & Triton Kernels</span></a></li><li class="nav-item"><a href="../../docs/concepts/training-and-memory.html" class="nav-link " title="Training, Memory & Numerical Stability"><span class="nav-link-text">Training, Memory & Numerical Stability</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">Guides</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/guides/quickstart.html" class="nav-link " title="Quickstart — From Zero to a Running Loop"><span class="nav-link-text">Quickstart — From Zero to a Running Loop</span></a></li><li class="nav-item"><a href="../../docs/guides/learning-paths.html" class="nav-link " title="Learning Paths — How to Read the Docs"><span class="nav-link-text">Learning Paths — How to Read the Docs</span></a></li><li class="nav-item"><a href="../../docs/guides/troubleshooting.html" class="nav-link " title="Troubleshooting — FAQ"><span class="nav-link-text">Troubleshooting — FAQ</span></a></li><li class="nav-item"><a href="../../docs/guides/glossary.html" class="nav-link " title="Glossary — Notation, Acronyms, File Layout"><span class="nav-link-text">Glossary — Notation, Acronyms, File Layout</span></a></li></ul>
+</div>
+<div class="nav-group">
+<div class="nav-group-title">References</div>
+<ul class="nav-list"><li class="nav-item"><a href="../../docs/references/model-reference.html" class="nav-link " title="Model, RoPE & Config Reference"><span class="nav-link-text">Model, RoPE & Config Reference</span></a></li><li class="nav-item"><a href="../../docs/references/data-reference.html" class="nav-link " title="Data, Tokenizer & Kernels Reference"><span class="nav-link-text">Data, Tokenizer & Kernels Reference</span></a></li><li class="nav-item"><a href="../../docs/references/training-reference.html" class="nav-link active" title="Training & Test Reference"><span class="nav-link-text">Training & Test Reference</span></a></li><li class="nav-item"><a href="../../docs/references/workspace-data.html" class="nav-link " title="Workspace Shared Data Pipeline"><span class="nav-link-text">Workspace Shared Data Pipeline</span></a></li></ul>
+</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="breadcrumb">
+                    <a href="../../index.html">Docs</a> &gt; <span>References</span> &gt; <span class="current">Training & Test Reference</span>
+                </div>
+
+                <div class="doc-header">
+                    <h1 class="doc-title">Training & Test Reference</h1>
+                    <div class="doc-meta">
+                        <span class="meta-item"><span class="meta-mark">&sect;</span> docs/references/training-reference.md</span>
+                        <span class="meta-item"><span class="meta-mark">&para;</span> 3,574 words</span>
+                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~16 min read</span>
+                    </div>
+                </div>
+
+                <article class="markdown-body" id="articleBody">
+                    <span class="doc-anchor" id="llama-3-lite--training-and-test-reference"></span>
+<p>This document is the consolidated test-suite reference for LLaMA-3-Lite. It covers the test strategy (unit / equivalence / smoke / e2e GPU), the shared fixture system (<code class="inline-code">tests/conftest.py</code>), pytest markers and configuration, a per-file walkthrough of every test class, the eight asserted stages of the standalone <code class="inline-code">tests/e2e_gpu_smoke.py</code> pipeline, the CI wiring in <code class="inline-code">.github/workflows/ci.yml</code>, and the design decisions behind the suite. The training code these tests defend lives in <code class="inline-code">train.py</code>, <code class="inline-code">model.py</code>, <code class="inline-code">dataset.py</code>, and <code class="inline-code">config.py</code>; the executable half of the documentation contract is enforced by <code class="inline-code">tests/test_doc_refs.py</code>, whose other half is this docs tree.</p>
+<blockquote>Audience: intermediate — you have run <code class="inline-code">pytest</code> before and want to know what this suite defends and how to drive it.</blockquote>
+<h2 id="overview" class="heading-anchor">Overview<a href="#overview" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>LLaMA-3-Lite keeps its correctness story in <strong>59 test functions</strong> across four files (<code class="inline-code">tests/test_config.py</code>, <code class="inline-code">tests/test_model.py</code>, <code class="inline-code">tests/test_smoke.py</code>, <code class="inline-code">tests/test_train.py</code>), a shared fixture/helper module (<code class="inline-code">tests/conftest.py</code>), and one standalone GPU pipeline script (<code class="inline-code">tests/e2e_gpu_smoke.py</code>) that is not collected by pytest. (63 functions including <code class="inline-code">tests/test_doc_refs.py</code>'s four; 71 collected items once parametrization is expanded.) Everything runs on a tiny, CPU-friendly model configuration — the production 16-layer / 1024-wide model is never trained in tests. The suite is the executable half of the documentation contract enforced by <code class="inline-code">tests/test_doc_refs.py</code>; the other half is this docs tree, which cites the same symbols.</p>
+<p>The suite is designed to answer three questions, in order of increasing cost:</p>
+<ol class="doc-list">
+<li><strong>Is each module mathematically right?</strong> (unit + equivalence tests, seconds)
+</li>
+<li><strong>Does the whole pipeline hang together?</strong> (smoke tests, tens of seconds)
+</li>
+<li><strong>Does it work on a real GPU with real kernels?</strong> (the e2e script, minutes)
+</li>
+</ol>
+<h2 id="test-strategy" class="heading-anchor">Test Strategy<a href="#test-strategy" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Layer</th><th>Where</th><th>What it defends</th></tr></thead><tbody><tr><td>Unit</td><td><code class="inline-code">tests/test_model.py</code>, <code class="inline-code">tests/test_config.py</code></td><td>Individual modules against closed-form references: RMSNorm against the explicit <code class="inline-code">x * rsqrt(mean(x^2) + eps)</code> formula, RoPE against rotation properties, SwiGLU against the unfused gate/up/down computation, the config surface against a fixed <code class="inline-code">REQUIRED_KEYS</code> contract.</td></tr><tr><td>Equivalence</td><td><code class="inline-code">tests/test_model.py::TestChunkedCrossEntropyWithZ</code>, <code class="inline-code">TestChunkedHeadCrossEntropyWithZ</code>, <code class="inline-code">TestSwiGLUFFN.test_fused_equals_unfused_reference</code></td><td>The memory-saving implementations must be numerically indistinguishable from their naive counterparts: chunked CE ≡ dense CE, chunked head CE ≡ dense CE + z-loss, fused <code class="inline-code">gate_up_proj</code> ≡ two separate projections. This is the guarantee that makes the memory optimizations (see <a href="../training.html" class="doc-link">training.md</a>) safe.</td></tr><tr><td>Smoke</td><td><code class="inline-code">tests/test_smoke.py::TestEndToEndSmoke</code>, <code class="inline-code">tests/test_train.py::TestCheckpointRoundTrip</code></td><td>End-to-end paths on synthetic data: a real forward/backward/optimizer step, loss decreasing over 30 steps, checkpoint save → fresh-model load reproducing pre-save outputs bit-for-bit, RNG state restored exactly.</td></tr><tr><td>E2E GPU</td><td><code class="inline-code">tests/e2e_gpu_smoke.py</code></td><td>The full pipeline on real hardware: environment, data loading with <code class="inline-code">non_blocking</code> H2D, autocast BF16 training, chunked CE, validation, checkpoint round-trip, and the three Triton kernels — each stage an assert-guarded <code class="inline-code">check_*</code> function.</td></tr></tbody></table></div>
+<p>The strategy is layered deliberately: the equivalence tests would catch a wrong chunking math on any laptop; the e2e script catches integration bugs (device/dtype plumbing, kernel fallbacks, allocator config) that only appear under CUDA. Theory for the chunked-CE equivalence and z-loss lives in</p>
+<p><a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>; the RNG-restore mechanics are</p>
+<p>in <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>.</p>
+<h2 id="fixtures" class="heading-anchor">Fixtures<a href="#fixtures" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>The fixture system lives in <code class="inline-code">tests/conftest.py</code>, which does four jobs: environment pinning, the wandb stub, CLI options, and the shared fixtures/helpers.</p>
+<h3 id="environment-pinning" class="heading-anchor">Environment pinning<a href="#environment-pinning" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>At import time it sets <code class="inline-code">TOKENIZERS_PARALLELISM=false</code>, <code class="inline-code">WANDB_MODE=offline</code>, <code class="inline-code">WANDB_DISABLED=true</code>, and prepends the repo root to <code class="inline-code">PYTHONPATH</code> so <code class="inline-code">import config</code>, <code class="inline-code">import model</code>, <code class="inline-code">import train</code> resolve from tests. All are <code class="inline-code">setdefault</code> — they never override an explicit environment.</p>
+<h3 id="the-wandb-stub" class="heading-anchor">The wandb stub<a href="#the-wandb-stub" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">train.py</code> imports <code class="inline-code">wandb</code> at module scope, so any test that imports <code class="inline-code">train</code> (and <code class="inline-code">tests/test_smoke.py</code> and <code class="inline-code">tests/e2e_gpu_smoke.py</code> both do) would fail on a machine without the package. <code class="inline-code">conftest.py</code> handles this at import time: if <code class="inline-code">wandb</code> is not already in <code class="inline-code">sys.modules</code>, it tries a real import; on <code class="inline-code">ImportError</code> it installs a minimal stub module with <code class="inline-code">log</code>, <code class="inline-code">init</code>, <code class="inline-code">finish</code>, a <code class="inline-code">Table</code> class supporting <code class="inline-code">add_data</code>, and a <code class="inline-code">_calls</code> dict recording every invocation. Because the stub is injected into <code class="inline-code">sys.modules[&quot;wandb&quot;]</code>, the <code class="inline-code">import wandb</code> inside <code class="inline-code">train.py</code> silently succeeds and every test stays offline-capable. <code class="inline-code">tests/test_smoke.py::TestEndToEndSmoke.test_validate_runs_and_returns_finite_loss</code> relies on this: it monkeypatches <code class="inline-code">wandb.log</code> and asserts <code class="inline-code">validate</code> calls it exactly once.</p>
+<h3 id="cli-options" class="heading-anchor">CLI options<a href="#cli-options" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">tests/conftest.py:pytest_addoption</code> registers two flags:</p>
+<ul class="doc-list">
+<li><code class="inline-code">--device {cpu,cuda}</code> — force the device used by fixture-based tests.
+</li>
+<li><code class="inline-code">--run-gpu</code> — unskip tests marked <code class="inline-code">gpu</code> (see <a href="#markers" class="doc-link">Markers</a>).
+</li>
+</ul>
+<p><code class="inline-code">tests/conftest.py:pytest_collection_modifyitems</code> implements the gating: when <code class="inline-code">--run-gpu</code> is absent, every item carrying the <code class="inline-code">gpu</code> keyword gets a skip marker with the reason <code class="inline-code">needs --run-gpu and a CUDA device</code>. <code class="inline-code">--run-gpu</code> alone does <strong>not</strong> move the <code class="inline-code">device</code> fixture to CUDA — pass <code class="inline-code">--device cuda</code> for that (the option help text is optimistic on this point; the fixture is the source of truth).</p>
+<h3 id="fixture-table" class="heading-anchor">Fixture table<a href="#fixture-table" class="anchor-link" aria-label="Link to section">#</a></h3>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Fixture</th><th>Scope</th><th>Contract</th></tr></thead><tbody><tr><td><code class="inline-code">tests/conftest.py:device</code></td><td>session</td><td>Returns <code class="inline-code">torch.device</code> from <code class="inline-code">--device</code>, defaulting to <code class="inline-code">cpu</code>; <code class="inline-code">pytest.skip</code>s the whole session if <code class="inline-code">cuda</code> was requested but <code class="inline-code">torch.cuda.is_available()</code> is false.</td></tr><tr><td><code class="inline-code">tests/conftest.py:dtype</code></td><td>session</td><td><code class="inline-code">torch.float32</code> on CPU, <code class="inline-code">torch.bfloat16</code> on CUDA. FP32-on-CPU is deliberate: the equivalence tests assert <code class="inline-code">atol=1e-5</code> against dense references, which only holds in a dtype with enough mantissa. GPU tests get the production dtype (see <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>).</td></tr><tr><td><code class="inline-code">tests/conftest.py:seed_everything</code></td><td>function</td><td>Factory <code class="inline-code">_seed(seed=1234)</code> seeding torch, CUDA (when available), numpy, and the Python <code class="inline-code">random</code> module; returns the seed used.</td></tr><tr><td><code class="inline-code">tests/conftest.py:full_config</code></td><td>session</td><td>The production config straight from <code class="inline-code">config.get_config()</code> — used only by the param-count and config-contract tests, never to build a training model.</td></tr><tr><td><code class="inline-code">tests/conftest.py:tiny_config</code></td><td>function</td><td>The small CPU-friendly config dict every fast test builds on: <code class="inline-code">d_model=64</code>, <code class="inline-code">n_layers=2</code>, <code class="inline-code">n_heads=4</code>, <code class="inline-code">n_kv_heads=2</code>, <code class="inline-code">head_dim=16</code>, <code class="inline-code">d_ff=128</code>, <code class="inline-code">vocab_size=256</code>, <code class="inline-code">seq_len=32</code>, <code class="inline-code">batch_size=4</code>, <code class="inline-code">max_steps=10</code>, <code class="inline-code">ce_chunk_size=16</code>, <code class="inline-code">warmup_steps=2</code>, <code class="inline-code">val_split=0.1</code>. It mirrors the production key set (minus Triton dispatch keys), so config plumbing is exercised at small scale.</td></tr><tr><td><code class="inline-code">tests/conftest.py:tiny_model</code></td><td>function</td><td>A <code class="inline-code">build_transformer(...)</code> instance built from <code class="inline-code">tiny_config</code> hyperparameters, moved to <code class="inline-code">device</code>/<code class="inline-code">dtype</code>, seeded via <code class="inline-code">seed_everything(1234)</code>.</td></tr></tbody></table></div>
+<p>Dependencies among fixtures:</p>
+<div class="code-wrapper" data-lines="6"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>device ──► dtype
+tiny_config ──► tiny_model
+device ──► tiny_model
+dtype ──► tiny_model
+seed_everything ──► tiny_model
+full_config   (standalone, no dependencies)</code></pre></div>
+<h3 id="module-level-helpers" class="heading-anchor">Module-level helpers<a href="#module-level-helpers" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><code class="inline-code">tests/conftest.py:make_token_stream(num_tokens, vocab_size, seq_len, eos_id=0, bos_id=1, seed=42)</code> — builds a synthetic <code class="inline-code">uint32</code> token buffer packed as repeated <code class="inline-code">BOS … EOS</code> documents (each document <code class="inline-code">max(8, seq_len // 2)</code> tokens long), exactly the layout <code class="inline-code">PackedDataset</code> expects. Used by <code class="inline-code">tests/test_smoke.py:tiny_dataloaders</code> to build train/val loaders without a tokenizer.
+</li>
+</ul>
+<h2 id="markers" class="heading-anchor">Markers<a href="#markers" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p><code class="inline-code">pytest.ini</code> pins the collection rules (<code class="inline-code">testpaths = tests</code>, <code class="inline-code">python_files = test_*.py</code>, <code class="inline-code">python_classes = Test*</code>, <code class="inline-code">python_functions = test_*</code>), suppresses Deprecation/Future/User/Resource warnings globally, and disables the cache provider (<code class="inline-code">-p no:cacheprovider</code>). <code class="inline-code">addopts = -ra --strict-markers --strict-config</code> means every marker used anywhere must be registered, and the config file must parse strictly.</p>
+<p>Registered markers:</p>
+<ul class="doc-list">
+<li><code class="inline-code">slow</code> — tests taking more than a few seconds (reserved; currently unused).
+</li>
+<li><code class="inline-code">gpu</code> — requires a CUDA GPU; auto-skipped unless <code class="inline-code">--run-gpu</code> is passed. Currently one test: <code class="inline-code">tests/test_train.py::TestCheckpointRoundTrip.test_load_restores_rng_state_cross_device</code>.
+</li>
+<li><code class="inline-code">numeric</code> — numerical-equivalence assertions. Currently one test: <code class="inline-code">tests/test_model.py::TestChunkedCrossEntropyWithZ.test_matches_ce_plus_zpen_reference</code>.
+</li>
+</ul>
+<p>The <code class="inline-code">smoke</code> marker is <strong>not registered</strong> (despite the e2e smoke module's name): <code class="inline-code">tests/test_smoke.py::TestEndToEndSmoke</code> carries no marker, and CI runs the full CPU suite rather than a <code class="inline-code">-m smoke</code> selection.</p>
+<h2 id="per-file-walkthroughs" class="heading-anchor">Per-File Walkthroughs<a href="#per-file-walkthroughs" class="anchor-link" aria-label="Link to section">#</a></h2>
+<h3 id="the-config-contract-7-tests" class="heading-anchor"><code class="inline-code">tests/test_config.py</code> — the config contract (7 tests)<a href="#the-config-contract-7-tests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">tests/test_config.py:REQUIRED_KEYS</code> is the authoritative list of every key <code class="inline-code">config.get_config()</code> must (and must not) expose. <code class="inline-code">TestGetConfig</code> enforces a <strong>bijection</strong>: <code class="inline-code">test_has_all_required_keys</code> fails if any required key is missing; <code class="inline-code">test_no_extra_unknown_keys</code> fails if the config grows a key the test suite does not know about — so adding a config knob forces updating the contract in the same commit.</p>
+<ul class="doc-list">
+<li><code class="inline-code">tests/test_config.py::TestGetConfig.test_known_values</code> — pins the
+<br> production numbers: <code class="inline-code">d_model=1024</code>, <code class="inline-code">n_layers=16</code>, <code class="inline-code">n_heads=8</code>, <code class="inline-code">n_kv_heads=4</code>, <code class="inline-code">head_dim=128</code>, <code class="inline-code">d_ff=4096</code>, <code class="inline-code">vocab_size=128000</code>, <code class="inline-code">seq_len=2048</code>, <code class="inline-code">ce_chunk_size=256</code>.
+</li>
+<li><code class="inline-code">test_gqa_heads_divide_evenly</code> — GQA validity (<code class="inline-code">n_heads % n_kv_heads == 0</code>,
+<br> ratio ≥ 1), a precondition of the KV-expansion logic in
+<br> <a href="model-reference.html" class="doc-link">model-reference.md</a>.
+</li>
+<li><code class="inline-code">test_data_source_weights_positive</code> — mixture weights are positive and sum
+<br> in <code class="inline-code">(0.5, 1.0]</code>, the invariant the workspace data pipeline relies on (<a href="data-reference.html" class="doc-link">data-reference.md</a>, <a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a>).
+</li>
+<li><code class="inline-code">test_learning_rate_schedule_invariants</code> — <code class="inline-code">0 &lt; min_lr &lt; learning_rate</code>,
+<br> <code class="inline-code">0 &lt; warmup_steps &lt; max_steps</code>, <code class="inline-code">weight_decay &gt;= 0</code>, <code class="inline-code">max_grad_norm &gt; 0</code>; the preconditions of the SequentialLR chain (<a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>).
+</li>
+</ul>
+<h3 id="the-model-35-tests" class="heading-anchor"><code class="inline-code">tests/test_model.py</code> — the model (35 tests)<a href="#the-model-35-tests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>Nine test classes, each pinned to a <code class="inline-code">model.py</code> symbol:</p>
+<ul class="doc-list">
+<li><strong><code class="inline-code">tests/test_model.py::TestRMSNorm</code></strong> — output shape, zero-input behavior,
+<br> exact match to the closed form <code class="inline-code">x * rsqrt(mean(x^2) + eps) * weight</code> in float64, scale invariance (RMSNorm is homogeneous), and <code class="inline-code">weight</code> being a learnable parameter initialized to ones. Theory: <a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestRoPE</code></strong> — buffer shapes (<code class="inline-code">cos_cached</code>/
+<br> <code class="inline-code">sin_cached</code> as <code class="inline-code">(1, 1, max_seq_len, head_dim/2)</code>, <code class="inline-code">inv_freq</code> of length <code class="inline-code">head_dim/2</code>), strictly decreasing <code class="inline-code">inv_freq</code> (monotone frequency schedule), and three geometric properties that <em>define</em> rotary embeddings: rotation preserves the Euclidean norm, position 0 is the identity, and the inner product <code class="inline-code">q_i · k_j</code> depends only on <code class="inline-code">i − j</code> (<code class="inline-code">test_relative_position_property</code>) — the translation-equivariance that makes RoPE a relative scheme. Theory:
+<br> <a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestGroupedQueryAttention</code></strong> — output shape,
+<br> <code class="inline-code">test_causality</code> (perturbing the last token must not change earlier outputs — the <code class="inline-code">is_causal</code> mask contract), <code class="inline-code">n_rep == n_heads // n_kv_heads</code> across four head configurations, and <code class="inline-code">test_invalid_n_kv_heads_raises</code> (a non-divisor <code class="inline-code">n_kv_heads</code> fails loudly at forward time, not silently at init). Theory: <a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestSwiGLUFFN</code></strong> — output shape; the core
+<br> equivalence <code class="inline-code">test_fused_equals_unfused_reference</code> (splitting <code class="inline-code">gate_up_proj.weight</code> into gate/up halves and running <code class="inline-code">silu(gate) * up → down_proj</code> must reproduce the fused forward at <code class="inline-code">atol=1e-6</code>); and <code class="inline-code">gate_up_proj</code> being exactly <code class="inline-code">2 * d_ff</code> rows. Theory: <a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestTransformerParamCount</code></strong> — the README's
+<br> advertised ~515M total parameters within 1%, and <code class="inline-code">get_num_params(non_embedding=True)</code> agreeing with both the README's ~252M and the <code class="inline-code">total − in_emb − out_emb</code> definition — a guard against metric-definition drift. The anatomy behind these numbers is derived in
+<br> <a href="../concepts/attention-and-positional.html" class="doc-link">attention-and-positional.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestTransformerForward</code></strong> — forward shape
+<br> <code class="inline-code">(B, S, vocab)</code>, backward producing a finite grad for <em>every</em> parameter, and <code class="inline-code">test_gradient_checkpointing_matches_normal</code> (checkpointed and non-checkpointed forwards are identical at <code class="inline-code">atol=1e-6</code> — the correctness half of the memory tradeoff in
+<br> <a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>).
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestChunkedCrossEntropyWithZ</code></strong> — the z-loss
+<br> wrapper. <code class="inline-code">test_matches_ce_plus_zpen_reference</code> (marked <code class="inline-code">numeric</code>) proves <code class="inline-code">chunked_cross_entropy_with_z(logits, targets, chunk_size, z_loss_weight)</code> equals <code class="inline-code">F.cross_entropy + weight * mean(logsumexp(logits)^2)</code> at <code class="inline-code">atol=1e-5</code>; <code class="inline-code">test_z_weight_zero_matches_pure_ce</code> proves the penalty term is identically zero when the weight is zero; <code class="inline-code">test_gradients_flow</code> proves the bound actually backprops; <code class="inline-code">test_z_loss_grows_with_logit_magnitude</code> sanity-checks the penalty's behavior; and <code class="inline-code">test_z_loss_ignores_ignore_index_positions</code> proves masked positions are excluded from the z average (the <code class="inline-code">ignore_index=-100</code> training contract). Full derivation: <a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestChunkedHeadCrossEntropyWithZ</code></strong> — the
+<br> memory-bounded LM-head loss, the centerpiece of the 92→20 GB story (<a href="../training.html" class="doc-link">training.md</a>). It proves chunked-head loss ≡ dense CE (z=0) and ≡ dense CE + z (z=1e-4) at <code class="inline-code">atol=1e-5</code> on the same <code class="inline-code">tiny_model</code>; that gradients reach both <code class="inline-code">output_proj.weight</code> and <code class="inline-code">input_embedding.weight</code> (proving hidden gradient flow through a non-leaf); and that <code class="inline-code">return_hidden=True</code> skips the head (hidden is <code class="inline-code">(B, S, d_model)</code>).
+</li>
+<li><strong><code class="inline-code">tests/test_model.py::TestQKNorm</code></strong> — parameter-count delta is exactly
+<br> <code class="inline-code">2 * head_dim * n_layers</code> when enabled; with <code class="inline-code">qknorm=False</code> the <code class="inline-code">q_norm</code>/<code class="inline-code">k_norm</code> modules are <code class="inline-code">torch.nn.Identity</code> placeholders and the forward is unchanged; with <code class="inline-code">qknorm=True</code> they are real <code class="inline-code">RMSNorm</code> instances and the forward runs finite. Theory: <a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a>.
+</li>
+</ul>
+<h3 id="the-pipeline-4-tests" class="heading-anchor"><code class="inline-code">tests/test_smoke.py</code> — the pipeline (4 tests)<a href="#the-pipeline-4-tests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p><code class="inline-code">tests/test_smoke.py:tiny_dataloaders</code> builds train/val <code class="inline-code">DataLoader</code>s from <code class="inline-code">make_token_stream</code> output via <code class="inline-code">dataset.PackedDataset</code> + <code class="inline-code">dataset.ShuffledRangeSampler</code> + <code class="inline-code">dataset.collate_fn</code> — the real loading path at tiny scale. <code class="inline-code">TestEndToEndSmoke</code> then defends:</p>
+<ul class="doc-list">
+<li><code class="inline-code">test_one_forward_backward_step</code> — one real AdamW step: loss finite and
+<br> positive, and every named parameter receives a finite gradient (a catch-all for dtype/plumbing errors).
+</li>
+<li><code class="inline-code">test_loss_decreases_over_few_steps</code> — a tiny model overfits a fixed
+<br> random batch in 30 steps (<code class="inline-code">lr=1e-2</code>), proving the optimizer path actually learns.
+</li>
+<li><code class="inline-code">test_chunked_ce_matches_full_ce_in_training</code> — chunked CE (<code class="inline-code">chunk_size=7</code>)
+<br> equals <code class="inline-code">F.cross_entropy</code> inside a real forward pass, bridging the unit-level equivalence to the full model.
+</li>
+<li><code class="inline-code">test_validate_runs_and_returns_finite_loss</code> — <code class="inline-code">train.validate</code> runs,
+<br> returns a finite positive loss, and calls <code class="inline-code">wandb.log</code> exactly once (stubbed via monkeypatch).
+</li>
+</ul>
+<h3 id="training-components-13-tests" class="heading-anchor"><code class="inline-code">tests/test_train.py</code> — training components (13 tests)<a href="#training-components-13-tests" class="anchor-link" aria-label="Link to section">#</a></h3>
+<ul class="doc-list">
+<li><strong><code class="inline-code">tests/test_train.py::TestTopKTopPSampling</code></strong> (5) — the generation
+<br> sampler <code class="inline-code">train.top_k_top_p_sampling</code>: seeded determinism (<code class="inline-code">torch.equal</code> on two seeded runs), <code class="inline-code">top_k=1</code> = argmax, temperature acceptance, <code class="inline-code">top_p=0.5</code> pruning a low-probability tail down to the single high-probability token, and <code class="inline-code">-inf</code> logits handled (the finite entry wins, output finite). Used by <code class="inline-code">train.generate_samples</code>; see <a href="../training.html" class="doc-link">training.md</a>.
+</li>
+<li><strong><code class="inline-code">tests/test_train.py::TestCheckpointRoundTrip</code></strong> (7) — the
+<br> reproducibility contract (<a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>):
+<ul class="doc-list">
+<li><code class="inline-code">test_save_creates_step_file</code> — <code class="inline-code">save_checkpoint(..., step=42)</code> writes
+<br> <code class="inline-code">&lt;model_filename&gt;_step_42.pt</code>.
+</li>
+<li><code class="inline-code">test_load_restores_model_weights</code> — a freshly seeded model does <em>not</em>
+<br> reproduce the pre-save outputs until <code class="inline-code">load_checkpoint</code>; after loading it matches at <code class="inline-code">atol=1e-4</code>. This is the round-trip in miniature.
+</li>
+<li><code class="inline-code">test_load_restores_rng_state</code> — the headline claim: torch, numpy, and
+<br> Python RNG states are restored <strong>exactly</strong> (<code class="inline-code">torch.equal</code> on rng states, <code class="inline-code">np.array_equal</code> on <code class="inline-code">get_state()[1]</code>, <code class="inline-code">random.getstate()</code> equality), and post-restore draws are bit-identical to a reference draw from the saved state.
+</li>
+<li><code class="inline-code">test_load_returns_zero_when_no_checkpoints</code> — <code class="inline-code">(step=0, best=inf)</code> on an
+<br> empty folder (fresh-start contract).
+</li>
+<li><code class="inline-code">test_final_checkpoint_uses_special_names</code> — the final checkpoint writes
+<br> <code class="inline-code">*_final_model_full.pt</code> and <code class="inline-code">*_final_model_weights.pt</code> and no step file.
+</li>
+<li><code class="inline-code">test_async_save_returns_thread</code> — <code class="inline-code">async_save=True</code> returns a joinable
+<br> <code class="inline-code">Thread</code>; after <code class="inline-code">join(timeout=5)</code> the file exists.
+</li>
+<li><code class="inline-code">test_load_restores_rng_state_cross_device</code> (marked <code class="inline-code">gpu</code>) — regression:
+<br> <code class="inline-code">torch.load(map_location=...)</code> used to move RNG state tensors to the load device, breaking CPU-loads-from-CUDA-saves; this test saves on CUDA and loads on CPU and asserts both weights and RNG survive. It self-skips unless the fixture device is CPU <em>and</em> CUDA is present, so it runs with <code class="inline-code">--run-gpu</code> alone.
+</li>
+</ul>
+</li>
+<li><strong><code class="inline-code">tests/test_train.py::TestSetupGpuOptimizations</code></strong> (1) —
+<br> <code class="inline-code">test_idempotent_on_cpu</code> runs <code class="inline-code">train.setup_gpu_optimizations</code> twice with <code class="inline-code">tf32=False</code>/<code class="inline-code">cudnn_benchmark=False</code>/no <code class="inline-code">cuda_alloc_conf</code> and asserts nothing explodes — the CPU-safety half of the GPU configurator (<a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>).
+</li>
+</ul>
+<h2 id="the-e2e-gpu-script" class="heading-anchor">The E2E GPU Script<a href="#the-e2e-gpu-script" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>A standalone script (not collected by pytest) that drives the <strong>real pipeline</strong> end to end in 8 asserted stages. Run it with <code class="inline-code">python tests/e2e_gpu_smoke.py</code> (the module docstring suggests the project venv: <code class="inline-code">~/.venv/bin/python tests/e2e_gpu_smoke.py</code>).</p>
+<div class="code-wrapper" data-lines="3"><div class="code-header"><span class="code-lang">code</span><span class="code-actions"><button class="copy-btn" onclick="copyCode(this)">Copy</button></span></div><pre><code>check_environment → check_data_pipeline → build_model → train_steps
+    → check_chunked_ce → check_validate → check_checkpoint_roundtrip
+    → check_triton_kernels</code></pre></div>
+<ul class="doc-list">
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_environment</code> — prints torch version, CUDA
+<br> availability, device name/compute-capability/VRAM, and Triton availability; selects <code class="inline-code">cuda</code> when present, else <code class="inline-code">cpu</code> with a warning (the script is runnable on CPU but that defeats its purpose).
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:build_tiny_config</code> — a GPU-friendly config
+<br> (<code class="inline-code">d_model=128</code>, 2 layers, <code class="inline-code">vocab_size=512</code>, <code class="inline-code">seq_len=64</code>, <code class="inline-code">batch_size=4</code>, <code class="inline-code">max_steps=8</code>, <code class="inline-code">ce_chunk_size=128</code>) sized so the CE buffers fit in 4 GB, with <code class="inline-code">tf32</code> set by <code class="inline-code">tests/e2e_gpu_smoke.py:device_supports_tf32</code> (Ampere and newer, compute capability ≥ 8) and <code class="inline-code">cuda_alloc_conf=expandable_segments:True</code>.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_data_pipeline</code> — builds synthetic data via
+<br> <code class="inline-code">dataset.build_synthetic_data(num_tokens=8192, seed=0)</code>, verifies batch shapes <code class="inline-code">(batch_size, seq_len)</code>, and exercises the trainer's <code class="inline-code">non_blocking</code> H2D copy (with <code class="inline-code">cuda.synchronize</code>) on GPU, printing the H2D time.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:build_model</code> — seeds and builds the model, prints
+<br> param count and GPU memory after build.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:train_steps</code> — the real training recipe at small
+<br> scale: AdamW with the decay/no-decay split (<code class="inline-code">p.dim() &gt;= 2</code>), BF16 <code class="inline-code">torch.autocast</code> on CUDA, chunked CE with z-loss, gradient clipping, epoch wrap on <code class="inline-code">StopIteration</code>, and a <code class="inline-code">cuda.synchronize</code> per step. Asserts every loss is finite.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_chunked_ce</code> — dense vs chunked CE on the
+<br> trained model, <code class="inline-code">abs diff &lt; 1e-3</code>.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_validate</code> — stubs <code class="inline-code">wandb</code> (same pattern as
+<br> conftest) and calls <code class="inline-code">train.validate</code>; asserts a finite positive loss and prints perplexity.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_checkpoint_roundtrip</code> — saves step 7 into a
+<br> temp dir, loads into a freshly seeded model, asserts <code class="inline-code">step == 7</code>, <code class="inline-code">best_val_loss ≈ 2.5</code>, and max-abs weight drift <code class="inline-code">&lt; 1e-3</code>.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:check_triton_kernels</code> — skipped on CPU or without
+<br> Triton; otherwise compares <code class="inline-code">kernels.rmsnorm_triton.triton_rmsnorm</code> (diff <code class="inline-code">&lt; 5e-2</code>), <code class="inline-code">kernels.swiglu_triton.triton_swiglu</code> (diff <code class="inline-code">&lt; 1.0</code>, tolerating the documented BF16 bias on cc-7.5), and <code class="inline-code">kernels.cross_entropy_triton.triton_chunked_cross_entropy_with_z</code> (diff <code class="inline-code">&lt; 5e-1</code>) against their PyTorch references. Kernel details:
+<br> <a href="data-reference.html" class="doc-link">data-reference.md</a>, <a href="../concepts/data-and-kernels.html" class="doc-link">data-and-kernels.md</a>.
+</li>
+<li><code class="inline-code">tests/e2e_gpu_smoke.py:main</code> — parses <code class="inline-code">--steps N</code> to override
+<br> <code class="inline-code">cfg[&quot;max_steps&quot;]</code> (useful for a 1–2 step sanity pass), runs the stages in order, prints <code class="inline-code">E2E SMOKE: ALL CHECKS PASSED</code>, and exits 0; any failed assert exits non-zero.
+</li>
+</ul>
+<h2 id="running-the-suites" class="heading-anchor">Running the Suites<a href="#running-the-suites" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>Intent</th><th>Command</th></tr></thead><tbody><tr><td>Full CPU suite (fast, no GPU needed)</td><td><code class="inline-code">python -m pytest tests/ -q</code></td></tr><tr><td>One file</td><td><code class="inline-code">python -m pytest tests/test_model.py -q</code></td></tr><tr><td>One test class</td><td><code class="inline-code">python -m pytest tests/test_model.py::TestRoPE -q</code></td></tr><tr><td>Numeric-equivalence tests only</td><td><code class="inline-code">python -m pytest tests/ -m numeric -q</code></td></tr><tr><td>GPU-marked tests (CUDA required)</td><td><code class="inline-code">python -m pytest tests/ --run-gpu -q</code></td></tr><tr><td>Entire suite on a CUDA box</td><td><code class="inline-code">python -m pytest tests/ --run-gpu --device cuda -q</code></td></tr><tr><td>E2E GPU script (full)</td><td><code class="inline-code">python tests/e2e_gpu_smoke.py</code></td></tr><tr><td>E2E GPU script (quick, 2 steps)</td><td><code class="inline-code">python tests/e2e_gpu_smoke.py --steps 2</code></td></tr><tr><td>Doc↔code anchor checker</td><td><code class="inline-code">python -m pytest tests/test_doc_refs.py -q</code></td></tr></tbody></table></div>
+<p>The CPU suite needs no data, no tokenizer download, and no wandb: the <code class="inline-code">tiny_config</code>/<code class="inline-code">tiny_model</code> fixtures and the conftest wandb stub make it hermetic. On a Mac M1 the full suite runs in roughly 20 seconds (verified 2026-08-05: 70 passed / 1 skipped, the skip being the <code class="inline-code">gpu</code>-marked test).</p>
+<h3 id="ci-workflow" class="heading-anchor">CI workflow (<code class="inline-code">.github/workflows/ci.yml</code>)<a href="#ci-workflow" class="anchor-link" aria-label="Link to section">#</a></h3>
+<p>On every push/PR to <code class="inline-code">main</code>, the <code class="inline-code">smoke</code> job runs on <code class="inline-code">ubuntu-latest</code> with Python 3.11 and the CPU-only torch wheel (<code class="inline-code">pip install torch --index-url https://download.pytorch.org/whl/cpu</code>), then three steps:</p>
+<ol class="doc-list">
+<li><strong>Import checks</strong> — <code class="inline-code">python -c &quot;import model; import dataset; import train&quot;</code>,
+<br> the cheapest smoke: the three entry modules must import cleanly.
+</li>
+<li><strong>CPU test suite</strong> — <code class="inline-code">python -m pytest tests/ --no-header -q</code> (the full
+<br> CPU suite; there is no <code class="inline-code">-m smoke</code> selection — the <code class="inline-code">smoke</code> marker is not
+<br> registered).
+</li>
+<li><strong>Doc reference checker</strong> — `python -m pytest tests/test_doc_refs.py
+<br> --no-header -q`, enforcing that every symbol citation in these docs resolves to a real module attribute and that no line-number anchors exist.
+</li>
+</ol>
+<p>CI intentionally does not run the <code class="inline-code">gpu</code> tests (no CUDA runner) and does not run the e2e script; both are local/GPU-farm activities.</p>
+<h2 id="test-matrix" class="heading-anchor">Test Matrix<a href="#test-matrix" class="anchor-link" aria-label="Link to section">#</a></h2>
+<div class="table-container"><table class="doc-table"><thead><tr><th>File</th><th>What it defends</th><th>How to run</th></tr></thead><tbody><tr><td><code class="inline-code">tests/test_config.py</code></td><td>Config contract: <code class="inline-code">REQUIRED_KEYS</code> bijection, production values (1024/16/8/4/128/4096/128k/2048/256), GQA divisibility, mixture-weight and LR-schedule invariants</td><td><code class="inline-code">pytest tests/test_config.py</code></td></tr><tr><td><code class="inline-code">tests/test_model.py</code></td><td>Model math: RMSNorm, RoPE, GQA causality, SwiGLU fused≡unfused, param counts (514.9M / 251.7M), forward/backward, grad-ckpt equivalence, chunked CE ≡ dense CE, chunked head ≡ dense CE+z, QK-norm identity/RMSNorm behavior</td><td><code class="inline-code">pytest tests/test_model.py</code></td></tr><tr><td><code class="inline-code">tests/test_smoke.py</code></td><td>End-to-end training on synthetic data: one optimizer step, loss descent, chunked-CE-in-training, <code class="inline-code">validate</code> + wandb stub</td><td><code class="inline-code">pytest tests/test_smoke.py</code></td></tr><tr><td><code class="inline-code">tests/test_train.py</code></td><td>Generation sampling (top-k/top-p/temperature/-inf), checkpoint round-trip incl. exact RNG restore and cross-device regression, async save, GPU-optimization idempotence</td><td><code class="inline-code">pytest tests/test_train.py</code></td></tr><tr><td><code class="inline-code">tests/e2e_gpu_smoke.py</code></td><td>Full pipeline on real hardware: env, data, training with autocast, chunked CE, validate, checkpoint, Triton kernels</td><td><code class="inline-code">python tests/e2e_gpu_smoke.py [--steps N]</code></td></tr></tbody></table></div>
+<h2 id="design-decisions" class="heading-anchor">Design Decisions<a href="#design-decisions" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><strong>Tiny models for big guarantees.</strong> Every numerical contract is checked on
+<br> a 2-layer / 64-wide model, where dense references fit in memory and tolerances stay tight. The 16-layer production model is only instantiated once, in <code class="inline-code">tests/test_model.py::TestTransformerParamCount</code>, which builds it on CPU (no forward) purely to count parameters.
+</li>
+<li><strong>Exactness is a dtype decision, not a tolerance decision.</strong> FP32 on CPU
+<br> is what makes the <code class="inline-code">1e-5</code> equivalence assertions meaningful; GPU runs use BF16 because that is what trains. The two are wired through the <code class="inline-code">device</code> → <code class="inline-code">dtype</code> fixture chain, so no test hardcodes a dtype.
+</li>
+<li><strong>The suite is hermetic by default.</strong> No network, no data files, no wandb,
+<br> no tokenizer: synthetic tokens from <code class="inline-code">make_token_stream</code>, a stubbed wandb, and config-driven tiny sizes. The e2e script is the one place that deliberately breaks hermeticity to touch real kernels and real allocator settings.
+</li>
+</ul>
+<h2 id="training-loop" class="heading-anchor">Training Loop<a href="#training-loop" class="anchor-link" aria-label="Link to section">#</a></h2>
+<p>The end-to-end training recipe this suite defends — AdamW with the decay/no-decay split, BF16 autocast, chunked CE with z-loss, gradient clipping, checkpointing, and generation sampling — is documented in</p>
+<p><a href="../training.html" class="doc-link">training.md</a>, with the memory, precision, and optimization</p>
+<p>theory behind it in</p>
+<p><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a>. The tests in</p>
+<p><code class="inline-code">tests/test_train.py</code> and <code class="inline-code">tests/test_smoke.py</code> are the executable form of those chapters.</p>
+<h2 id="references" class="heading-anchor">References<a href="#references" class="anchor-link" aria-label="Link to section">#</a></h2>
+<ul class="doc-list">
+<li><a href="model-reference.html" class="doc-link">model-reference.md</a> — the config surface the <code class="inline-code">test_config</code> contract pins.
+</li>
+<li><a href="../training.html" class="doc-link">training.md</a> — <code class="inline-code">validate</code>, <code class="inline-code">save_checkpoint</code>/<code class="inline-code">load_checkpoint</code>,
+<br> <code class="inline-code">top_k_top_p_sampling</code>, <code class="inline-code">setup_gpu_optimizations</code> in context.
+</li>
+<li><a href="../concepts/architecture-components.html" class="doc-link">architecture-components.md</a> — why chunked CE ≡ dense CE
+<br> and what z-loss does.
+</li>
+<li><a href="../concepts/training-and-memory.html" class="doc-link">training-and-memory.md</a> — the RNG-restore theory
+<br> behind <code class="inline-code">TestCheckpointRoundTrip</code> and the memory claims the chunked-head equivalence tests make safe.
+</li>
+<li><a href="data-reference.html" class="doc-link">data-reference.md</a> — the Triton kernels checked by the e2e script.
+</li>
+<li><a href="../guides/learning-paths.html" class="doc-link">learning-paths.md</a> — where this reference sits
+<br> in the reading order.
+</li>
+</ul>
+                </article>
+
+                <div class="doc-footer-nav">
+                    <a href="../../docs/references/data-reference.html" class="nav-card prev-card"><span class="card-label">← Previous</span><span class="card-title">Data, Tokenizer & Kernels Reference</span></a>
+                    <a href="../../docs/references/workspace-data.html" class="nav-card next-card"><span class="card-label">Next →</span><span class="card-title">Workspace Shared Data Pipeline</span></a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar Table of Contents -->
+        <aside class="toc-sidebar">
+            <div class="toc-inner">
+                <div class="toc-title">On This Page</div>
+                <ul class="toc-list"><li class="toc-h2"><a href="#overview" class="toc-link">Overview</a></li><li class="toc-h2"><a href="#test-strategy" class="toc-link">Test Strategy</a></li><li class="toc-h2"><a href="#fixtures" class="toc-link">Fixtures</a></li><li class="toc-h3"><a href="#environment-pinning" class="toc-link">Environment pinning</a></li><li class="toc-h3"><a href="#the-wandb-stub" class="toc-link">The wandb stub</a></li><li class="toc-h3"><a href="#cli-options" class="toc-link">CLI options</a></li><li class="toc-h3"><a href="#fixture-table" class="toc-link">Fixture table</a></li><li class="toc-h3"><a href="#module-level-helpers" class="toc-link">Module-level helpers</a></li><li class="toc-h2"><a href="#markers" class="toc-link">Markers</a></li><li class="toc-h2"><a href="#per-file-walkthroughs" class="toc-link">Per-File Walkthroughs</a></li><li class="toc-h3"><a href="#the-config-contract-7-tests" class="toc-link"> — the config contract (7 tests)</a></li><li class="toc-h3"><a href="#the-model-35-tests" class="toc-link"> — the model (35 tests)</a></li><li class="toc-h3"><a href="#the-pipeline-4-tests" class="toc-link"> — the pipeline (4 tests)</a></li><li class="toc-h3"><a href="#training-components-13-tests" class="toc-link"> — training components (13 tests)</a></li><li class="toc-h2"><a href="#the-e2e-gpu-script" class="toc-link">The E2E GPU Script</a></li><li class="toc-h2"><a href="#running-the-suites" class="toc-link">Running the Suites</a></li><li class="toc-h3"><a href="#ci-workflow" class="toc-link">CI workflow ()</a></li><li class="toc-h2"><a href="#test-matrix" class="toc-link">Test Matrix</a></li><li class="toc-h2"><a href="#design-decisions" class="toc-link">Design Decisions</a></li><li class="toc-h2"><a href="#training-loop" class="toc-link">Training Loop</a></li><li class="toc-h2"><a href="#references" class="toc-link">References</a></li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script defer src="../../assets/portal.js"></script>
+</body>
+</html>
