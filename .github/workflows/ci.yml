@@ -19,6 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers datasets wandb
+          pip install -r requirements-dev.txt
       - name: Import checks
         run: |
           python -c "import model; import dataset; import train"
