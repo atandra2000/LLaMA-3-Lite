@@ -31,6 +31,9 @@ env/
 # opencode local tooling
 .opencode/
 
+# HTML docs build output (CI rebuilds it from source for GitHub Pages)
+docs_html/
+
 # Local QA screenshot artifacts
 .benchmarks/
 
