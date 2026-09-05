@@ -1,0 +1,5 @@
+# Files
+
+- [Token Data and Loader Pipeline](data-pipeline.md) - Traces corpus preparation from the external workspace pipeline through manifest-ordered uint32 shard conversion, mmap loading, fixed next-token windows, validation, sampling, tokenization, and device batches. Highlights the boundary between this repository's vendored loader and the workspace-owned preparation stages, including distinct failure and fallback paths.
+- [System Boundaries and Public Surfaces](system-overview.md) - Maps the repository’s runtime domains, executable entrypoints, module boundaries, compatibility exports, generated artifacts, and operational interfaces. Traces the end-to-end path from prepared token bytes through next-token batches, the decoder, chunked loss, training metrics, checkpoints, and generated documentation.
+- [Training Runtime and Lifecycle](training-runtime.md) - Describes the control flow of `train.py` from device and data setup through model compilation, optimization, evaluation, generation, checkpoint persistence, and shutdown. Records the fallback and failure behavior that affects reproducibility and the meaning of a run.

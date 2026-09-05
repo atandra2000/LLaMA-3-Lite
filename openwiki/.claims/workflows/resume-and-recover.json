@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e960a065e0c4c4a73965fcf6f9be9886f2ae57b6f95697bd91a52b5c2bea1098",
+  "claims": [
+    {
+      "id": "claim_f6b4068934914c528c84b0b3908dbbb5",
+      "statement": "`load_checkpoint` is called only when `config.get('preload')` is non-`None`; the value of `preload` is not used as a pathname. The loader scans `model_folder` for `<model_filename>_step_*.pt`, orders candidates by numeric step suffix, and loads the newest matching file.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L212-L247",
+          "version": "repo-lines-v1:sha256:15507cf325a61d0701f35f6ec97ba12047e13c283fc28acc44aa9d1069359b92:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MmQ2ZDFiOGQ4N2RmNzljYTg5NGY3YjlkOGY4NzUwYzJhNzgxZTQ2Nzg1NDlkMzk3OGJiZjRkNzNiODkwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWIyNGUwZmMwMjQzZTcyMDE1YWY5OGU4N2U1ZWEwNTRiNGEwYTRhNmVlYzI3MmFlOTE0NDIzOThiYjY4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NjE2OWYxNGJiNGIxYmMzMDZiYmUxMTMzM2Q3YWNlM2I4YThiMTBjMTI5ZjIxNTI0MzYzNGVkZTBmNzgzMzcifQ"
+        },
+        {
+          "resource": "repo://train.py#L409-L412",
+          "version": "repo-lines-v1:sha256:d3d18af20e9cb2b413b0ee46626fd6f389b7912e675bb95483d79194b19557f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5YTNkZjA2NjczZjMzZDdhNjU0ODVhYjdhODVmNTdiNTVmYzNmOGZjNDAzNTNhNzQ2Nzg3ZWU5MmM5OWEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQ0OWE3MDdiMjgyYjE1M2Q5MDI2Y2I0NGZiMTAyZGU2OTljNGEyZDQyMjFjOTMxODRjZGMzYmUzYmI2NzYzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY3OWRlOWE0M2YxNmQxY2FmMDc3Njg5MjViZDI5MDI0Yjc0NWZkN2EzZDQwOWMyZTA5ZWQ0MTUwM2FhMGE0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2bc271bad044f7d81917481d9fd3410",
+      "statement": "If no matching numeric step checkpoint exists, `load_checkpoint` returns `(0, float('inf'))` without raising, so a non-`None` `preload` value alone does not establish that a resume occurred.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L197-L217",
+          "version": "repo-lines-v1:sha256:810d7bdfcfc13c0fc9fd49d02d4aebbb31d051540a82f9badca6a5dd280ded28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYjI4NWJjYmMxNzhkYzZhMGVlMWFjYWNlYWJlNTBkYTk3MTliYjQ1OGY1MDcxNjM0NDhlYTAyMjJhYWY4NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2IwZTRkZTdmODJjNGU5MjJhZTAyNDc2ZDFkMGQwMzg2YzAyN2NlMDMwNWExNWQ1OWEwNzI0ODlmZWU4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZTY4OWFhNWU1ZTk2YmEzNjdmYjA4NjA1YjI1OTgyNjM1YzkwMjRmMTliZTM3YzczODAwYTFhNzdiYzhkYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZDUwYmM5MDRhZTM3YjI5ZThmOTZmMzA2ZmE2OTZmMzIyZTgyMDY5ZmQ4YzhjOTViN2I2NDMwYmNmNDY1MTQifQ"
+        },
+        {
+          "resource": "repo://train.py#L214-L224",
+          "version": "repo-lines-v1:sha256:5a358453051b2b35efbccf78dd76662de51b0512281cd40af425bf40904975d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMzAyZWRiMTdlYTYwOWJlYWUxM2ZlODNhMDRkYzI2ZmEzMTA2YjIyMDk4NWRmYTA2ZTNhMGU5ZGMwZTNmMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NDgwNmNhNjhlM2M0YzEwNjUxMmVjOGM1YTU1MWNlZTllZWU5ZTBjYzJjZWY0MDRlOTY1YjY0MjEyMzQ5MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0ZWM2Y2FlYmRjZmQwNzFjYjJmNTQ4YzM3OGQ1MzEyZDUzNGE5YmNiMWUzMDA3Mjg5N2U2NTFiMGQxMjkzODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZTVhMjg0YTAyZjM3ZmVmNjU2YzkwNjMwMzc0NmE0NzAzN2EzMTdlMzhkNjkyODRmY2MwZmQyMmNmNDI4YmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f8a9d4e3d824803aa3a374d802ed0a5",
+      "statement": "Periodic checkpoints contain live model state, optimizer state, scheduler state, step, derived token count, best validation loss, configuration, Torch/NumPy/Python RNG state, and optional EMA state; CUDA RNG state is also saved when CUDA is available.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L168-L188",
+          "version": "repo-lines-v1:sha256:80105df22d17f541991ddf84ccb10253b1e4dcd0b6fc2806bb66c5de9f1465ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMjBlNWJmOWYwMzE5ZGRjY2IyMzI1OGI1YTFmZWJiNjQ2ZjM4NWVjY2ZjNzViMGVlODIzNjQ5Y2MzZjJiZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0N2JjMTZkOGM4NmVmN2RkYmIxNTMxMzg4ZTQ3NmNlN2ViZmNkNDYxMDQyMmVlOTE3Mzg0NmYzODE5NTJjNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNDhjM2Q4OWE4MWE4YzQ3MmYyN2IwZDVkNTY3YzI2OGZkNTlkMGY2MjM4YTY2MmRlODQ3MTBhYTg0OGI3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMTUxZDRlY2I3NGRlMzYwZGMzY2E0MTI1NWU4Nzk5MmMxMjQwMjI2MTRiYjhmYTRiMGE3NjI4NjlhYTllMGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_099d1068c2c7463bb3e84aeaeed4a9cc",
+      "statement": "Loading a valid checkpoint restores model, optimizer, scheduler, Python/NumPy/Torch RNG state, CUDA RNG state when present and available, and EMA state when the caller supplies an EMA object and the checkpoint contains one; it returns the saved step and best validation loss.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L105-L147",
+          "version": "repo-lines-v1:sha256:07eedfdf4179c4cad0ffbfda0908e8c4d2f5ac7e978de4713472d269e289b7f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MWZiNTE5OTc3ZmM5NzkxNDI1OTk2YTUxODRhMmFmZDNiOGYxMjU1MDgxZTA5YTY2MTA5NzJlYjBjZDEwMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYzA5MzJiZmI1YjI2Zjc1OThlZGFjMDZjZmIwY2QzZDFkNzFhYTBkNTI2ZTU4NGQ5MDAxNDZiMjhmZGEyNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjOGE5OWY4YWVlNWQyNzI3YTg3ZjZmMjAzNThkNzVkOWM0YTM3MWYwNjk2MTE2NTVmMjMxYzRhNDAxZjgxN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0OTU2NDIyNzkyYjU2MWU1ZGQxZmIzN2NjZjBhZTQxMWQ4NGZhNmNiMzIzZDdjNjYwM2JhMzdjYmFkNTc3MDYifQ"
+        },
+        {
+          "resource": "repo://train.py#L225-L247",
+          "version": "repo-lines-v1:sha256:4c4fac60080bddf12bcdbb58f1dff62321a2ac703e3c27568ea31a017671e357:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZmQ4NDE5MzExN2IxYmM1Mjk3NmVhMTUxNzI2YmQ2MmY0N2ViYzgyYmI4YjdjZWFmOTMxZTNjMmZmZDYwMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWIyNGUwZmMwMjQzZTcyMDE1YWY5OGU4N2U1ZWEwNTRiNGEwYTRhNmVlYzI3MmFlOTE0NDIzOThiYjY4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5MDZiYzFmY2EwZGU3YzA5NTVkMjAxMzQzY2MzZTIyYjcwYzdiMjhlN2M4Y2JiY2MyN2JmNjZlYjRhOWMxZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NjE2OWYxNGJiNGIxYmMzMDZiYmUxMTMzM2Q3YWNlM2I4YThiMTBjMTI5ZjIxNTI0MzYzNGVkZTBmNzgzMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc3e9d0390ac4b9d819aa2b5680c73e3",
+      "statement": "Checkpoint loading normalizes serialized Torch and CUDA RNG tensors to CPU `torch.uint8` before installing them, allowing RNG state saved on CUDA to be loaded onto CPU without passing a device-resident RNG tensor to the RNG setters.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L242-L301",
+          "version": "repo-lines-v1:sha256:4599227579c70395e45ec6ec8e47adfa224b42e71ff33a3c121fc2d3aaab6e37:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZDg1M2EyZGIxZjNhY2E0YmM2ZTBkZDU5M2FhNTIzMjA2ZTkzYWZiMGUyNWYzMzEwZjNhNTRmYjRkMTkwNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMTlmN2ViOTJlMGVkNmQxZTk4MGFjMmMwNTFjNmFmYWJmYTNmYTk1Njg5ZjI5YzYzMjMyMTk5OWI1NGZjOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZGJmZGM3ZjBkNGNhMjU3NDlkZDg1NzM4Y2JhMzIyZDdiZDM5ZWE2Njg1ZjJiYjYzZDIxMjk5Y2E3YTFmY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxOWY4NDljMzMwMGE2YzZhZjIwYTkyMWY5MDk5NDI0YzE5OTc0NDM5NjllMGFhZjYzNTllNWRiNzcxNjgxMzAifQ"
+        },
+        {
+          "resource": "repo://train.py#L231-L241",
+          "version": "repo-lines-v1:sha256:a5ded48d85a12f169205f92b488705a911a7e883aac9b583e717c2d86d3b9745:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmY2I4MTczOTQ1ZTk1NGRkYjYyMTlkNjEzY2Q4NWRhNTdkZmRlYmM0MjNmMGM1YTQ3YmQxOGQ3NGQwNDdiMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwYzNkYThmMmJkZjg0NDMxZDIzNjBmY2Q2NzVlNTk4MGU2ZTczYzFlZDM4M2Q4NGM3YzMxNjk2N2U1OGNmMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ZTY4OGNjMTQ4ZGNhZWYyNGQxY2ZmZDhhYTU4OGRlZTYyMWUyMzE3YTliNDE1ZWFiM2Y1MzQ3MWVhN2MyZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNTFjZjBjMjE4ODE2YjlhMGM2YmE2OTk0ZmY4NTkzYjM3ZDY4MWYzYmE3MjM2ZDk1ZjY5MThiNjliYmUzNGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9439899e0e848e28e9f1cad9e325706",
+      "statement": "The checkpoint does not persist a DataLoader iterator, sampler permutation, worker state, or epoch cursor; data exhaustion is handled separately by `_next_batch`, which increments epoch state, updates samplers that provide `set_epoch`, and starts a fresh iterator.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L48-L65",
+          "version": "repo-lines-v1:sha256:ff2f1df32e93cbda87cda961576ee218c40d2edeac6ca119195caff04bd47f78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZjY3MDk0Y2FhZjBmZGZiZDZiOGI2ODRiNzAyNzk3OGMzMzRiNzkyOWY1MjU1ZDMyYjY2Njg2MTA3ZGUxMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YjgwNTA4YWRmYmJjNWNkMmM5YmZiMzA1MDI2YTgyMDU4YTZiOWNjMmNiODk0MjQ1ZjNhOWRjNTNjMzhjMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGNmNmU2MjBjMDg2ZDAzMTIyYzIxNThkMTY2ODZkMmIzYzBkZGE3YjY1ZDdkMjc4YjVkNWFlOGE2MDMxMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZmVjNGUxNDdiMjM1ZDgxN2ViNDJkMDA3ZDU5YzM1N2EyOGZlOTZmMjlhYTllN2Q3ZmEwNDBmNzk2YzM3ZDcifQ"
+        },
+        {
+          "resource": "repo://train.py#L250-L267",
+          "version": "repo-lines-v1:sha256:1be27d47125d05450e89f6aa0a41ea12900cf2e4f33e989bf6a9f36628033695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OTNkMGFmY2UxOWQyYTBiZWM4OWI4ODExNDE1M2MxYWExODFiYzNhNGM3ZGEwMzVmN2MxYmJlZmUwNDExYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZjM2MDkyMDdiZTJmNTBkZmNkYTk3NTU2Y2I3OTZhNDYwZDdiYzc1ZDAzODQ5MjBmMTQ4M2EyYjVmMTMyMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlOGZiN2Y4OWRlYmIzNmNkMmQ4NmM4YTY0YjdjN2MxYTdjOTA3YjA3NGM4ZmIwYjYzNjhmODhjM2RmZjNhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNmE3MGYxMjc4M2UxMjhiYTdhNmIxZjg5YzYxYzk2ODkzZDE0YjIyMzI0NzRjMWZlYTM5NzdmMjc3YjJmYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43222565846a4e5a96f08934473d53da",
+      "statement": "Validation uses EMA weights when EMA is enabled, but a strict validation improvement saves the live model's `state_dict()` to `<model_folder>/<model_filename>_best.pt`; equal losses do not replace the existing best artifact.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L561-L576",
+          "version": "repo-lines-v1:sha256:369815718abe13bbaa29a88b7b4a2609b7a83a2efb3096d67f4225f4e934bb86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NWY1ZDEyMTNlZjY5ZmNmNmNmNmQxODJiOTc5NTExOWM2MDE0ZGI0MGU3MTY5MzcxNWQyM2U5ZjlmMzU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNzY1YTRiYjAyYWQ4ZDY1NGQ4OWQxY2RjNzM0MWRmYjNiYWFmNjY2OWQ2Y2ZhZjU3NzYzNzE2NTdhMWE2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYWI2MzAzZTNhNjliNGI0Y2FlN2UwZGY0Y2FlMjI0MDg0MWUyOGM0ZjRiMjMyYmVlYTRiYzY5MzYyMWQ0MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliN2I3ODUzZWQ2NjlkODdkNGEwMmNjMjkxYTQ3ZmQ1MTk1MjVkMDkyNzZlN2E3YzYxYzc3NGJhMjc1MGZkMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d96a3116cef490d98e70b6100e1804d",
+      "statement": "At an optimizer boundary the trainer updates EMA from the post-step live model, and a later periodic checkpoint captures the resulting EMA state; EMA and scheduler updates occur only at optimizer boundaries.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L509-L515",
+          "version": "repo-lines-v1:sha256:c75b2e1832c55efc21fd179709921ee50efc2613df29a8f0139ad026fe494ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmYzOGY0MWQ2YjhlMGMyMTFhMDQ3MTM2YjNjZTRlOGMxNmNjZWIyNTE5MjA3ZGE2OTNiMmI1OGY0YmVkNjE2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2QxNmIwZmI4ZWE3ODFmYmIxMGJjM2E4MWZhYThiYTA5M2JjZTM5MjFkZDI3YjMxMjg4NjAwNWNkMzFhZjFmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzc2MTQyY2M3MWIyYjQ0MWQzMThlNDYzNGM0MjZhMWQxODMyMDQyMTQyNjM2ZjQ5ZTk2NzZlZDUzNDBjNTE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRiMjJmOWQwMTYxZWJmMWFlYzE2OWE0MTg3YjgyMTA0MDc3ZTcyN2M0OGQ0OGYxNjM3ZjYzNzYzNWFkZTBlMiJ9"
+        },
+        {
+          "resource": "repo://train.py#L584-L589",
+          "version": "repo-lines-v1:sha256:e788e95b82d1b951d887128cae06b6eb2e614395f776a53a94369581cc464f60:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMyMDdjMjg5NGE3NzA0NmI1NGI2MWZmNzEzZTRjYzAwOGE3MGYzMjk3NWM2OWEyNWI4ZTYwY2I4ZDFmODI1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUwMzJlOTY0ZDA5MzIzNTFlNWQxODUyNjkyODFiMTcxYTNhMDliMDhiMjg2ZTY2MWVhNDcwMzIzYzgyZWI0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODUwMjMzOGI1OGQwMzBhYzYwNmJmNDhkYTVlNWM5NTRkZTBkMThmNmIwNjg3Yjk3ZmU1YTNhZDQyNjc5N2NkYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNiZTUyMDA4NWQ0MTE0OTA5NTUwZDRkNTU5NTRjZWY3NjI0ZWZjMDFlYTI5YzczMDM2NWZlNDdhYmM3NGNhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_af232d2c27e3406f843b9d924948bfe3",
+      "statement": "Periodic checkpoints are named `<model_filename>_step_<step>.pt`; when retention is enabled, the trainer numerically sorts matching step files and deletes all but the newest `keep_last_n_checkpoints`, while best and final artifacts are outside that cleanup pattern.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L95-L100",
+          "version": "repo-lines-v1:sha256:ffce304889654ab93fe3b95306baff519390578fa02b92d452cc8b2c7d85835d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkNDBjMzA4NDQ5ZDdmZmU5ZGQzOWU1MmYwMWQ5NGIzNzA5NjYyOTA4YjE1YWNhZGY5YTI0OWU2MmU5YTA0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODAwMThhNDc5NzAyMjk4NjFiMjJhNDc0ZTI2YjNjMTljNDViNjJlN2Y2ZjNjMDJkYTNjNGRiMjczMWM4MTc0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTczYmFiODM2YTdkNzQ4NGRjMTI0OWViMmFlN2E3MDg3NzQwMzZmMjg1ZTA4YmEyZTJkNzFjYzc1NWY4ZjFjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdiNDM4N2IzNzM4MDRkMTQ4MzVkZGFiMGUxMmJlOTRhMDNjZjA2MjBkZTM1ZjMyOGY0NThkMjc2YWY0ODQ5NSJ9"
+        },
+        {
+          "resource": "repo://train.py#L199-L209",
+          "version": "repo-lines-v1:sha256:f7c41c65cee70ef081fb60b1a5b3dff6715fb96b39676360937cf5cdf78caba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNTIwYmQ2NDE3ZDE1YTFlOGZmYTNkNjQ2OTUzOTU3YzEyMWFiOTc1MDhlZjgyZTlmODQ0YTk3ZjVjNjI0ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MmFmZjQwNjY3Y2UwYTMzMDA0MjQxMzI1MThkY2VjMDEyMTM1YTQzZGU5ODg0MDYyN2FiZDM0OGZjOGE3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4NTczMTAyNDEzNWI2MDhkYmIwZGQ4MTg3NzE5N2YwNDI0MzY4Mzc0YzVhZmFhMmYzMzJlODI1YzZkZWJkMjIifQ"
+        },
+        {
+          "resource": "repo://train.py#L584-L597",
+          "version": "repo-lines-v1:sha256:21dd4b18379873af4b7cd1158fcb7c9d3338f8c192f526d8852ea3109d586b38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjA3YzI4OTRhNzcwNDZiNTRiNjFmZjcxM2U0Y2MwMDhhNzBmMzI5NzVjNjlhMjViOGU2MGNiOGQxZjgyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZmMxY2E4MDlhMmI0YjFkOTY3MDYwMDE5NGVhMDJhZWE4NjE5ZjBiOTllNGFkMGUzNDZjODI0MWIyNTE5MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MDIzMzhiNThkMDMwYWM2MDZiZjQ4ZGE1ZTVjOTU0ZGUwZDE4ZjZiMDY4N2I5N2ZlNWEzYWQ0MjY3OTdjZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlOTkyNzFhM2E3ZDBiNDVkOGRkMDcwNmM4OWU1YTUxMDYyZTU2NjgwZjM4MjIzZDQxMWZmM2E3N2RkYTRlOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71c89aa2d28341fe9c7f7190fd58d6f4",
+      "statement": "With asynchronous checkpointing, periodic `torch.save` runs in a daemon thread named `ckpt-save-<step>` and returns that thread; at shutdown the trainer joins only the most recently returned thread before final persistence.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L199-L209",
+          "version": "repo-lines-v1:sha256:f7c41c65cee70ef081fb60b1a5b3dff6715fb96b39676360937cf5cdf78caba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNTIwYmQ2NDE3ZDE1YTFlOGZmYTNkNjQ2OTUzOTU3YzEyMWFiOTc1MDhlZjgyZTlmODQ0YTk3ZjVjNjI0ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MmFmZjQwNjY3Y2UwYTMzMDA0MjQxMzI1MThkY2VjMDEyMTM1YTQzZGU5ODg0MDYyN2FiZDM0OGZjOGE3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4NTczMTAyNDEzNWI2MDhkYmIwZGQ4MTg3NzE5N2YwNDI0MzY4Mzc0YzVhZmFhMmYzMzJlODI1YzZkZWJkMjIifQ"
+        },
+        {
+          "resource": "repo://train.py#L466-L470",
+          "version": "repo-lines-v1:sha256:01d39eefbf4ca6c42733535bc8ae0db64e72d6c08cdcc140e2e6a1d0c10f52c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMwN2FjNzhhYTIzODBiNWRiOTZkZmUwOTQyYmZmNmM4NGIxNTFlMjAzMjNmYWIyZjM4MWIwMTA3NzYwY2Y3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODMxOWU1YjYyNmIwYjZlMjVmYjNlNThlNWIzZmI2MDkxZWY5NDQ3Nzc3YjMzOWNiMjBjMjYwMGExNDc2NWE5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U4YzNlYjZmYzczZTkwZDAwNDY5MzBkYTQzZTZiYzU3OGVjOTc5NDg2YzhmY2U3YjhlNDNiYThkYTljNGI4OCJ9"
+        },
+        {
+          "resource": "repo://train.py#L603-L606",
+          "version": "repo-lines-v1:sha256:e6f94ea472ba0b08e8360b2768d5821a6edf448378c74ba5836c6450134262f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlNjc0OGJjNzI2ZDZiZTI0MTNlODUzNTdjYjYzMmU0NGRjODU3MGIwNmUwMWE5OGRkNmNmOGUwMTc3ZmVhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFmNDA5OWE1MTY5N2EzMTc0MDE4NWZkZjBhNTk1ZmVhNzc3OGY5NjQ3YzI2ZjEzODdiOTE3NTM4YmM2OGUyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM5OTEyMzUzNDkxNzc0YzhhZmUyYjFhOGI5Y2U2ZjFmYmI2YjM1NTM3ZjlhNTVhMGM3YTIwMTA0NjQ1YzE1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjODE5NzFiYWFkNWFkYTU5NTczZDkyYTI0OTQzMzYyMmVlMTMzNDA1ZjVjNDRhZDgwNjI4YzdiYTBiNmQ4YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5298f0556d04eea864eede083ec5cee",
+      "statement": "Final persistence is synchronous and writes two distinct files: `<model_filename>_final_model_full.pt` containing the full checkpoint dictionary and `<model_filename>_final_model_weights.pt` containing only `model.state_dict()`; it does not create a normal `_step_<max_steps>.pt` file.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L219-L230",
+          "version": "repo-lines-v1:sha256:ea209e87e5a241386b505afa6ef6662f68780b854590f2fb1b92cf64085736b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2Mzg3MzllYjc4NmE3OThmMmI1NGJiMDM1ODBmYTkxOTg2N2E1MTk2MzVhMTY2NDY1ZjM1MGVmZmM1ODMzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4Y2JmMjMwNDYxNGYyOGZjOWFlMDZkZmMzYjA4YWFkZjhiNzc3MmY5NzYwYjA2OWE0MTlkMWZiNDI1YmU2NDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YzM1MTY2MmVlYzk4NmNhN2MzN2MzODY3MTcwN2Q5MjlkNWIwNWQ1ZTk5YjZiZGU0ZGU1Zjk0OTY5MjVlY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZTZiYjA5MDUxN2ZjNzczOTM1Y2U1YzJmYWU4YmJkZTBhNzA2OWEwODBkZGFmM2I4ZjJjMjFkNWRlODhhMjkifQ"
+        },
+        {
+          "resource": "repo://train.py#L190-L197",
+          "version": "repo-lines-v1:sha256:1c743ea5839972537568ae97cd3ee040e0c995600bfa643cf8a917ac8f4a3bc2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFlZWQ0MzdkOWQ2ODQwY2MxYjMyNzgxMGNjNjNmZjNmY2NlYmVlNjIzNDMyYWFjN2MyNWFkMzU2OWQxZjZhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBiZTQwMDZkZjc2MzcwOWJjMmQ1YmZmOWViYTkzYmQxNjkwODg5Yjk4YTFhN2RjZTdlYWFjOGQxZWM0OTFhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM5ZGE1MDkxZGVlMGViZTE4NjA4ZmE1ZDllZTkxMmQ5NjhmYzFiOWIzYWViZjhkYWM3NmE2YzUxMDMxYWZjNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7031ab3757ef4e68bdb94aaf9c6e3be5",
+      "statement": "The final full artifact is not automatically discoverable by `load_checkpoint`, because discovery considers only numeric `_step_*.pt` files; the weights-only and best files are not complete training checkpoints.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L190-L197",
+          "version": "repo-lines-v1:sha256:1c743ea5839972537568ae97cd3ee040e0c995600bfa643cf8a917ac8f4a3bc2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFlZWQ0MzdkOWQ2ODQwY2MxYjMyNzgxMGNjNjNmZjNmY2NlYmVlNjIzNDMyYWFjN2MyNWFkMzU2OWQxZjZhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBiZTQwMDZkZjc2MzcwOWJjMmQ1YmZmOWViYTkzYmQxNjkwODg5Yjk4YTFhN2RjZTdlYWFjOGQxZWM0OTFhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM5ZGE1MDkxZGVlMGViZTE4NjA4ZmE1ZDllZTkxMmQ5NjhmYzFiOWIzYWViZjhkYWM3NmE2YzUxMDMxYWZjNyJ9"
+        },
+        {
+          "resource": "repo://train.py#L212-L225",
+          "version": "repo-lines-v1:sha256:92243dc6327124eea076e1c7b22b95bf790f4d5a37572ebe9c6cb93c967c634b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MmQ2ZDFiOGQ4N2RmNzljYTg5NGY3YjlkOGY4NzUwYzJhNzgxZTQ2Nzg1NDlkMzk3OGJiZjRkNzNiODkwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZmQ4NDE5MzExN2IxYmM1Mjk3NmVhMTUxNzI2YmQ2MmY0N2ViYzgyYmI4YjdjZWFmOTMxZTNjMmZmZDYwMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1Y2MwMzkzNjkzN2E1YzQyNTMyZDY3MzAxNmJhNDkxMmNhMWE2YTViMzdjODQ3ZWM5YTBlMWE0OWVlNjU3NWQifQ"
+        },
+        {
+          "resource": "repo://train.py#L569-L575",
+          "version": "repo-lines-v1:sha256:6acd0287acd0e476e8e812bb75b2843b8d849ca742155dfe1c1236dfee15a14a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4YmJlZWU2Mjc3MGYzOWNlMGJmOWJmNjA3ODBkMThkZTUzMjJiMGJkZDc3MDYzZjQwNDRjMzQ1NWUzMzZmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ3OTVkYzUzOTJjNDdiOWExMWNhMjI4Yzg3ZTEzY2FhNWJjZGY2YmU3ZWIwNzE2ZDY2M2E5ODAxOTZhZWU0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNhNzFkN2JlMjkwMjc3ODAzMGE5MzFkYjkzNzAwYTFhY2M4MThiMzIxNzg2NDYzODExN2YwMmRkNDAxMWJlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRjYjRiZDE0NjQ0YWUyODQ5NmY4NzA3ZWZiM2UyMGM4NDQyYzFmOTU2Y2IzMTU0YjAzYmZmZGEwYWZhMGNmMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_df39414e8d0549f59ec5dcff0710e6ae",
+      "statement": "The production persistence defaults are `model_folder='weights'`, `model_filename='llama3-515M'`, `checkpoint_interval=5000`, `keep_last_n_checkpoints=3`, `async_checkpoint=True`, and `preload=None`.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L95-L100",
+          "version": "repo-lines-v1:sha256:ffce304889654ab93fe3b95306baff519390578fa02b92d452cc8b2c7d85835d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkNDBjMzA4NDQ5ZDdmZmU5ZGQzOWU1MmYwMWQ5NGIzNzA5NjYyOTA4YjE1YWNhZGY5YTI0OWU2MmU5YTA0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODAwMThhNDc5NzAyMjk4NjFiMjJhNDc0ZTI2YjNjMTljNDViNjJlN2Y2ZjNjMDJkYTNjNGRiMjczMWM4MTc0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTczYmFiODM2YTdkNzQ4NGRjMTI0OWViMmFlN2E3MDg3NzQwMzZmMjg1ZTA4YmEyZTJkNzFjYzc1NWY4ZjFjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdiNDM4N2IzNzM4MDRkMTQ4MzVkZGFiMGUxMmJlOTRhMDNjZjA2MjBkZTM1ZjMyOGY0NThkMjc2YWY0ODQ5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1768b6bf256348b788ebcf27532dd754",
+      "statement": "The focused checkpoint tests cover step-file creation, model round-trip, best/step restoration, Torch/NumPy/Python RNG restoration, no-checkpoint behavior, special final names, asynchronous completion, and CUDA-to-CPU checkpoint loading.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L67-L301",
+          "version": "repo-lines-v1:sha256:a1e8db67101f911773d0bb5377e731bb08fafca38a33d61574a6f1a647c543ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYWZmMmNiYzJmMDUxMzk0NzBkODA5MmU3OGQwMWI1N2M4ZmJkZjM3N2QxOWRhYTU2NTgzOTYwYzkwYjk5OWVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3ZjE5ZjdlYjkyZTBlZDZkMWU5ODBhYzJjMDUxYzZhZmFiZmEzZmE5NTY4OWYyOWM2MzIzMjE5OTliNTRmYzk2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZjRhYjFhNTdlYmY0ODUzZGE0ZTMwNzgyZmRiZWExMjAyZTZkMjllYTA1MGYxZjM4OTRkY2JiNDEyNzVkYzBkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MTlmODQ5YzMzMDBhNmM2YWYyMGE5MjFmOTA5OTQyNGMxOTk3NDQzOTY5ZTBhYWY2MzU5ZTVkYjc3MTY4MTMwIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

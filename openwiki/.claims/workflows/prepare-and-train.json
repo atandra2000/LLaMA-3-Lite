@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f562734b8c041c2b27893acc7bb53b76565d5b25511fc0179cecd8dbf1800267",
+  "claims": [
+    {
+      "id": "claim_89b289e45f074c53a55c9aa9dd10a0ef",
+      "statement": "`data/prepare_data.py` is a thin bridge to the workspace-owned `LLM/shared_data` preparation pipeline: it forwards mixture, data-config, data-root, source, and `--skip-*` options to `run_pipeline`, and this checkout vendors only the runtime loader rather than download, clean, tokenize, or pack implementations.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:518ea200236aebf0ab0e4bd61342362f5bb4f46737a675baed50bc48216f5055"
+        },
+        {
+          "resource": "repo://data/prepare_data.py",
+          "version": "repo-file-v1:sha256:2628ac84cf9992b05d0729b358817fbf28191d58b8b0ad4a03301b6a6ba557bb"
+        }
+      ]
+    },
+    {
+      "id": "claim_70be60b4a5f546d48010f80f7bd31d67",
+      "statement": "Real-data preparation fails visibly when the external `shared_data` package is not importable, while training handles a missing runtime cache separately by warning and falling back to deterministic synthetic loaders; a successful synthetic run therefore does not demonstrate that real corpus data was used.",
+      "evidence": [
+        {
+          "resource": "repo://data/prepare_data.py",
+          "version": "repo-file-v1:sha256:2628ac84cf9992b05d0729b358817fbf28191d58b8b0ad4a03301b6a6ba557bb"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py",
+          "version": "repo-file-v1:sha256:f2697b923124142f20b6b91fb28a8c63b937671e216179a232a3bed578bfd4f7"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_d940eda621df4c3995ce9ffdd1ae189c",
+      "statement": "After the external pipeline completes, `concat_shards_to_cache` sorts manifest shard entries by numeric index, streams their bytes into the configured flat cache through a sibling temporary file, and installs it with `os.replace`; missing or empty manifests raise `SystemExit` instead of creating an empty cache.",
+      "evidence": [
+        {
+          "resource": "repo://data/prepare_data.py",
+          "version": "repo-file-v1:sha256:2628ac84cf9992b05d0729b358817fbf28191d58b8b0ad4a03301b6a6ba557bb"
+        },
+        {
+          "resource": "repo://tests/test_data_pipeline.py",
+          "version": "repo-file-v1:sha256:4d0056a50f13d0b17c5ce24affcfeca258668a6222ed42b237e52d816e692a54"
+        }
+      ]
+    },
+    {
+      "id": "claim_fbcd48a0c13443aca64e997cd293d02b",
+      "statement": "The runtime cache contract is a raw headerless `uint32` stream that `build_training_data` opens read-only with `np.memmap`; it truncates the usable stream to complete `seq_len + 1` windows, holds out the final chunk-aligned `val_split`, and creates distinct train and validation loaders.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py",
+          "version": "repo-file-v1:sha256:f2697b923124142f20b6b91fb28a8c63b937671e216179a232a3bed578bfd4f7"
+        },
+        {
+          "resource": "repo://tests/test_data_pipeline.py",
+          "version": "repo-file-v1:sha256:4d0056a50f13d0b17c5ce24affcfeca258668a6222ed42b237e52d816e692a54"
+        }
+      ]
+    },
+    {
+      "id": "claim_602f69090f404c46932c93c72b6bc26e",
+      "statement": "`PackedDataset` exposes non-overlapping next-token windows: each item reads `seq_len + 1` tokens and returns an `input` tensor from `window[:-1]` and a one-position-shifted `target` tensor from `window[1:]`; `collate_fn` stacks those fields into batches.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py",
+          "version": "repo-file-v1:sha256:f2697b923124142f20b6b91fb28a8c63b937671e216179a232a3bed578bfd4f7"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py",
+          "version": "repo-file-v1:sha256:212ae3d9cd5216b5814baa4d255b6ece2a895b2539eb17fc2be0353b8328bfa2"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1dd868b8240444cb5a99a8ab3a422d3",
+      "statement": "Training sampling is reproducibly shuffled with `ShuffledRangeSampler` using `seed + epoch` through `set_epoch`, while validation is ordered and retains its final partial batch; loader transport settings pass prefetching only when workers exist and support pinned, non-blocking CUDA transfers.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py",
+          "version": "repo-file-v1:sha256:f2697b923124142f20b6b91fb28a8c63b937671e216179a232a3bed578bfd4f7"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_166842da7c934f51b329adafdfd0adc2",
+      "statement": "`reuse_data_cache=True` causes preparation to skip shard concatenation when the configured cache already exists, so changes to source composition, deduplication, document limits, tokenizer identity, or target size require deliberate cache removal or relocation before rebuilding.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:518ea200236aebf0ab0e4bd61342362f5bb4f46737a675baed50bc48216f5055"
+        },
+        {
+          "resource": "repo://config.py",
+          "version": "repo-file-v1:sha256:4ef466891adac94cd50609d516243fea3a0b4eeee2188fa957c6c5c1cb515a9d"
+        },
+        {
+          "resource": "repo://data/prepare_data.py",
+          "version": "repo-file-v1:sha256:2628ac84cf9992b05d0729b358817fbf28191d58b8b0ad4a03301b6a6ba557bb"
+        }
+      ]
+    },
+    {
+      "id": "claim_1982fe7279bb4fb38b5727c3c364fa0a",
+      "statement": "`benchmark_data.py` is cache-independent: it constructs a deterministic synthetic `uint32` stream, exercises `PackedDataset` and the DataLoader, optionally runs a tiny transformer forward, and reports timing and throughput metrics in text or JSON.",
+      "evidence": [
+        {
+          "resource": "repo://benchmark_data.py",
+          "version": "repo-file-v1:sha256:7c5839949c7b594b1184a79dc5d62613ac4a2d00cad5e34216445164683b7797"
+        },
+        {
+          "resource": "repo://tests/test_data_pipeline.py",
+          "version": "repo-file-v1:sha256:4d0056a50f13d0b17c5ce24affcfeca258668a6222ed42b237e52d816e692a54"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c9a0871bb7846fdb5eae3346eb09743",
+      "statement": "The benchmark CLI supports `--steps`, `--batch_size`, `--seq_len`, `--vocab_size`, `--num_workers`, `--prefetch_factor`, `--pin_memory`, `--device {auto,cpu,cuda}`, `--with_model_forward`, and `--json`; `auto` selects CUDA only when available and pinning is restricted to CUDA.",
+      "evidence": [
+        {
+          "resource": "repo://benchmark_data.py",
+          "version": "repo-file-v1:sha256:7c5839949c7b594b1184a79dc5d62613ac4a2d00cad5e34216445164683b7797"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e254cc36e124cc6bbc4dcc42caabeb6",
+      "statement": "`train.py` has a single executable entrypoint using `get_config()` rather than a training argument parser, selects CUDA when available, and uses the configured production defaults including batch size 96, sequence length 2048, gradient checkpointing, chunked cross-entropy, 42,000 steps, and torch compilation.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:518ea200236aebf0ab0e4bd61342362f5bb4f46737a675baed50bc48216f5055"
+        },
+        {
+          "resource": "repo://config.py",
+          "version": "repo-file-v1:sha256:4ef466891adac94cd50609d516243fea3a0b4eeee2188fa957c6c5c1cb515a9d"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_3540f278face45db8b4afc7bbbbd6887",
+      "statement": "Before measured training steps, `train_model` fetches a real-shape batch and, when enabled, performs `torch.compile` warmup with a hidden-state forward, chunked loss, backward pass, and CUDA synchronization; if the train iterator is exhausted, `_next_batch` advances the sampler epoch and restarts with a fresh permutation.",
+      "evidence": [
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b6c8853b0724d639d98ddefb41cddc1",
+      "statement": "Training uses scheduled periodic side effects: W&B training metrics at `log_interval`, validation at `val_interval`, generation at `generation_interval`, and full step checkpoints at `checkpoint_interval`; validation evaluates EMA when enabled, computes capped perplexity from chunked loss, and saves live-model best weights only on strict improvement.",
+      "evidence": [
+        {
+          "resource": "repo://config.py",
+          "version": "repo-file-v1:sha256:4ef466891adac94cd50609d516243fea3a0b4eeee2188fa957c6c5c1cb515a9d"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py",
+          "version": "repo-file-v1:sha256:212ae3d9cd5216b5814baa4d255b6ece2a895b2539eb17fc2be0353b8328bfa2"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_f65bd1c161a24c7a9d1d2138f05446fa",
+      "statement": "Periodic checkpoints contain model, optimizer, scheduler, step, derived token count, best validation loss, configuration, RNG state, and optional EMA/CUDA state; asynchronous checkpoint writes are joined before final persistence, numeric step files are retained according to `keep_last_n_checkpoints`, and final output is split into a full checkpoint and weights-only state dict.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py",
+          "version": "repo-file-v1:sha256:47d37807ee8333ce2daab0fbd0379b0cece94420bf4e3b89e02fb1c7eea698dc"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_2debb075308343489bc9ce210f82e410",
+      "statement": "When `preload` is non-`None`, `load_checkpoint` scans the model folder for the newest matching numeric `_step_*.pt` checkpoint and restores model, optimizer, scheduler, RNG, and optional EMA state; it does not use the literal `preload` string as a direct pathname and returns step zero with infinite best loss when no matching step checkpoint exists.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py",
+          "version": "repo-file-v1:sha256:47d37807ee8333ce2daab0fbd0379b0cece94420bf4e3b89e02fb1c7eea698dc"
+        },
+        {
+          "resource": "repo://train.py",
+          "version": "repo-file-v1:sha256:6a2d595cbc4615672b74728f33de3f8fc66810d27e3c771834ef032a3c9ac7a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c1da8bd32ac4a56ae098fdfec41fd67",
+      "statement": "The focused data and smoke tests protect the operational boundaries documented here: manifest-order atomic cache conversion and failure cases, mmap compatibility, benchmark text/JSON execution and token arithmetic, synthetic loader construction, finite forward/backward gradients, chunked-loss equivalence, decreasing tiny-model loss, and finite offline validation.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_data_pipeline.py",
+          "version": "repo-file-v1:sha256:4d0056a50f13d0b17c5ce24affcfeca258668a6222ed42b237e52d816e692a54"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py",
+          "version": "repo-file-v1:sha256:212ae3d9cd5216b5814baa4d255b6ece2a895b2539eb17fc2be0353b8328bfa2"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

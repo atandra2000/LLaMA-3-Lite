@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ae95cef4755121afb16c8bcfef627fc919abeb72c9dc15ffa4b0d8938f5922cc",
+  "claims": [
+    {
+      "id": "claim_c84f9336555e45f28998c9f7ca33314e",
+      "statement": "`train_model` is the training orchestration entrypoint; when `train.py` is executed directly, it obtains configuration with `get_config()` and invokes `train_model(config)`.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L270-L290",
+          "version": "repo-lines-v1:sha256:bb147574b6f403e6b2b87a7877df8088ee984a0edc7633229a9ff7cd207435f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGFmODA5YTQ3YmNhYzJlYTUwYjA4MjRjNTc2Y2QyZDMxM2U5MDE0MTRjYzUwYzU2ZDQ4ZTdmNDU3MTZjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMjg0NjE4NGZjOTNjYWYxODlkMTUyNGMzY2Q3YzUwNDM2MjlmMGUzMDM1ODA1YTg5ZWY5OThjODFiYmMzNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNjQxMWZkMjM0ZGFhZTU1NzJkYjZkYWVjZGNjZGMyYjQ3ZDYyZDdmZWQyNDhkNGEyM2ZkOTg2NmJkOTYxYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZGMwNDlmOWJiZGEwNThiM2NmMjllOTFlMDg3MDkwMDM0YWI5NzJlMjFmZTI1M2RkNGExYjRlMmM1OTdlNTcifQ"
+        },
+        {
+          "resource": "repo://train.py#L613-L616",
+          "version": "repo-lines-v1:sha256:cb4f0b816462d123c0a6cbd044ce0f763d33560c5af1a64e3bc881ac5c4366e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZkZjFhMjYxMjFjMGNhMWY1YzZhMGRhMGYyNjU1MTM1OTkyY2VlNWQ5MzQzMTM1ZjNmNWY1MTQ3N2E0NDFlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI2NWI5YzkxNDc2ZjJmNWNiMzczZWY3Yjk2YjlkODY2YWZmMmIxM2UyNTNkMjQ2Y2JjYjU4ODBjNWYwYzk5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDEyNjNiYzc2NWMwMDRjMzMwZjY1NmI2NmUwODNhOGZiNzUwMTIyNWEzYmMzYzMzYmE1ZmFjYjQxYTIyYTBiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e07ec9c08c544ffbad600e87ab7d83c",
+      "statement": "The trainer selects CUDA when available and otherwise CPU, applies GPU optimization settings only on CUDA, and reports the selected device; GPU setup can enable TF32, set high float32 matmul precision, configure cuDNN benchmarking, set `PYTORCH_CUDA_ALLOC_CONF`, and print device capability details.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L270-L277",
+          "version": "repo-lines-v1:sha256:0c54ef5d3bc2ddd884665b3cf6eab3a8a2d3abc16c98e62fa9bd3a97c63db6e0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA0YWY4MDlhNDdiY2FjMmVhNTBiMDgyNGM1NzZjZDJkMzEzZTkwMTQxNGNjNTBjNTZkNDhlN2Y0NTcxNmM5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQyNWE3YzI3NmI1M2Y3NjY1NjA3ZjViNmM2NDUxOGZmMWZhNDQyNWNmYjE0ZjVmNDIxMGYzOWMxZTlkODBlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGE2NDExZmQyMzRkYWFlNTU3MmRiNmRhZWNkY2NkYzJiNDdkNjJkN2ZlZDI0OGQ0YTIzZmQ5ODY2YmQ5NjFiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDEyOTc5YTgzMjAyY2E3N2E5NjFkMzhlMmY1YTVmYTNkNDg2ZDMwOTk5Y2JiYzZjN2ZlNWIyNzc2YzYzOTZhNyJ9"
+        },
+        {
+          "resource": "repo://train.py#L30-L50",
+          "version": "repo-lines-v1:sha256:01d510a81de056938e08136e91c0ba6c55f7c3d67000942886a78742aacaf7d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzFjZTQyODU5YmM1NDRjN2Y3MjMwYzlmOTZjN2M4ZGQ5YzIyYTEwOGFiYWMxZjc5Y2Y3OWQ5ODE1ZmY5ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxODJlM2JlODE5Njk3YzUzNDFkNDFmOTYyNzUyNjg4MTYwNjhjODliODFiNmU5ZDBmYTBlZWE1ZTg0ZGMxYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZTE3NTM3ZTNjZWRkMDlmZGM2MjMwZmYzMzQ1NWExYWIzNDc3MGU5YmNiYWE1NTk2OTY0ZDY2NzAxYTgxNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_639362d58e47427fa19ea2d7175ad31e",
+      "statement": "If any supplied data object is missing, the trainer builds the complete training-data trio; a missing token cache raises `FileNotFoundError`, is reported with a preparation command, and causes a fallback to synthetic train/validation data and its tokenizer stub.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L146-L158",
+          "version": "repo-lines-v1:sha256:d47640c5442c8005e0e0bc8525afca864cd8e94520f742fea8a397ca3699fb81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYmFmNmE0MTZhMDQyNjM1ZDkyZWM4MTNjZGQ5NDcyZDZiNDNjZjlhNDY4OWEyYzUxZjUzYjZkZGRkY2EzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMGJmNmVhZDc0YThhOGM1YTg0NmE2ZmY5ZDJjZTgyZTcyMTg2NTA5M2RhNWIxNzBlYzMyYmFhYmQyMjA5NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MDJjZTFjZmM3M2FkOTQ1YWVlYzQ1YzJiMjUxOWJhYTliYmMwY2NkZWQwZDI4NzU2NDdlZWQ2YThjMGY3YmIifQ"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py#L93-L143",
+          "version": "repo-lines-v1:sha256:d33ac1f7b6ead4070ad3cb92245478dbaf445e2c50adcd134cf4e408d189ec30:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZDdlNGNiYmIyOGQzMGE5NGQ2MjE3YjJjYmYxNjg2M2Q3ZDM5YTliYWI2YWZmNzRhOWMyNmY1YjRjOTRmMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNTY3ZDM2M2JmNmM0ZGY1N2EzOTIzNjc4NmI2MjYyMmE5YmI2NWRmMDI2MWQ4ZDMwMGE2MmFhZDI0Yzg4MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOWIwNzY1Zjk4ZmZlMTFlOGQwZWQzZWRlNmJhMTRlZDgzODViNzNmZDk1ZDNkMzVmY2RiNjY2ZGY2MWQwNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiZDVkZjE2YTFlZjQ4OWE1ZGYyN2U5ZTNjMzYwNGMzMjhmYjhkMGFlYWM3MmQzNTc0Zjc0OTI4MTU3YzdlMjgifQ"
+        },
+        {
+          "resource": "repo://train.py#L279-L290",
+          "version": "repo-lines-v1:sha256:681b685846662e6f3e63f61f3dd4d54b4874b99e6db467216a7ceed0468de92f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzODU1YTQyZTcyOTA1YWNiZmUzZTE0ODI0ZGMwOTQ4YjQxNmU0ZTVmMjczNGM4NjVjM2RiNzBlNzNmY2QzZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMjg0NjE4NGZjOTNjYWYxODlkMTUyNGMzY2Q3YzUwNDM2MjlmMGUzMDM1ODA1YTg5ZWY5OThjODFiYmMzNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjQyNGY1ZjIyNDA2YjdjYzcxZTVkYjExMGZhZTU0MjhjOGI1ZWQ3ODcyZDBkMDQyYmQ2OTg3Mjg3NDkwY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZGMwNDlmOWJiZGEwNThiM2NmMjllOTFlMDg3MDkwMDM0YWI5NzJlMjFmZTI1M2RkNGExYjRlMmM1OTdlNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab7d9820569e40c59d0810b03869fe21",
+      "statement": "Runtime data uses a read-only `uint32` memmap split into chunk-aligned, non-overlapping next-token windows, with shuffled `drop_last=True` training batches and ordered, non-dropping validation batches transferred with `non_blocking=True`.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L167-L191",
+          "version": "repo-lines-v1:sha256:9645bcc1d4316e67dc8d5e093ea808bef5787fb3a3a800378507ec8b6065cd21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MGRlZjgxNmU0ZTI4YTdhZmU3ZjZiODYyMTNhOTA2OGJhYzU1NGJmYmJmZGI2MjFiZmMyOGM4ZjY5OTM0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3MjQ2ZWEwYWNlMTI4NWUxZTgyNGZlOGIyYzU0YTZjZDZmYWY1ZDRjNTFjYzkxMGZmZTYzZTFiZDI2ZTllMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlOWI1ZWVjYmIyZTUwMjVkMWUwOGFlZjgyYWVlMzk2ZmFiOWQ0OGNhOGI1OWJmMzlmZjhkYjUyMzE5NDg4NTUifQ"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py#L17-L45",
+          "version": "repo-lines-v1:sha256:7360db6336e47554cd301084df9f6cd6c8fa3ff225e75a2d875c68e69db90f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZTlmMDUxY2NjMWM2MTIyNzNkMmNhODFkOTU5M2E2MGFlNDY2ZGM4MTUxZTlkMzI4NGY0YjkzMGQ5ODFhYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmOGJjM2U2NDM2YWI2MTFmMjdlNTg0NjQyMTc0YWExZjBlMDdjNDA5MWFmODk5NjRiYjQ0Yjc3ZWUxM2Q0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3M2NlNDVmMDFjNWM5MDcxYjM4ZjNmMjk5OGI1NzM5NmE0MDUzOWY0OGFjNWMxMmUxMjVhZmNiYzg1MTMxZWYifQ"
+        },
+        {
+          "resource": "repo://train.py#L471-L490",
+          "version": "repo-lines-v1:sha256:0ace5291e0c7202f392a1d538d0d51acf5314535e6c32c8cd01618f95a94f93b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NWYzNmQyMDg2MWEwNmQyNTczNDQ4MGFjZDEyMzM1MDhkODkyZTNlYTQ1ZmM3MjE3MzI5NTE4NDBkYWIwNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNjMyMGYzYWY0ZDI5N2ExYTAzNjhiM2JkZDU2MjAxOWM1ZmNjNGU2Y2FmMmU0ZDhjMDIyYTVlMDNlNzlmODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmYzA5OTg2OWY1OTc2MzQ5ZDIzNWRiZDYwZmVhZDg1MWIyMWRjYzBiYzU1YmJmYWFkZDRiZjAxMGFjMTFjNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNTdmY2RjYzZlNDBkOWRlY2JmNDkwMDBkNzYwMzMwZGY1ZGRkYzM4NDEzNWY1ZGZjM2ZkMDBkZTcyMTUwYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76f6ae52e8a641318ad2e3ff8a2c5e63",
+      "statement": "Tokenizer loading is a soft failure boundary: `build_training_data` catches any tokenizer-loading exception, preserves the real cached ids, prints an explicit warning, and substitutes `_SyntheticTokenizerStub`, whose byte-level generation behavior is not semantically equivalent to the intended tokenizer.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L193-L222",
+          "version": "repo-lines-v1:sha256:2d2a6d5c7a6387f44dca7e6a4b91ef8e8fdce623aa19806be6cee1e781f69cd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNmJmZjM2MzhhOGU4NjZiOGFmNDJiZDhiNTlkMDkzNWJlMGY5NWZiYTU0YTllMGU2YzQ5MTAzZmQxOThlMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwOTNhNGE3MDZiY2UyYWEyMjc2NmYyN2FhZTlmZWQ4NzVmNDE2NjU5OWFkNzE5OGUyOWE2NTg2NjAzNDE5M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlMDJlZjRiNzk1OTQ5ZTk1MjcxZGJlZjk3ZWQ2YzFiZDk0ODdlZGIxMWZkOWY3ZTkwODE3YjVlNTA5NmU5MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py#L76-L90",
+          "version": "repo-lines-v1:sha256:f0506b6f4231a958e17425d6ddf724227f681438477fa91def66f83092143802:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNmE2ZmZkZGEyYzY5NzQ1MTk3ZDE1ODEyZDM0MjIyOTJmNjMxYWJjYTk2ZTJmYTRjM2U2OWQyODA4MDlkNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYTMzNGE2NGVmZWNhZTAwOWNjZmU2YmE0OTRhN2ZkYTI5ODdlMzQ3NjE2N2QyZDEzYTI3ZTFkYTUzOTcwOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZmI3MzUyOGUxMDRhYjBkMmI4MGMwNTYwODUyMWE4MjNmNTBhNDZkZDU4NWEwY2ZjYjRmZjEzN2QyZThiYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6ff6fdc793b4ba5a2ab338031c5ae14",
+      "statement": "Triton implementations are explicitly gated: if any of `rmsnorm_impl`, `swiglu_impl`, or `cross_entropy_impl` requests `triton` without `ENABLE_TRITON_KERNELS=1`, `train_model` force-restores all three implementations to `pytorch`; an opted-in unavailable cross-entropy Triton path raises an explicit `ImportError` rather than silently falling back.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L264-L289",
+          "version": "repo-lines-v1:sha256:ed67ba0a5927f50e4872b93fc70520fc2419fa21cfbe0b906dd468dfdd8f587a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2Y1MzViNzU0N2FmZDMxMmU4NmYzYmM0Y2I1ZDJlNmNjMjZkYTYwMjFmMzM0MjA0MDMwM2ZjNDNiMWVmMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNzBkMGRlOTRmYWY1ZTc3ZTQzNmY2N2NlY2NmNGRiNzhlYTZhZDU2Mjc3MWJiZmM5YzE1MjExMjFkODZkMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmJiZGIxNGY5OWFjMTIwMzEyNWVkNTQwZjVlNzhiMzM5N2I5MGE2MjQ5YzBmOTRlODQxNmM2MWU3ZDYyMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMjBkNDMzY2EzZjZkMjJhM2JmMjI2MDA1Y2E5ZWIxZjFlYmIxOGYyMDRhOThiMzJmNGZmM2M5MTE4ODFkOTMifQ"
+        },
+        {
+          "resource": "repo://model.py#L34-L50",
+          "version": "repo-lines-v1:sha256:618048afd60304e8d06916ba225f164bb1df5cf3b42f4d972a755ef6f913cc7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZThjNjgyMWUxMjEzZDc5ZGQ1OTM3Yjg4YWU3NTdjZWFmNDViMGFmZTMxMmNlZDgyZjMzMWRkMDk0OTE5ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMjA0ZDg2MTIzYzE2Mzc5ODlmNDJkOWQyODI1ZGYzZjRkM2Y3NmFiMmE4MGVkYWExOTQ1YjQ0YjE2YmNjNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWQyNTA5NDYwNzUyNGY0MDkzMTdjM2Y5MTIwNDk2Nzc2NzI4ZmZhZmZhMGVhNmVlNmMyYmZiMWQ0NGM0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YzMyODNhZmQwMGFlMWNjNTg0NTk1NzRkY2E4NDQ0MjExZTY3YmE0Y2MxZWQ4ZjkxZjJkOTViMzRmNWM4ZmMifQ"
+        },
+        {
+          "resource": "repo://train.py#L299-L313",
+          "version": "repo-lines-v1:sha256:0e7605d1579a7df3e64a66e03c5e8b8ef9b9b140ba40b42131b249b21c1f661b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxYjU4MTNhYjlhNTM1NTVhMjczYThjNDU5YmE5MjE2YzNhYmVkYTMxN2UxNjI4NjA3MzVlYmFkZmEwMzY1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMDE0OTI0OWQ1YmY5NjUwMzgyYWJmODViNmFhYmFlOWYyYjU5ZGNiNGE3YzI4ZGViNmI4MjY1NzllNThhODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZDJhN2FmMjMyMDIyYjE0MDcyMWE5OTExMTg1ZDFlMDRiMmU1YzJlMmQ0NGM0NmZlOTZlMWJkN2QyZGI5ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZTJlMjRiNGY5NGNkMDg2MjlhMjdlMzJiMzI3NjI3YjhiYWE5YzA5Mzk0ZGJhZWRlMjRlM2RlN2IyMTFlZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d28450deb9e4153aeebc42911a39a8e",
+      "statement": "The trainer constructs the configured decoder Transformer, passes gradient-checkpointing, QK-Norm, and implementation settings into it, and moves it to the selected device; during training, decoder layers use activation checkpointing while evaluation and generation use the ordinary decoder path.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L161-L205",
+          "version": "repo-lines-v1:sha256:8ce25e93a8cea8f099c824f8cb220699c9bd6063b2a65ee2778484cd702eb0af:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2N2ZmOWVlYzYxMmI2MDc1OTU3NWUwNmVjMDQwNWNiZDliZTI2MjNiOGEwMGZmMjQxNzExYzZhMGQwNGJmY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODBjNWIwNTNlYmU4OTQ4ZTY5ZDU2Y2QyY2Q1MGVlNTBjZjVkNjM5OWQxYTNlNjc2MDZiOGRlOTZlNGQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMDNmZjVkNmJhNjkwOWJmZTZhYTZjZDc1NmYzOTY5Mjg0YjMzZDUzMDY3ODA0YjgzYzc5YzQ4ZDEwZGZhYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZDhlMjJiOWVjODkyZWE0N2QxOTQyZGJmOTY2YzcxNzRkMjBjNjhlN2ZmY2ZiZGVkZTNhYmNlMDExZWYxYTgifQ"
+        },
+        {
+          "resource": "repo://train.py#L315-L330",
+          "version": "repo-lines-v1:sha256:ddf57d917c9eccfcbc73757da815dada26d088f3a4753049abafc0e6f216605a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1Mzk0ZWRiZTJiYTZjMzQ3NmEyYWM4N2IyZjZmMzM5MmU5Y2VkYjE2NWU0Yjg5YTViYzIxZWEzNTNhN2YxZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMWIyZDRhM2M4MzZkZDI5NDhjMWI1MWVmNDdhZmJmN2ZjZjJjMWM5NWFkMWY1N2NiZmZhOWM5Mjc2OTU3ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0NGE1ZWJlOWU0YTY2OTJjNDAxZDg2ZTFlZGJhYTIyNzE0YTA3MTQ0MzMyYWEyZGY2YmNlODI2MWQ0ODhhMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyYzhkODc5NzE4MzM5ZmQ5N2EzYjUwMDM4ZTM4ZTgyYTkyNzc4ZjRmYjA3N2JhNzY2MjMzMGZiMThlNjUyZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e39666cdaa9348ac86fa67d34fe041b1",
+      "statement": "Compile warmup consumes an actual first DataLoader batch before optimizer construction; when compilation is enabled and available, the trainer compiles with the configured mode and runs a hidden-state forward, chunked loss, backward pass, and CUDA synchronization before proceeding.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L347-L376",
+          "version": "repo-lines-v1:sha256:ce91f26cb8b6c7f7976b30be08a06e2b587bef24b8ab5a0d9c160b733a215095:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYTQ4Yzc0MDdhZmFiY2UzOTM4MTJkZjg1MGNkZTY3NjE5ZTEyN2I3MDM2MWY3MTcxZGU4OWI2NGI2MTJiMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlODdkODQ4YzAwY2ViOTRjMzQ4NjBmNjliMWEwOGM4N2I0ZDc4MWFkZWY4MTU2ZjU2YTIxYTg2OWQzNTYyYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZDBhYTczY2JlNTUzMGRhY2UyZjgzMmU2ODg0MDJlZGI2YjUxMWY3MTUyYjRjZGQ5NTg0ZWU1YWJjZjgwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZWJiODU1ZTBhNzI5OTllMzg5Mjk1ZGFmM2NkNmFlMGNhMGY0MDQ4OTk5NzY3M2YwZDVmZTA1OTM4NjRiNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02b137d31f8f41eba4304729bf930afe",
+      "statement": "The warmup backward pass occurs before the optimizer exists and without an explicit warmup gradient clear, so warmup gradients remain on parameters until the first optimizer boundary; the warmup batch itself is consumed and the subsequent iterator item becomes the first training batch.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L347-L373",
+          "version": "repo-lines-v1:sha256:63fd025aaf396b8f5dda726cf6ca8d4843a8b8a73f8c3d10335bb5129900ee36:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYTQ4Yzc0MDdhZmFiY2UzOTM4MTJkZjg1MGNkZTY3NjE5ZTEyN2I3MDM2MWY3MTcxZGU4OWI2NGI2MTJiMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYTkxN2Q5Yjk2MjQ3NWI2MjA5NjZjYTI0MjZkZThlMzYzZDQ0M2M1NjA1MTQyMmFmNjcyYjViMWY2YTQ0YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZDBhYTczY2JlNTUzMGRhY2UyZjgzMmU2ODg0MDJlZGI2YjUxMWY3MTUyYjRjZGQ5NTg0ZWU1YWJjZjgwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxMjZiZjMwMWUyZTI2YzlhZWVjZmEwOGRjYzE3N2FmN2ZhNzNjODJlNDA1MWM2OGU5NzFkYzU5OWMyOWFhY2QifQ"
+        },
+        {
+          "resource": "repo://train.py#L466-L490",
+          "version": "repo-lines-v1:sha256:f2a8e599f93044eec15e594610b2894fde4d3e43a2ad7cdcacbe1d301e6bbbe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMDdhYzc4YWEyMzgwYjVkYjk2ZGZlMDk0MmJmZjZjODRiMTUxZTIwMzIzZmFiMmYzODFiMDEwNzc2MGNmN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNjMyMGYzYWY0ZDI5N2ExYTAzNjhiM2JkZDU2MjAxOWM1ZmNjNGU2Y2FmMmU0ZDhjMDIyYTVlMDNlNzlmODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMTllNWI2MjZiMGI2ZTI1ZmIzZTU4ZTViM2ZiNjA5MWVmOTQ0Nzc3N2IzMzljYjIwYzI2MDBhMTQ3NjVhOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNTdmY2RjYzZlNDBkOWRlY2JmNDkwMDBkNzYwMzMwZGY1ZGRkYzM4NDEzNWY1ZGZjM2ZkMDBkZTcyMTUwYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f66f22acb924617ae0b7f3c272552de",
+      "statement": "Training computes loss from hidden states through `chunked_head_cross_entropy_with_z`, which projects the output head and evaluates FP32 CE plus z-loss in checkpointed row chunks instead of materializing the full logits matrix; the trainer scales the loss by `gradient_accumulation` before backward.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L264-L330",
+          "version": "repo-lines-v1:sha256:9483d47a0e87be7ae1fa6099768d157a1b8c2e2801c0b2afaf6b6ebd51cb57b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2Y1MzViNzU0N2FmZDMxMmU4NmYzYmM0Y2I1ZDJlNmNjMjZkYTYwMjFmMzM0MjA0MDMwM2ZjNDNiMWVmMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOWMxODVjMWJkMzUxOTM3MjBhOTg2M2I2NjdiNzM3MmVlNGJkMDZmYWMzMGI2OTZkYTYyY2NlMmU1NjMwMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmJiZGIxNGY5OWFjMTIwMzEyNWVkNTQwZjVlNzhiMzM5N2I5MGE2MjQ5YzBmOTRlODQxNmM2MWU3ZDYyMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZjQ3MTRkY2Q4MzljYjA2NGI1YThlMGE3MzA1MWMzZmU0YjY5MDdiMDZiNzQyZDRiMmE1ZDRkZGIyYmIyMmQifQ"
+        },
+        {
+          "resource": "repo://train.py#L492-L507",
+          "version": "repo-lines-v1:sha256:50658ce0a8d6249ab3c3de6d4936aa313f5792fe544a813be4ef7c3e038118a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMTJiNjUwMjkwMjBmNjM1ODU5NTFlNzVmMzY2Yjc4OTgwMDQ1NDdlNTQwNTVmNDJlNTJhMjE0OTdlMGY2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NWNkMWE3NDdlNDRmM2Q5MWVmMDdmYzM3NjFjMWFlMDU4NThiYzNjNmI2YWVkYjc3MTQ1NDA4MDkxYWQwYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYjZlOWE3MDZiYzczNTUxMTAxMjM4NmM0MzE2ZDk5OTFjNDZhY2YyNTNhOTNjYjY2MGJkMTc3ZDQxMGVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyOGRmNWIxMzA5NDE4YzBhNWRiMzhiNDE3NzQ3YWU0Yzg5NmRkY2NhMWEyNmE3NWFmYTQxM2I1YTI1YjRiNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c3b16f1ed6447d1bec2a05502e530cf",
+      "statement": "An optimizer boundary occurs when `(step + 1) % grad_accum_steps == 0`; the trainer clips gradients, calls AdamW, updates EMA from the post-step model, clears gradients with `set_to_none=True`, and then steps the sequential warmup/cosine scheduler, so EMA and scheduler updates happen only at boundaries.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L378-L407",
+          "version": "repo-lines-v1:sha256:8165f4dc3b0f199f7c59d1838bb3eb3c4a2dc1717ee6878e628ce73b21cbb0b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MGZkMGZkNmIyZTdjNzUyMTY4ZmE2N2NlMzlmMDg0ZWUzODMzZDA5OGJkMmRkZDQ3NzlkMGZmOTFhYWUyYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MTUxY2Q2YTgxOGIwMzVhMzAwMWRjZGM0ODFmMjM4MmUzZjkxZDc1ZTE5NjQyNzJiZjllZmZhOGYwMWM3MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxOTQyZjM1YmIxZDUxMjZiYjgwNWQ3NGRkZjUyNTE1Yzk3YjVkMGQwYjliNjExNjY3YTA1ZmMwOTk2ZTFiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYmU0OGNiYjdjY2Y4NjBiMmZkMmJhZWRkNDQ4ZTk2NTI4OTBiOWY5ZTMwZDA5NTVlYTU5MGJjZDE3Y2U0YWEifQ"
+        },
+        {
+          "resource": "repo://train.py#L509-L515",
+          "version": "repo-lines-v1:sha256:c75b2e1832c55efc21fd179709921ee50efc2613df29a8f0139ad026fe494ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmYzOGY0MWQ2YjhlMGMyMTFhMDQ3MTM2YjNjZTRlOGMxNmNjZWIyNTE5MjA3ZGE2OTNiMmI1OGY0YmVkNjE2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2QxNmIwZmI4ZWE3ODFmYmIxMGJjM2E4MWZhYThiYTA5M2JjZTM5MjFkZDI3YjMxMjg4NjAwNWNkMzFhZjFmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzc2MTQyY2M3MWIyYjQ0MWQzMThlNDYzNGM0MjZhMWQxODMyMDQyMTQyNjM2ZjQ5ZTk2NzZlZDUzNDBjNTE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRiMjJmOWQwMTYxZWJmMWFlYzE2OWE0MTg3YjgyMTA0MDc3ZTcyN2M0OGQ0OGYxNjM3ZjYzNzYzNWFkZTBlMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_18173e1eba2a493ea880ca2cb2c12402",
+      "statement": "The train iterator wraps around corpus exhaustion rather than terminating: `_next_batch` increments epoch state, calls `sampler.set_epoch` when supported, prints a corpus-exhaustion warning, and starts a fresh iterator.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L48-L65",
+          "version": "repo-lines-v1:sha256:ff2f1df32e93cbda87cda961576ee218c40d2edeac6ca119195caff04bd47f78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZjY3MDk0Y2FhZjBmZGZiZDZiOGI2ODRiNzAyNzk3OGMzMzRiNzkyOWY1MjU1ZDMyYjY2Njg2MTA3ZGUxMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YjgwNTA4YWRmYmJjNWNkMmM5YmZiMzA1MDI2YTgyMDU4YTZiOWNjMmNiODk0MjQ1ZjNhOWRjNTNjMzhjMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGNmNmU2MjBjMDg2ZDAzMTIyYzIxNThkMTY2ODZkMmIzYzBkZGE3YjY1ZDdkMjc4YjVkNWFlOGE2MDMxMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZmVjNGUxNDdiMjM1ZDgxN2ViNDJkMDA3ZDU5YzM1N2EyOGZlOTZmMjlhYTllN2Q3ZmEwNDBmNzk2YzM3ZDcifQ"
+        },
+        {
+          "resource": "repo://train.py#L250-L267",
+          "version": "repo-lines-v1:sha256:1be27d47125d05450e89f6aa0a41ea12900cf2e4f33e989bf6a9f36628033695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OTNkMGFmY2UxOWQyYTBiZWM4OWI4ODExNDE1M2MxYWExODFiYzNhNGM3ZGEwMzVmN2MxYmJlZmUwNDExYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZjM2MDkyMDdiZTJmNTBkZmNkYTk3NTU2Y2I3OTZhNDYwZDdiYzc1ZDAzODQ5MjBmMTQ4M2EyYjVmMTMyMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlOGZiN2Y4OWRlYmIzNmNkMmQ4NmM4YTY0YjdjN2MxYTdjOTA3YjA3NGM4ZmIwYjYzNjhmODhjM2RmZjNhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNmE3MGYxMjc4M2UxMjhiYTdhNmIxZjg5YzYxYzk2ODkzZDE0YjIyMzI0NzRjMWZlYTM5NzdmMjc3YjJmYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d7849523658469998af3224a321d15d",
+      "statement": "Periodic logging runs after compute and optimizer work, synchronizes CUDA before reading timing, logs loss, learning rate, gradient norm, throughput, token counts, effective batch size, data wait, and CUDA memory/utilization metrics when applicable, and mirrors key values in the tqdm postfix.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L517-L559",
+          "version": "repo-lines-v1:sha256:fe7e949f08092e2c0271b44319f2275e787d096f23a0fa5d3c76572699a960ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzNDI5MGIzMDQwMzA5NjQ1OGFjNTA4YjY0MDMzZGQ3NzQ3NjA3ODE4YjhlNGFiNWEwYzUyZDdlMzczYWMxMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5OTcxMjBmNGU3NTVkZTNhMzUxZjA4ODY2YmIzNzFkNWJlNWQ4ZGFjZTE1M2RmOGYxYjQxZWJlYjMyNjhlM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMDFmZGNjYTRlOGZlZTBkYzlmYjEwMTk3ZDYyZTNmYTM4NTcxOTBiZGVkNjQ1YmYyZWY1YzkwMDM3YjNjMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YzVlNTQ4ZWEwZWFhYTQ3MGFkOWZmODk5NmQ0MTZmNmQ2ZGNlMTgxODUwYjk0OWYzMDQzMTFiMjRiZjBkOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_25b15a70ef834902afb0d3cdc660aaaa",
+      "statement": "At due steps greater than zero, periodic effects are evaluated in source order: logging, then validation, then generation, then checkpointing; each effect is independently controlled by its configured interval.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L87-L105",
+          "version": "repo-lines-v1:sha256:ad28538305f45cc7f8a7c7954597447f2e7f9a0bc75ca9cb31576e4b8d625c59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOGU2MjJmMDJjMjMyMjQ4ZjhmNTFmMjg2ZWRiNDYxZDhiMjA1NjczNWM3ZDZhNjJlNmU4ZWE3NDMzZmViMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZWMzODU4OTM0NDIxMmM0ODE1ODcyY2UxYzczYTk4YWY2ZWM3ZDZlZTJjNWI0MzVhOTJlNWQ2YjM0ZWY2NTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWU1MzQxNWQzODBiNjA0NTlkNjk4MGE1NDY2MTNiYjc5M2ZhNGZlZGU4YTYwMTNjNTZmZWIzNzZkNDYyMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMifQ"
+        },
+        {
+          "resource": "repo://train.py#L523-L584",
+          "version": "repo-lines-v1:sha256:fdae74f59fc0038a04482776c989953309f4d0ca4e709b72942dd0541719b6c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMzcwYzAwZmQ0Nzc2NDlkZmU2ZmVkNDlhMGM2M2E5ODAyZTRjMzJlYzczNTcyNDEzYTA2MWIyMjIwOWM2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjA3YzI4OTRhNzcwNDZiNTRiNjFmZjcxM2U0Y2MwMDhhNzBmMzI5NzVjNjlhMjViOGU2MGNiOGQxZjgyNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1ZDY5MDJhNGU0NjhkNzliMGYzYjhiNjMxY2UzN2I4MjRiMjQ1ODk3YmFiNjQzN2Q5MWQwMmNlZDZjMGIxMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMDZiZDlhYjNkOWJmMTIwYjlkNWIzYWE4YTEwOGM2NzA3OGE4YTFhYzZlN2NhMmNhYjdiYWNiZjM3MjE0NjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c187b484609142f9b6dac0a3a693b76a",
+      "statement": "Validation evaluates the EMA model when enabled, otherwise the live model; it uses at most `val_max_batches`, CUDA-only BF16 autocast, hidden-state chunked loss, per-batch averaging, capped-exponent perplexity, W&B logging, and restores training mode. A strictly improved loss synchronously saves the live model weights to the best-model path, even when validation used EMA.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L122-L165",
+          "version": "repo-lines-v1:sha256:22eaab93a8b68dacc39f86db294a99bbc5c4cde06923c4b1d13a5c8b88dd6294:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYmRiYTIxNWQyMjJlZDIxOGNkNTZlZjFiNWEwYmRlMThlNDk0YjBiNDdmNWQzY2M0OTg0MWNhOGE5MTkwNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYmMzOTEzZTU2YjhlNWU4YTAwODBmZmE0MWNjM2Q1NjFjNTJmNjRkZTNhYTNhNGYwYzkyNWFkYjQxZDQyNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMTE0Nzc4ZWQzZDZhMWMzM2ZlN2U5NzlkYTU5N2VmNWRjMTI1MWFiM2JjZGQwZTA5NTAzZTQxYmE0NzRmM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOTUxYWJkZDQ4ZmNhMGViYTQyOTRlNzRlM2NiYzFjZTYwODY4MDU5MTRjMjE2MGFjN2M5NjRjMTBkYTlhYzIifQ"
+        },
+        {
+          "resource": "repo://train.py#L561-L576",
+          "version": "repo-lines-v1:sha256:369815718abe13bbaa29a88b7b4a2609b7a83a2efb3096d67f4225f4e934bb86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NWY1ZDEyMTNlZjY5ZmNmNmNmNmQxODJiOTc5NTExOWM2MDE0ZGI0MGU3MTY5MzcxNWQyM2U5ZjlmMzU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNzY1YTRiYjAyYWQ4ZDY1NGQ4OWQxY2RjNzM0MWRmYjNiYWFmNjY2OWQ2Y2ZhZjU3NzYzNzE2NTdhMWE2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYWI2MzAzZTNhNjliNGI0Y2FlN2UwZGY0Y2FlMjI0MDg0MWUyOGM0ZjRiMjMyYmVlYTRiYzY5MzYyMWQ0MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliN2I3ODUzZWQ2NjlkODdkNGEwMmNjMjkxYTQ3ZmQ1MTk1MjVkMDkyNzZlN2E3YzYxYzc3NGJhMjc1MGZkMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c9fdb66e1d914369b8d50120edee0f1c",
+      "statement": "Generation uses EMA when available and otherwise the live model, runs five fixed prose/code prompts for up to `generation_max_tokens`, applies CUDA-only BF16 autocast, top-k, hard-coded top-p 0.9, temperature sampling, EOS early stopping, W&B table logging, and restores training mode.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L52-L75",
+          "version": "repo-lines-v1:sha256:6a0f1990cd41e0ed9ae878dfc700b3e91bed1aa96da367751436ac6bce851cea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTVlMmEwNzMyZDliNTA1NWNlNTVkZmM0NTQ5YTlkODY5MDg3M2Y5YTdlOWQzZTJmOGEwY2ZlZWNhZjMyNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2MDdjMTU0MjUwNTBhMDIwZmM3NzRmOWRiM2RjODA0MWZkZTM2NGFkNzcxMTg4MDgxNjNjODk3MzViZDZlMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYTcwYjRlN2JiOTQ4OGQzMjhkZGMwMmJkNzAxNjNiNjA5ODY3ZjBjMjYwOTZlZjgzMGI2MTVmMDY4MjNiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YjJhNzFjMGVjOWQ4YzA5ZDA4MWE3OWEyM2I5ZTg3YjY1ZjQ2NmE0Y2E3N2I3ZTM3MTMzMjg4YjMwODQ2NmQifQ"
+        },
+        {
+          "resource": "repo://train.py#L578-L582",
+          "version": "repo-lines-v1:sha256:45900fcbb8689f529c1826c998ce652ada31236099961973da9399ee4b8b90d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ0ZGQ4MTg0ODZlZGE5N2Y3MzljMDVjMzE3NTUzYTcwMjg3MzkwNDAyNTRkNmYzZjI3NWQ1MTIwNjg3Y2JhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcyYzdhYjllOWZmYzE4ZWJhMWRmN2Q2MTU2MGEzNTIzMDg5ZGZjOTM0YTMxYjE5NWE4NWY3MzMyOTBiM2Y3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ0NDdiNjQzM2ZjMDRhMGM2NmMwYjIzNGZkYTBkNDdkMThiODU4ZmJlZWQzNGEzNjlkMzk1NjhlODE4MzFlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTViMjk5MTBkOTVlODUzMjAyMmFjNDUyNDA5MWZiNDE5NmJkYWFkNjlkY2Y1ZmJmZjVkMWEwNmViODZmN2ZjYyJ9"
+        },
+        {
+          "resource": "repo://train.py#L78-L112",
+          "version": "repo-lines-v1:sha256:ba7b4d2d314d6cacb086e61d05835e5011b126ef6288b5a5ff010bca8bc3fa7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYmRiYTIxNWQyMjJlZDIxOGNkNTZlZjFiNWEwYmRlMThlNDk0YjBiNDdmNWQzY2M0OTg0MWNhOGE5MTkwNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NDJlYzY5MWI4M2JhMDI5ZTA0NmFkZDhkMTdhZjNkNGViZTdlMjAwMjFmMzNkZWFkNTk5YzY0ZDcwNjUyYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MWU5NzExOGNkYjRmMjY5YTllM2Q3ZjUzMzBiNWRjYjhhMjdjM2RkMWU4NDE0YWU1ZTIzYWU5ZjYwNmRlZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExNjc2NDUwNmNkOTlhNmIzMmY0N2EyMzVlYWIzYWVjZjc5OTZmNzNhOTI2YTZmOTJlNzIxY2I1NmY1MWJlMDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d23764864db4e669abc1e886bee7314",
+      "statement": "Periodic checkpoints contain model, optimizer, scheduler, step/token metadata, best validation loss, Python/NumPy/Torch RNG states, optional CUDA RNG state, configuration, and optional EMA state; asynchronous saves run `torch.save` in a daemon thread and return that thread, while retention deletes older numeric step files beyond `keep_last_n_checkpoints`.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L168-L209",
+          "version": "repo-lines-v1:sha256:727afb1b69dc28ba322a09a1304831a423b8c9cd32245739424035e69fdf4968:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMjBlNWJmOWYwMzE5ZGRjY2IyMzI1OGI1YTFmZWJiNjQ2ZjM4NWVjY2ZjNzViMGVlODIzNjQ5Y2MzZjJiZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNDhjM2Q4OWE4MWE4YzQ3MmYyN2IwZDVkNTY3YzI2OGZkNTlkMGY2MjM4YTY2MmRlODQ3MTBhYTg0OGI3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4NTczMTAyNDEzNWI2MDhkYmIwZGQ4MTg3NzE5N2YwNDI0MzY4Mzc0YzVhZmFhMmYzMzJlODI1YzZkZWJkMjIifQ"
+        },
+        {
+          "resource": "repo://train.py#L584-L597",
+          "version": "repo-lines-v1:sha256:21dd4b18379873af4b7cd1158fcb7c9d3338f8c192f526d8852ea3109d586b38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjA3YzI4OTRhNzcwNDZiNTRiNjFmZjcxM2U0Y2MwMDhhNzBmMzI5NzVjNjlhMjViOGU2MGNiOGQxZjgyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZmMxY2E4MDlhMmI0YjFkOTY3MDYwMDE5NGVhMDJhZWE4NjE5ZjBiOTllNGFkMGUzNDZjODI0MWIyNTE5MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MDIzMzhiNThkMDMwYWM2MDZiZjQ4ZGE1ZTVjOTU0ZGUwZDE4ZjZiMDY4N2I5N2ZlNWEzYWQ0MjY3OTdjZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlOTkyNzFhM2E3ZDBiNDVkOGRkMDcwNmM4OWU1YTUxMDYyZTU2NjgwZjM4MjIzZDQxMWZmM2E3N2RkYTRlOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_562407d31a2f4836978bb90e6dae82f5",
+      "statement": "Shutdown reports elapsed time and throughput, joins the most recently returned asynchronous checkpoint thread before final persistence, writes distinct full-checkpoint and weights-only final files synchronously, finishes W&B, and reports the artifact directory.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L599-L610",
+          "version": "repo-lines-v1:sha256:801d0acad0cab5f65129fa54dba3f8623cb93da4bfbd64a8f501563b2b8012d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxODcwMWZhOWNmZDhmMjMwNDM4YjA0YzQ5YTdkOTk1OWU2MWI5YTJhNTRiYzhkYTYyMGMwZDhkMDI5ODJlZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NTIwMzhkMDZiN2ZmNTljNTM3MjUzMWJkZWQ3M2M2ODQ1MjFiNDU0OWM1YWQyM2E3M2E1YzI2ZTQyNWEzOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5YmE3MWQxZWRlMTc5OTJiZmNmZWI4NjBmOGI4ZGY3Yjc4MWM4YjhiMTFiODk1MWUwNGI0ODE4MWE3OGNkZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMjY5NzZiOTI4ZmJjYjU3NjJhZDBiZWYyYzM4MTViNDMyNDRiZDlkMDYwZGRkMjhiM2U5NWNjZmIyNTQxYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8158262c84d04574861c32dc7de21b3a",
+      "statement": "When `preload` is non-`None`, resume scans for numeric step checkpoints, loads the newest one, restores model/optimizer/scheduler/RNG/EMA state, reports the resumed step, and returns `(0, inf)` without error when no step checkpoint exists; the preload value is an enable switch rather than a direct pathname.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L212-L247",
+          "version": "repo-lines-v1:sha256:15507cf325a61d0701f35f6ec97ba12047e13c283fc28acc44aa9d1069359b92:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MmQ2ZDFiOGQ4N2RmNzljYTg5NGY3YjlkOGY4NzUwYzJhNzgxZTQ2Nzg1NDlkMzk3OGJiZjRkNzNiODkwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWIyNGUwZmMwMjQzZTcyMDE1YWY5OGU4N2U1ZWEwNTRiNGEwYTRhNmVlYzI3MmFlOTE0NDIzOThiYjY4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NjE2OWYxNGJiNGIxYmMzMDZiYmUxMTMzM2Q3YWNlM2I4YThiMTBjMTI5ZjIxNTI0MzYzNGVkZTBmNzgzMzcifQ"
+        },
+        {
+          "resource": "repo://train.py#L409-L412",
+          "version": "repo-lines-v1:sha256:d3d18af20e9cb2b413b0ee46626fd6f389b7912e675bb95483d79194b19557f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5YTNkZjA2NjczZjMzZDdhNjU0ODVhYjdhODVmNTdiNTVmYzNmOGZjNDAzNTNhNzQ2Nzg3ZWU5MmM5OWEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQ0OWE3MDdiMjgyYjE1M2Q5MDI2Y2I0NGZiMTAyZGU2OTljNGEyZDQyMjFjOTMxODRjZGMzYmUzYmI2NzYzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY3OWRlOWE0M2YxNmQxY2FmMDc3Njg5MjViZDI5MDI0Yjc0NWZkN2EzZDQwOWMyZTA5ZWQ0MTUwM2FhMGE0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1339f4abdeae46429590960abe252258",
+      "statement": "Focused tests verify the runtime's high-risk boundaries without running an unbounded production training job: synthetic forward/backward and validation, chunked-loss equivalence, deterministic sampling, checkpoint and RNG round trips, async completion, special final names, GPU setup idempotence, configuration invariants, and selected-device smoke behavior.",
+      "evidence": [
+        {
+          "resource": "repo://tests/e2e_gpu_smoke.py#L241-L310",
+          "version": "repo-lines-v1:sha256:808c66a7e1465c3bc3f57b2d7d7c292e693b26677c251c09ca75ad909ce2e76f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxODYxNWQyY2Y2ZDk2MTdjYjA0MGJmMjc1NzUyZWVkNDgwMTFiZjZiZDNiMGRjY2EyNTE5NjFmZDVmNDQxZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYmU4M2I3NjM1ZDRhYmZkZmRiMTY1NGNhN2U2ODhjYTY2MTlhMmE1ZmVjOTE5NDQwMDZjMmM2OTUyZTZlYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTEzYTlhMzlmOGQyYzU5MmY1OGI5YTcxNDA3OTA3YTdlNDI5NTVkZDM4ZDJmZTI3NTFkZDI4NmMyNmRhZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmY2UzNmFjOWI4MjRmOWVmY2IyZWRhMTFkMDViOTJhNmFmODZjNGE0NmQzMGM3MTI0NmFjNDZkMThlZDY5YjkifQ"
+        },
+        {
+          "resource": "repo://tests/test_config.py#L36-L75",
+          "version": "repo-lines-v1:sha256:aaea5369255032ba9d8fe1eefdc4d384c29579566f08da86c8bdf961dad07dbc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZGFhNDg2MzhkMWEwNWE4N2MyZmM5MDJmN2FjNzUyMDc2ZDVhMzk5ZTA0NmFlOTUzMDg0OGJhODViNzczNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZGNlMmE5MGU5Zjc5N2FmMDVlYjVmMTE5MjIyNmZiZWI1ODg1ODgwMDk1Y2ZhZDk0ODNkNTJjMTZiNjdlYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py#L40-L138",
+          "version": "repo-lines-v1:sha256:64371e980a935729a1486f4ba4453d557959f09a29bc0aa14522f89c66114c78:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYzMyMTcwYTU1N2NmYTZmYTYzYzM0ZWYyYTI3OTI3N2Q3ZDIwMGI5YjJjMWY3ZGE1MTdhMGFiMTg1MTA5NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzI2MWNkNDc2ZmRmYjk5YzEwYjYwZThmN2ZkMTM4ZDhlNTE4ZmE1YTM1Mjk4OTgyN2ZkZTZjZjVhZDJkZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwZmY1MmM1YWRkMTk2NjExMzA3MTU3ZGE3ODM4M2FmOGRhNGU1OWMyN2IyYmFiZGE4NDlmYjJlYjNiYzYwYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_train.py#L25-L310",
+          "version": "repo-lines-v1:sha256:30951b0d7d646420574c5064320e20bd78f8d6baf60eddc2fba5e655ea0a65a0:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjg2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMjMzMWZjNjljOWJkMzM4YzBlNTgyNGJjOGYwZmEyMzZiNTQyZjZjY2UxODJkMmE2YjJhYjY4OGI0ZDliN2U2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNmU1MjU0YjA5ODU4YmQxNGMxNTA3YmM4MjFiYmE0NWE3YzIwOTI1YjEwNzAyYjUxZDJlMGY1Y2RlOTUzZjE5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

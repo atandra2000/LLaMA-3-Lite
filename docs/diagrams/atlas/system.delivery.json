@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/system.architecture.json",
+  "output": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/system.html",
+  "specification": {
+    "sha256": "1dac4e5c5b735ad7bb5c7fbbb734b0eee067ac089ea82504bd9e634c6d61e7e0",
+    "bytes": 4530
+  },
+  "artifact": {
+    "sha256": "70337a3692575c16caa5e0ff1fde2250153c36ea98e38ab06b725dfd5fb72fbf",
+    "bytes": 712328
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}
