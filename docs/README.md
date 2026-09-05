@@ -21,6 +21,11 @@ Measured 2026-08-05 (`wc -w` over the working tree; refreshed after the audit fo
 
 ## Learning paths
 
+- **Visual tour:** [Illustrated systems guide](diagrams/atlas/index.html) — five
+  standalone, interactive Archify maps covering system ownership, the decoder,
+  data preparation and consumption, the training loop, and all eight optimization
+  techniques. Includes tensor shapes, memory arithmetic, source links, and
+  [artifact/browser evidence](diagrams/atlas/RECEIPTS.md).
 - **Beginner** (what is this model, how does it work):
   [guides/quickstart.md](guides/quickstart.md) →
   [concepts/attention-and-positional.md](concepts/attention-and-positional.md)

@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LLaMA-3-Lite: the complete system",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1120,
+      650
+    ]
+  },
+  "components": [
+    {
+      "id": "corpus",
+      "type": "external",
+      "label": "Shared corpus preparation",
+      "sublabel": "Workspace shared_data package",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Project preparation shim",
+      "sublabel": "Shards \u2192 data_cache/tokens.bin",
+      "pos": [
+        440,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "load",
+      "type": "database",
+      "label": "Dataset + loader",
+      "sublabel": "mmap \u2192 shifted targets \u2192 batches",
+      "pos": [
+        840,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Training runtime",
+      "sublabel": "config.py drives train_model",
+      "pos": [
+        840,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "decoder",
+      "type": "backend",
+      "label": "Raw PyTorch decoder",
+      "sublabel": "16 blocks \u00b7 width 1024 \u00b7 GQA",
+      "pos": [
+        440,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "objective",
+      "type": "backend",
+      "label": "Memory-bounded objective",
+      "sublabel": "Untied head \u00b7 chunked CE + z",
+      "pos": [
+        40,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "learning",
+      "type": "backend",
+      "label": "Learning state",
+      "sublabel": "AdamW \u00b7 LR schedule \u00b7 EMA",
+      "pos": [
+        40,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "evaluation",
+      "type": "backend",
+      "label": "Evaluation + generation",
+      "sublabel": "Validation loss \u00b7 sampled text",
+      "pos": [
+        440,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "artifacts",
+      "type": "database",
+      "label": "Artifacts + telemetry",
+      "sublabel": "weights/*.pt \u00b7 Weights & Biases",
+      "pos": [
+        840,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "corpus-bridge",
+      "from": "corpus",
+      "to": "bridge",
+      "label": "delegate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "bridge-load",
+      "from": "bridge",
+      "to": "load",
+      "label": "read cache",
+      "variant": "emphasis"
+    },
+    {
+      "id": "load-runtime",
+      "from": "load",
+      "to": "runtime",
+      "label": "supply batches",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "runtime-decoder",
+      "from": "runtime",
+      "to": "decoder",
+      "label": "forward",
+      "variant": "emphasis"
+    },
+    {
+      "id": "decoder-objective",
+      "from": "decoder",
+      "to": "objective",
+      "label": "hidden states",
+      "variant": "emphasis"
+    },
+    {
+      "id": "objective-learning",
+      "from": "objective",
+      "to": "learning",
+      "label": "backpropagate",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "learning-evaluation",
+      "from": "learning",
+      "to": "evaluation",
+      "label": "evaluate weights",
+      "variant": "emphasis"
+    },
+    {
+      "id": "evaluation-artifacts",
+      "from": "evaluation",
+      "to": "artifacts",
+      "label": "save and log",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ownership",
+      "items": [
+        "shared_data owns preparation; the local shim adapts its output.",
+        "dataset.py re-exports the vendored loader API."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Two compute modes",
+      "items": [
+        "Training and validation use hidden states with chunked loss.",
+        "Generation uses full logits and recomputes the growing prefix."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Target, not a completed run",
+      "items": [
+        "42,000 \u00d7 96 \u00d7 2048 = 8.258B training token positions.",
+        "A100 80 GB is the target; speed and peak memory need GPU evidence."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:39bdfe3662002329b9d0caa4310630fb05da91bccd6f29fb525332088c45831a",
+  "claims": [
+    {
+      "id": "claim_16a5b64f134b426c96456624f92bfad3",
+      "statement": "`config.py:get_config()` is the single source of the model, optimization, data, evaluation, checkpoint, and telemetry settings used by the training entrypoint.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L1-L6",
+          "version": "repo-lines-v1:sha256:803ba74790066675295ec944c58711b28a7c80a6ea5d71d93c1e63ffd95c306d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQzNTMxN2Q4NDM3YmVjMWVhNDg0NmJkMDg2NzQ4YTUwNTI5MTBmODNjNjhmZjIyZWU3NWY2OTBiODA0MDExMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY3N2ZlMWYxY2QxYmEyY2ZjYzcwYTY2MWVlYjFhYjhhOWMyZjRlMmQxMmE5ZWYyNGQ1MTk4NjY0MmMwMTc5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNjYmVlOWJlYjlkMDA4YTA2YWQ4Yzg2MWE0NjllNDNhODgzNjhkYjc0YzA5OTUwMWM4NzRiMDVlNGNmOGM3MSJ9"
+        },
+        {
+          "resource": "repo://train.py#L613-L616",
+          "version": "repo-lines-v1:sha256:cb4f0b816462d123c0a6cbd044ce0f763d33560c5af1a64e3bc881ac5c4366e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZkZjFhMjYxMjFjMGNhMWY1YzZhMGRhMGYyNjU1MTM1OTkyY2VlNWQ5MzQzMTM1ZjNmNWY1MTQ3N2E0NDFlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI2NWI5YzkxNDc2ZjJmNWNiMzczZWY3Yjk2YjlkODY2YWZmMmIxM2UyNTNkMjQ2Y2JjYjU4ODBjNWYwYzk5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDEyNjNiYzc2NWMwMDRjMzMwZjY1NmI2NmUwODNhOGZiNzUwMTIyNWEzYmMzYzMzYmE1ZmFjYjQxYTIyYTBiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa3927ec26574fd19f95b2b0126e3adb",
+      "statement": "The production model configuration is a 16-layer decoder with `d_model=1024`, 8 query heads, 4 key/value heads, `head_dim=128`, `d_ff=4096`, vocabulary size 128000, sequence length 2048, RoPE theta 500000.0, QK-Norm enabled, and RMSNorm epsilon 1e-5.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L40-L43",
+          "version": "repo-lines-v1:sha256:a29ed26130149c97366cb882232daf13e580316c219e8cd9547c967861417faf:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ1MGE0ZTkyYzMzYzc2ZGNmMTFlYjhmNzg4ZDQ4MzRhNTM3Mjg0YTEzZWNhNmU0Mzg0MjdkOGFmMTRlZGQzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZjZDU0OTU2NmU3MDI0OTQ2MDE1NTgwMDE1ZGVhN2Y5ZjZiYmEwNDEzOGVkZjEyMDM1NmY0ZmI5MGY2MjdkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDY1MzhlZGU2YmJiMWQyOTgxYmM1NzY1Mjg4MTg1YzI3YmVjODcwMGMxNjE2NzViM2EyNTA2Y2ZmZjRhNzdjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjUzYzE1MmJjYTY4NWE1MzUxM2ViMmFiZDM3ZTQ5NzUyMjZjZWIzNDMxZmJlZjEyMzZlNGQ3N2M1MmU2Y2VhOCJ9"
+        },
+        {
+          "resource": "repo://config.py#L7-L16",
+          "version": "repo-lines-v1:sha256:ce153d186ae7e188573bd1132d64941f9204826f2476d12982b909743bf3426c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZDVhNzZjODViYzY1YTAzM2U0ZTllZWZiMGVmNWVhOGM4NDk3M2Q1NjdkZTNmOGZiMTg3ZjE1YTg3MjNiNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NmQxYWE5NWVjYzc5MzI1NGI1MjcyNTk0YjFhNDVlY2YwZmZiNWQxNzQ4MTE2ODgxNjg5NWVkYTI1ZDkyMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMTdhMTA3MDI1MzFhM2ZlMzcyYjU4MjlkYjUyZTEyYTUyNmJkYjdhZTJjZTU2NTc5YzQ4MTA3OGI2ZmEzODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzOTYyNzE2N2NiNmUxMThlYzViZmY1NmVjNDgyNjA5Y2Q0OTYxODk5NjJhOTU4Mzg5YjBjZjc4NzRjNzZiNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be4013ac75644eafb3a59a201548d53f",
+      "statement": "The trainer gates Triton kernel implementations with the exact environment switch `ENABLE_TRITON_KERNELS=1`; if any of `rmsnorm_impl`, `swiglu_impl`, or `cross_entropy_impl` requests Triton without that switch, it force-restores all three implementations to PyTorch.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L299-L313",
+          "version": "repo-lines-v1:sha256:0e7605d1579a7df3e64a66e03c5e8b8ef9b9b140ba40b42131b249b21c1f661b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxYjU4MTNhYjlhNTM1NTVhMjczYThjNDU5YmE5MjE2YzNhYmVkYTMxN2UxNjI4NjA3MzVlYmFkZmEwMzY1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMDE0OTI0OWQ1YmY5NjUwMzgyYWJmODViNmFhYmFlOWYyYjU5ZGNiNGE3YzI4ZGViNmI4MjY1NzllNThhODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZDJhN2FmMjMyMDIyYjE0MDcyMWE5OTExMTg1ZDFlMDRiMmU1YzJlMmQ0NGM0NmZlOTZlMWJkN2QyZGI5ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZTJlMjRiNGY5NGNkMDg2MjlhMjdlMzJiMzI3NjI3YjhiYWE5YzA5Mzk0ZGJhZWRlMjRlM2RlN2IyMTFlZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f6756f913a34197bc6a67e0b8b605f1",
+      "statement": "On CUDA, `setup_gpu_optimizations` applies TF32, high float32 matmul precision, the configured cuDNN benchmark setting, nondeterministic cuDNN mode, and `cuda_alloc_conf` through `PYTORCH_CUDA_ALLOC_CONF`; the trainer invokes it only for a CUDA run.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L270-L277",
+          "version": "repo-lines-v1:sha256:0c54ef5d3bc2ddd884665b3cf6eab3a8a2d3abc16c98e62fa9bd3a97c63db6e0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA0YWY4MDlhNDdiY2FjMmVhNTBiMDgyNGM1NzZjZDJkMzEzZTkwMTQxNGNjNTBjNTZkNDhlN2Y0NTcxNmM5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQyNWE3YzI3NmI1M2Y3NjY1NjA3ZjViNmM2NDUxOGZmMWZhNDQyNWNmYjE0ZjVmNDIxMGYzOWMxZTlkODBlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGE2NDExZmQyMzRkYWFlNTU3MmRiNmRhZWNkY2NkYzJiNDdkNjJkN2ZlZDI0OGQ0YTIzZmQ5ODY2YmQ5NjFiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDEyOTc5YTgzMjAyY2E3N2E5NjFkMzhlMmY1YTVmYTNkNDg2ZDMwOTk5Y2JiYzZjN2ZlNWIyNzc2YzYzOTZhNyJ9"
+        },
+        {
+          "resource": "repo://train.py#L30-L49",
+          "version": "repo-lines-v1:sha256:736639e69f991a13ec89d2b28a683bdabc379a6b77e73979deb62b2b33803ef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzFjZTQyODU5YmM1NDRjN2Y3MjMwYzlmOTZjN2M4ZGQ5YzIyYTEwOGFiYWMxZjc5Y2Y3OWQ5ODE1ZmY5ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NTM0NzRiNDFjYzY1MjExYjliNGJjNjUyYWQzZWY0MzE3ODMwZGFhZWY2ZDA2OTk2NTcwYjYyNmY0NTFkOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxODJlM2JlODE5Njk3YzUzNDFkNDFmOTYyNzUyNjg4MTYwNjhjODliODFiNmU5ZDBmYTBlZWE1ZTg0ZGMxYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2M2JiMzFmNjMwOWE5OWVlMGIzNmJjZjc2MTRlNTExNDhiYjk2YzJlM2U3ZDg4ODkzYzc1MmExZGEzMWUwYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_087ea80ce7404d17975254658ba5cbdf",
+      "statement": "The optimizer uses AdamW with separate decay and no-decay parameter groups, and the production scheduler is a linear warmup followed by cosine annealing to `min_lr`; gradient accumulation delays clipping, optimizer, EMA, zeroing, and scheduler updates until the configured accumulation boundary.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L378-L407",
+          "version": "repo-lines-v1:sha256:8165f4dc3b0f199f7c59d1838bb3eb3c4a2dc1717ee6878e628ce73b21cbb0b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MGZkMGZkNmIyZTdjNzUyMTY4ZmE2N2NlMzlmMDg0ZWUzODMzZDA5OGJkMmRkZDQ3NzlkMGZmOTFhYWUyYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MTUxY2Q2YTgxOGIwMzVhMzAwMWRjZGM0ODFmMjM4MmUzZjkxZDc1ZTE5NjQyNzJiZjllZmZhOGYwMWM3MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxOTQyZjM1YmIxZDUxMjZiYjgwNWQ3NGRkZjUyNTE1Yzk3YjVkMGQwYjliNjExNjY3YTA1ZmMwOTk2ZTFiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYmU0OGNiYjdjY2Y4NjBiMmZkMmJhZWRkNDQ4ZTk2NTI4OTBiOWY5ZTMwZDA5NTVlYTU5MGJjZDE3Y2U0YWEifQ"
+        },
+        {
+          "resource": "repo://train.py#L454-L455",
+          "version": "repo-lines-v1:sha256:359279ad26ca2a967e73dc49adc79912a8245a040e96abbe9f2c563cebbee018:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQ0NmVmM2FhMjY1NTFkNGViZDZhNWE5ZjQ2MDEzOGFkNjZjNWRkZGQ0MGFmNTkwMDE3YTQ1YjY5YjZiZjJjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYwNGI2YjMwODcwYWE3N2I4NDZkNjA2NjI4ZmU1MmQxM2JhMDhjMmY5NmRjYmViMmRkMjc5NDQ4MmIwZGUwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI1MDIyYzQ4MTA1YmFjNTk2YmY2MjQxYmExMzViMjlmMzllYWI4ZTllYWZmYWNjMWM1NmY0NTVmNDg1MGMwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJjNDU5YmNmNjZiMzc2ZTcyYTI3YzBkMmQ4MWZiZTQyN2VjMWE0OGY3NzNjMzA2NTdlOTBmODJiODRiNGJkYSJ9"
+        },
+        {
+          "resource": "repo://train.py#L506-L515",
+          "version": "repo-lines-v1:sha256:af6e40e2d77c98622e2e318faf42540e50efb4b089d6e7e2eb104993605c6c09:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMzQxZDU5OTZjZWNmMjU3NjBjOTk3ZWM4N2NiOTM2Yzg2ODZmY2JjMjFmOTE4OGYxNjU0OTIwMWJkOTU3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMTZiMGZiOGVhNzgxZmJiMTBiYzNhODFmYWE4YmEwOTNiY2UzOTIxZGQyN2IzMTI4ODYwMDVjZDMxYWYxZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MmQyN2VlZjBhNDVkNjU2YjJhY2RhMzlkMDFlYzZiZjM5MGZhZDM4YmRhNmY3OTZiNGI3NDNjMzA5MmRjMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0YjIyZjlkMDE2MWViZjFhZWMxNjlhNDE4N2I4MjEwNDA3N2U3MjdjNDhkNDhmMTYzN2Y2Mzc2MzVhZGUwZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f2452cd6dd748e8a23261af320925e3",
+      "statement": "With the production defaults, one optimizer step accounts for `batch_size * seq_len * gradient_accumulation` tokens, or 196,608 tokens, and the 42,000-step plan accounts for 8,257,536,000 tokens; when the loader is exhausted, the trainer advances the sampler epoch and restarts iteration instead of terminating.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L18-L25",
+          "version": "repo-lines-v1:sha256:7c4e93c03e5e470707bc09c09be1e0893eb2a2f8468c0e451532d7f9ce212087:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1Y2Q4OGY5MWQyZjZlMTJlNTczNTc2MGZhMTNjMGU4NDk3Y2IxMWIwZWQxMWExOTUwYzJlYjAzNDdmYjU5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE4ZjQzZTM2MWQzOGRhYzZiNzEyZTM4NDJmMDIxY2VmNDYwYmMyMTQ0MGZmMDJiM2M5MzViZTI3ZWM2MWVjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTE0NGFhNDQzNzkxNzY5ZTE5Njk4NmFlYmE5OTg2NzAzNzc3ZTNiZDdkNGEzOWVjOTUyNjlkYjE4MDE1YzliMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTA1ZGQxMjFhMzM4Y2VhMzkxNjA1ZjVjNTExYWU2ZmY2NTFmOTU4YTRiMGI1YzdiMTViMTFmN2YwN2IyODQ2ZCJ9"
+        },
+        {
+          "resource": "repo://train.py#L250-L267",
+          "version": "repo-lines-v1:sha256:1be27d47125d05450e89f6aa0a41ea12900cf2e4f33e989bf6a9f36628033695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OTNkMGFmY2UxOWQyYTBiZWM4OWI4ODExNDE1M2MxYWExODFiYzNhNGM3ZGEwMzVmN2MxYmJlZmUwNDExYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZjM2MDkyMDdiZTJmNTBkZmNkYTk3NTU2Y2I3OTZhNDYwZDdiYzc1ZDAzODQ5MjBmMTQ4M2EyYjVmMTMyMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlOGZiN2Y4OWRlYmIzNmNkMmQ4NmM4YTY0YjdjN2MxYTdjOTA3YjA3NGM4ZmIwYjYzNjhmODhjM2RmZjNhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNmE3MGYxMjc4M2UxMjhiYTdhNmIxZjg5YzYxYzk2ODkzZDE0YjIyMzI0NzRjMWZlYTM5NzdmMjc3YjJmYWUifQ"
+        },
+        {
+          "resource": "repo://train.py#L454-L455",
+          "version": "repo-lines-v1:sha256:359279ad26ca2a967e73dc49adc79912a8245a040e96abbe9f2c563cebbee018:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQ0NmVmM2FhMjY1NTFkNGViZDZhNWE5ZjQ2MDEzOGFkNjZjNWRkZGQ0MGFmNTkwMDE3YTQ1YjY5YjZiZjJjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYwNGI2YjMwODcwYWE3N2I4NDZkNjA2NjI4ZmU1MmQxM2JhMDhjMmY5NmRjYmViMmRkMjc5NDQ4MmIwZGUwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI1MDIyYzQ4MTA1YmFjNTk2YmY2MjQxYmExMzViMjlmMzllYWI4ZTllYWZmYWNjMWM1NmY0NTVmNDg1MGMwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJjNDU5YmNmNjZiMzc2ZTcyYTI3YzBkMmQ4MWZiZTQyN2VjMWE0OGY3NzNjMzA2NTdlOTBmODJiODRiNGJkYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fae432c6b0c142718854d1e6cdee6580",
+      "statement": "The runtime data cache defaults to `data_cache/tokens.bin`; `build_training_data` opens it as a read-only `uint32` memory map, uses non-overlapping `seq_len+1` windows for shifted input/target pairs, and creates a final `val_split` holdout with training `drop_last=True` and ordered validation.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L69-L85",
+          "version": "repo-lines-v1:sha256:571164813a76e27b6b3440f28055130579f50c626d0278762535bfca3715a96b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkN2JmZjQzYzY0ZGZlMDZlYzJhM2FmYWUxMGE2NDY3MzIwMjJkZTc5MmEwMDU1NmQxNWY2OWQ0N2Y0N2RmMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmU0NzM1ZGUyZTRlZTVmZjhjYjgwZmRkYzIyZWEwMzc1NzI5ZDJjNjk2ZmY2ZmM1NjQ5N2Y1ZWUzZjA2MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NDFjZjhlMDA5MzFmMWQ0ZmM0ZjVjZThlNjA3ZjUwNmE3YmFkNjNiYmY0NmQ0MjA5OTJjOTE0MGJmNjkxZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmOWZkN2E5OTJhNjcyZmVmZmI4YjU1OTFlNDlkMmFkZDcxZGIxZTViNzAyZmFhMjExNTM1NGUwODY3MWQ2ZGMifQ"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py#L146-L191",
+          "version": "repo-lines-v1:sha256:e171c74a499e82052d037f54cfeadaa0600dfb298b5bc6fbb1c69cf830420eee:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYmFmNmE0MTZhMDQyNjM1ZDkyZWM4MTNjZGQ5NDcyZDZiNDNjZjlhNDY4OWEyYzUxZjUzYjZkZGRkY2EzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMGJmNmVhZDc0YThhOGM1YTg0NmE2ZmY5ZDJjZTgyZTcyMTg2NTA5M2RhNWIxNzBlYzMyYmFhYmQyMjA5NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlOWI1ZWVjYmIyZTUwMjVkMWUwOGFlZjgyYWVlMzk2ZmFiOWQ0OGNhOGI1OWJmMzlmZjhkYjUyMzE5NDg4NTUifQ"
+        },
+        {
+          "resource": "repo://data/shared_data/loader.py#L17-L45",
+          "version": "repo-lines-v1:sha256:7360db6336e47554cd301084df9f6cd6c8fa3ff225e75a2d875c68e69db90f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZTlmMDUxY2NjMWM2MTIyNzNkMmNhODFkOTU5M2E2MGFlNDY2ZGM4MTUxZTlkMzI4NGY0YjkzMGQ5ODFhYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmOGJjM2U2NDM2YWI2MTFmMjdlNTg0NjQyMTc0YWExZjBlMDdjNDA5MWFmODk5NjRiYjQ0Yjc3ZWUxM2Q0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3M2NlNDVmMDFjNWM5MDcxYjM4ZjNmMjk5OGI1NzM5NmE0MDUzOWY0OGFjNWMxMmUxMjVhZmNiYzg1MTMxZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89effb8a189646609b35369c7452b045",
+      "statement": "The preparation adapter concatenates manifest-indexed shards in numeric order using bounded streaming and atomically installs the configured cache via a sibling temporary file; `reuse_data_cache=True` skips concatenation when the cache already exists.",
+      "evidence": [
+        {
+          "resource": "repo://data/prepare_data.py#L119-L135",
+          "version": "repo-lines-v1:sha256:20c103b500680e7390eb2fdaa7c170d7d6590fe5e5db2d2b955a97e0ee71c4f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMjM4NDRlYWRiNjI2YjQyZDA1MTBhMTkzZWFmYzEwMWRlNDdlNWRmNmQ1YWM5ODAzNzY1NWQ0OTY5ZDQzYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NGU4MTM2Njk0NzhiZTgwOTkzNTQ2NjUyMTVhZWVkNmQ0OTlkYmYyZTA4YTU0YTQ4OGM4Y2I2YmQzZjJhMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMzBiYTAzZmUxYjk5NTQ3MmM0MmU0NjRmMjcwOWViN2M3MzAzOGZkZTY0NjAwYzBhOWMzYjkwOWI1MmIxZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://data/prepare_data.py#L37-L75",
+          "version": "repo-lines-v1:sha256:cc59e83d526b0c3b679f68163c47b9302bc7ce117ca78d775233d2afe05a73e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmOGMyMzcxZjQ1ZTNlZWVmNjNjY2I5YzIyODY5NjcwZGEzYmI1ZGNkMjJkNzRlYzJhNDkwYTc3NWU3MmEyZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MGY4N2ViZjAwODFjODgyYmY3ZGE2OTZjNTYzMmQ1YjZlMjQ0ZGE2Y2Q4OWI0MjA2ODNjNzcwZjkzMDcwZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_188d16d4ba724e2eb3e1c7406f614822",
+      "statement": "A missing runtime cache is a visible but non-fatal training fallback: `train_model` catches `FileNotFoundError`, warns that real data is absent, and builds synthetic random-token loaders; tokenizer loading can separately fall back to a byte stub while retaining the real cached training ids.",
+      "evidence": [
+        {
+          "resource": "repo://data/shared_data/loader.py#L146-L203",
+          "version": "repo-lines-v1:sha256:adf05cea53155ef405bdc485940f302fbce3eb2cb9558802aa97794949ea1ee6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYmFmNmE0MTZhMDQyNjM1ZDkyZWM4MTNjZGQ5NDcyZDZiNDNjZjlhNDY4OWEyYzUxZjUzYjZkZGRkY2EzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMTI0NjI0ZmIyNDkxOTJmMGZjNzE1ZjBlMmI3ZjJiNTI0YTIzMjM4MjI2MmE2YjMwYWFmYWQ1ODlmNWUyNzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMGJmNmVhZDc0YThhOGM1YTg0NmE2ZmY5ZDJjZTgyZTcyMTg2NTA5M2RhNWIxNzBlYzMyYmFhYmQyMjA5NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMWZmNGEzN2U0MzQ3ZTE1YjQ3ZGI0YTlkMDNiNzEyZmNkNThhNWMzMDdiOTlkYjYwYWIxYjMzOGZhY2JiN2IifQ"
+        },
+        {
+          "resource": "repo://train.py#L279-L289",
+          "version": "repo-lines-v1:sha256:a2b7d7400624e8721e453e4a547bcf99d0c6e69aad81651db4f379d7bdca4606:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzODU1YTQyZTcyOTA1YWNiZmUzZTE0ODI0ZGMwOTQ4YjQxNmU0ZTVmMjczNGM4NjVjM2RiNzBlNzNmY2QzZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzOGY2MjY1MGE0OTE0YmRiOTFhOWJhNjdlOWQ5ZjU2OTk3ZmRmYWI5MDlmMmIyZDA5MDA2MjdiYjRkMWM4YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjQyNGY1ZjIyNDA2YjdjYzcxZTVkYjExMGZhZTU0MjhjOGI1ZWQ3ODcyZDBkMDQyYmQ2OTg3Mjg3NDkwY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyZDZlNTc5Nzk4NTliOGRiOTNkNDY2YTAwM2RiNDQxMmY2NjI5MDdlY2NlNDE5M2IyYjgzOWQwM2RhNjlhNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d4c101e795aa457f889e24176c311602",
+      "statement": "Validation and generation use EMA when enabled, while the best-model artifact saves the live model state; validation is capped by `val_max_batches`, generation uses five fixed prompts with configured temperature/top-k plus hard-coded `top_p=0.9`, and periodic side effects run in logging, validation, generation, checkpoint order when intervals coincide.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L87-L93",
+          "version": "repo-lines-v1:sha256:e33500af2f4885f78efda5d473259a6ca402770c2d339ef39199356bca0cf1c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY4ZTYyMmYwMmMyMzIyNDhmOGY1MWYyODZlZGI0NjFkOGIyMDU2NzM1YzdkNmE2MmU2ZThlYTc0MzNmZWIwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk2Nzg3YjM3N2JmYTk1NWE4ZjQ3Yzk1YTQ0NWNkMTcwNzY2OWEyNjVmNTFmM2RiNmRkYTBjOTQ1ZGQ1NWQ2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNhZTUzNDE1ZDM4MGI2MDQ1OWQ2OTgwYTU0NjYxM2JiNzkzZmE0ZmVkZThhNjAxM2M1NmZlYjM3NmQ0NjIwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIzZjg2YTYyYjI1ZjQzMzAyM2QwOWNkNDBmYmFkNWJmNWZlODRjNDY3NjVjMGQ5ZmZhMzhlMTgxMTJiZWQ1NSJ9"
+        },
+        {
+          "resource": "repo://train.py#L122-L165",
+          "version": "repo-lines-v1:sha256:22eaab93a8b68dacc39f86db294a99bbc5c4cde06923c4b1d13a5c8b88dd6294:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYmRiYTIxNWQyMjJlZDIxOGNkNTZlZjFiNWEwYmRlMThlNDk0YjBiNDdmNWQzY2M0OTg0MWNhOGE5MTkwNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYmMzOTEzZTU2YjhlNWU4YTAwODBmZmE0MWNjM2Q1NjFjNTJmNjRkZTNhYTNhNGYwYzkyNWFkYjQxZDQyNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMTE0Nzc4ZWQzZDZhMWMzM2ZlN2U5NzlkYTU5N2VmNWRjMTI1MWFiM2JjZGQwZTA5NTAzZTQxYmE0NzRmM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOTUxYWJkZDQ4ZmNhMGViYTQyOTRlNzRlM2NiYzFjZTYwODY4MDU5MTRjMjE2MGFjN2M5NjRjMTBkYTlhYzIifQ"
+        },
+        {
+          "resource": "repo://train.py#L561-L589",
+          "version": "repo-lines-v1:sha256:4b3f307ed9033b85bf8e32643efeed68b9711c2497b6c812a28323e352c1cf58:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NWY1ZDEyMTNlZjY5ZmNmNmNmNmQxODJiOTc5NTExOWM2MDE0ZGI0MGU3MTY5MzcxNWQyM2U5ZjlmMzU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYWI2MzAzZTNhNjliNGI0Y2FlN2UwZGY0Y2FlMjI0MDg0MWUyOGM0ZjRiMjMyYmVlYTRiYzY5MzYyMWQ0MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYmU1MjAwODVkNDExNDkwOTU1MGQ0ZDU1OTU0Y2VmNzYyNGVmYzAxZWEyOWM3MzAzNjVmZTQ3YWJjNzRjYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca2d9074e69b4bf5865c5b6002dd23f1",
+      "statement": "Periodic checkpoints are named `<model_filename>_step_<step>.pt`, contain model, optimizer, scheduler, step, token-count, best-loss, configuration, RNG, and optional EMA state, and are numerically retained according to `keep_last_n_checkpoints`; final persistence writes separate full-state and weights-only files, while shutdown joins the last asynchronous save thread first.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L95-L100",
+          "version": "repo-lines-v1:sha256:ffce304889654ab93fe3b95306baff519390578fa02b92d452cc8b2c7d85835d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkNDBjMzA4NDQ5ZDdmZmU5ZGQzOWU1MmYwMWQ5NGIzNzA5NjYyOTA4YjE1YWNhZGY5YTI0OWU2MmU5YTA0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODAwMThhNDc5NzAyMjk4NjFiMjJhNDc0ZTI2YjNjMTljNDViNjJlN2Y2ZjNjMDJkYTNjNGRiMjczMWM4MTc0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTczYmFiODM2YTdkNzQ4NGRjMTI0OWViMmFlN2E3MDg3NzQwMzZmMjg1ZTA4YmEyZTJkNzFjYzc1NWY4ZjFjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdiNDM4N2IzNzM4MDRkMTQ4MzVkZGFiMGUxMmJlOTRhMDNjZjA2MjBkZTM1ZjMyOGY0NThkMjc2YWY0ODQ5NSJ9"
+        },
+        {
+          "resource": "repo://train.py#L168-L209",
+          "version": "repo-lines-v1:sha256:727afb1b69dc28ba322a09a1304831a423b8c9cd32245739424035e69fdf4968:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMjBlNWJmOWYwMzE5ZGRjY2IyMzI1OGI1YTFmZWJiNjQ2ZjM4NWVjY2ZjNzViMGVlODIzNjQ5Y2MzZjJiZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNDhjM2Q4OWE4MWE4YzQ3MmYyN2IwZDVkNTY3YzI2OGZkNTlkMGY2MjM4YTY2MmRlODQ3MTBhYTg0OGI3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4NTczMTAyNDEzNWI2MDhkYmIwZGQ4MTg3NzE5N2YwNDI0MzY4Mzc0YzVhZmFhMmYzMzJlODI1YzZkZWJkMjIifQ"
+        },
+        {
+          "resource": "repo://train.py#L584-L606",
+          "version": "repo-lines-v1:sha256:bfa4685bd1f037de377c0fe9a2070b52a361b133ffe477d5fdc42056e206b987:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjA3YzI4OTRhNzcwNDZiNTRiNjFmZjcxM2U0Y2MwMDhhNzBmMzI5NzVjNjlhMjViOGU2MGNiOGQxZjgyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhZjQwOTlhNTE2OTdhMzE3NDAxODVmZGYwYTU5NWZlYTc3NzhmOTY0N2MyNmYxMzg3YjkxNzUzOGJjNjhlMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MDIzMzhiNThkMDMwYWM2MDZiZjQ4ZGE1ZTVjOTU0ZGUwZDE4ZjZiMDY4N2I5N2ZlNWEzYWQ0MjY3OTdjZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzgxOTcxYmFhZDVhZGE1OTU3M2Q5MmEyNDk0MzM2MjJlZTEzMzQwNWY1YzQ0YWQ4MDYyOGM3YmEwYjZkOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88c65fa6378e4093be365b0195712b33",
+      "statement": "When preload is enabled, resume scans `model_folder` for matching numeric step checkpoints and restores model, optimizer, scheduler, Torch/NumPy/Python RNG, CUDA RNG when present, and EMA state; if none are found it returns step 0 and infinite best loss.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L212-L247",
+          "version": "repo-lines-v1:sha256:15507cf325a61d0701f35f6ec97ba12047e13c283fc28acc44aa9d1069359b92:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MmQ2ZDFiOGQ4N2RmNzljYTg5NGY3YjlkOGY4NzUwYzJhNzgxZTQ2Nzg1NDlkMzk3OGJiZjRkNzNiODkwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWIyNGUwZmMwMjQzZTcyMDE1YWY5OGU4N2U1ZWEwNTRiNGEwYTRhNmVlYzI3MmFlOTE0NDIzOThiYjY4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NjE2OWYxNGJiNGIxYmMzMDZiYmUxMTMzM2Q3YWNlM2I4YThiMTBjMTI5ZjIxNTI0MzYzNGVkZTBmNzgzMzcifQ"
+        },
+        {
+          "resource": "repo://train.py#L409-L412",
+          "version": "repo-lines-v1:sha256:d3d18af20e9cb2b413b0ee46626fd6f389b7912e675bb95483d79194b19557f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5YTNkZjA2NjczZjMzZDdhNjU0ODVhYjdhODVmNTdiNTVmYzNmOGZjNDAzNTNhNzQ2Nzg3ZWU5MmM5OWEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQ0OWE3MDdiMjgyYjE1M2Q5MDI2Y2I0NGZiMTAyZGU2OTljNGEyZDQyMjFjOTMxODRjZGMzYmUzYmI2NzYzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY3OWRlOWE0M2YxNmQxY2FmMDc3Njg5MjViZDI5MDI0Yjc0NWZkN2EzZDQwOWMyZTA5ZWQ0MTUwM2FhMGE0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5c2eca5f00549f0a418269ee33d2df1",
+      "statement": "W&B telemetry is initialized from the configured project, entity, and tags; training logs loss, learning rate, gradient norm, timing, throughput, token count, effective batch size, data wait, and CUDA metrics when available, while tests set `WANDB_MODE=offline` and `WANDB_DISABLED=true` and provide a stub if W&B is unavailable.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L16-L52",
+          "version": "repo-lines-v1:sha256:8e896a2f4211aab054ccf255859dc9611541a6f506c2c28ff17dad5697919ba9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNzY4MTA5NjQyM2Y3Mzc4YjA4ZjViNDA5M2RlMWUwODE0ZDcwNDk1ZjhjNjZkNWM0NTM1MTQ3ZTFkMjk0NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YjY1NzcxYTI1YjA1OGQzYmMxMzdhOTBhNGI5NDZmYWMyMzRmMzMyZWQxMDg1YmE0Njg5YTliYTllYmY1NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWI0ZDEyNjcwMTc3NjRjMWFjNTRlZTIxMDBiYjUwZmI4YWZhOTZlNDY0MzY4MmEzY2RiZmZjZTNjNzk4YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxY2ZhMzQ0NjUwN2YyYTI2NGEwNDJiZTM5MzEwYWY5OWIyNzNhYjYxZDg5ZTkzMWU1ZTY3YjhjNTNmMmYxMTAifQ"
+        },
+        {
+          "resource": "repo://train.py#L413-L445",
+          "version": "repo-lines-v1:sha256:8343f729fd3eb2511f6f2c0018670c0be90b62c01b6f0ed8a102ad42967f5536:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmYTQzN2Y4Y2Y4YTIzN2YxNGUxNGU2YzE1YmVmNTlkYmYyNzM2OGY5MmE4OWM3YTVlNTQyODI4MjBlNzU2OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYjJkMzljOTcwOGVhODRmOTkzOGRkMDhmZDhlMGUxMmJmMzIxYzIyMjk3ZWMwZjRhNDRiYWNmYzQ4NDY2OWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMjA5ZjJiMjU5OGE1ZDRiMTBhYTM4MjAwNWNlODdjN2NlNzE5NTNkOTYzZGU4N2Y0ZmZmZDRmYTMxNTZmMGQifQ"
+        },
+        {
+          "resource": "repo://train.py#L523-L551",
+          "version": "repo-lines-v1:sha256:667abab62334049fca6841b906465795832e57ff2a4adbeb9fa1b317bf222502:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMzcwYzAwZmQ0Nzc2NDlkZmU2ZmVkNDlhMGM2M2E5ODAyZTRjMzJlYzczNTcyNDEzYTA2MWIyMjIwOWM2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOTczNmI4MzBlNGE1Mjg4NzI4NDcwZjJmNjc3MWYzZjI4M2VjYzY0Yzg1MWY0MjU1NzM1MzY5OTIzNjEwMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1ZDY5MDJhNGU0NjhkNzliMGYzYjhiNjMxY2UzN2I4MjRiMjQ1ODk3YmFiNjQzN2Q5MWQwMmNlZDZjMGIxMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwOTYxMzg5OTZmNDE2Mzc2NzA2YzMxZDE4ZDllZTI5ZTQwNDg1NTM1YmI3NzgyZGUwODQwM2UzOWQ5YmI4OTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dee1a74b0c4245daad8d162544d7842c",
+      "statement": "The repository ignores runtime outputs including `weights/`, `data_cache/`, checkpoint extensions `*.pt`, `*.pth`, `*.ckpt`, W&B and log directories/files, and generated `docs_html/`; these ignore rules do not replace checkpoint retention or backup.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L14-L23",
+          "version": "repo-lines-v1:sha256:bc6154ace4f4df20646183e7de38d1490a4db6fa6a2e7bd7248cbdbdf8b947dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljM2Q3NTNkODAyNTFjYjNmZTBlZDAxZTRjNzFmOTFkYTRhNjBlODg3MWI5ZDdiZTczNzgxNmU0OWM3MjQyMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOGQ5YTE2NTMzNzMyYTY5Y2RhN2JiN2IxNzRlZTM5MmZkZDE1YmUzZDcyYTExNGNkOGYyZDUxZjNlYWI1MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNmExN2M1ZGYzMzIyZDg5MzlhZTkzZWI4NDFmNzA1MmQyMzlkZDBlMmQyZjU3NmE0YTc3NTRiOWRiN2VjMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxOTNhZGIyMTJjM2IwZDQxOWFiMWZmMGM0NzRmZmMzZGNkZmQzYWQyNjA2YWUwYjJkZjkwNTU0OWZhMjdjOTIifQ"
+        },
+        {
+          "resource": "repo://.gitignore#L34-L35",
+          "version": "repo-lines-v1:sha256:fa47c895ab045b5f81dbdcd4a4b42d38aec53bfee2cef669ef06de551bd6ceb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzI1ZjExOGE4YmUxMjExMGQzNWEwZTExNjRkZjAwYTBhZmIwNjZiOGI1MmZlMjQyZGU4MTUzYjRlY2Y5NTMzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEzZmMxNDA2ZmM0NTNhZmYxYTE3ZGM4ZGU3MTdlODMxODc0NmYyOGJmYTBmODhlNzI3NzhiZGI1Njk2ZGFkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU3OTUyNThlMGQ2OGMzNWJjMmFhMjYxMjc1OGMxNDAxYjJjMGU4NDU1ZThmNmRhNzY4ODg5YzUxNDI0MmRiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU1YjU2MzI0NDExNzM5NzMwOGZiZjZmNjFjZWNiZWJjMDRlMTEyZGVhNWNiOGU4NTU3NTY2MTQxNzMzZTdjMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_96254b175a1547dd95f43c8c317696bd",
+      "statement": "`tests/test_config.py` enforces the complete required configuration key set with no extras, selected known model values, even GQA head division, positive bounded data-source weights, and learning-rate, warmup, weight-decay, and gradient-clipping invariants.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_config.py#L41-L75",
+          "version": "repo-lines-v1:sha256:c312e1e452235781b6e8c6a8c5da033a2d3e4b6f4fe742e17d0668ee5c1842f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNzA4MDZmYjA2MzNiMDE0ZWU5Yjk1NjE5OTdiYjY4ZWYzNzk4YjI5NWVlYTBiMjA4MGQ4MmQ2ZDUzMzY2ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZGNlMmE5MGU5Zjc5N2FmMDVlYjVmMTE5MjIyNmZiZWI1ODg1ODgwMDk1Y2ZhZDk0ODNkNTJjMTZiNjdlYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwZDUwNTVkOTFlOWNjMjQ5NzcxNDFlMTBiYmUyNWMyMmM0MmM0MGQ1Y2Y1ZjAzYjg1YjZkMzgxOTJiNTEzYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_config.py#L9-L33",
+          "version": "repo-lines-v1:sha256:2213cd1930b04896dfec0db454207cd87d10e5be3130f897f56a911810183977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZDc5YzY4ZjQ2OTlhZDk3NmMwYjJkYzcwOTQ4YjUwMzY0NmQyY2VlYjZjYzRkZDE4ZDljYTc4NDFmZDk4OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyYTc0MjlkZTJjOTUzMGNmYmU4OTZkM2Y4YWQ0MDg0ZWU4NTA0ZjExZmRjNmRhYWY3ZjlkODEwMWNjOGMwMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMjUzNzMyNzQ4ODZkZjlmN2QyMjM2ZDkwNjk5YzNlZWM3NGM5NjAyNzI5NzhlNWZiZGNkYTdkNWVmMmFjN2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ca4e34f0d774d8f93b68db6284b52d1",
+      "statement": "`tests/test_train.py` verifies the production-style warmup/cosine scheduler construction and checkpoint lifecycle behaviors including creation, model/optimizer/scheduler restoration, RNG restoration, no-checkpoint resume, final naming, asynchronous completion, cross-device restoration, and idempotent GPU setup.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L17-L23",
+          "version": "repo-lines-v1:sha256:f71fb5bd7d9340f3ac027c3a46e6cbb645a117e3cfa02b8c18be23a4dae51bd1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg0ZDY4NDBiZWQ1OTBiNTMyNjBlOTdjMmMxMDUxMDU1NGJmYTA5M2VjNWJhMDIzNTVkMWM3NjU2YjVjODkyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M0OWEwMzM0MjJjNzQ4NzMwZTQxY2VmYjc5M2E2YzNiMzNiMGI0ZjliN2ExY2UzOGVhMjU4Y2RhMzNmMDNlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY0NGRmN2Q3ZTVlNjIyZDkzYTcxMGFkN2YyNTYyOTlkMThiYTdkNzY1NGU1MWYxNTJlMjA0OGYwMmMwZjU4MCJ9"
+        },
+        {
+          "resource": "repo://tests/test_train.py#L242-L310",
+          "version": "repo-lines-v1:sha256:2d6d5395dbf6a9b4c64d11dc3de05716040d7a34e82722dae2e4dccf79face5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZDg1M2EyZGIxZjNhY2E0YmM2ZTBkZDU5M2FhNTIzMjA2ZTkzYWZiMGUyNWYzMzEwZjNhNTRmYjRkMTkwNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZGJmZGM3ZjBkNGNhMjU3NDlkZDg1NzM4Y2JhMzIyZDdiZDM5ZWE2Njg1ZjJiYjYzZDIxMjk5Y2E3YTFmY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_train.py#L67-L240",
+          "version": "repo-lines-v1:sha256:98a7e1a0973243d1ea9afff900b3ad86e8f75b53987b58b7ea65334ef7f04063:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYWZmMmNiYzJmMDUxMzk0NzBkODA5MmU3OGQwMWI1N2M4ZmJkZjM3N2QxOWRhYTU2NTgzOTYwYzkwYjk5OWVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZDc2ODNkNzkzYjdmMzc1ZTIxNGFjYzMzMjkzNzU0N2M0ZmNkNzBlZGExNzc5OTA0ODdhN2IyMWRiYjY2NTEyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZjRhYjFhNTdlYmY0ODUzZGE0ZTMwNzgyZmRiZWExMjAyZTZkMjllYTA1MGYxZjM4OTRkY2JiNDEyNzVkYzBkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMjZkNDVhOTY5MGE4Mzk0YTFiYzgxZjFlOTM0MWQ4MTg4NDJlOTUwODUwMzE3YzNkMzVkMzQ4ZGZjNDUxMTI3In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

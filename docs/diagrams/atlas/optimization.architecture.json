@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Eight techniques, four different resource budgets",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1120,
+      620
+    ]
+  },
+  "components": [
+    {
+      "id": "activations",
+      "type": "backend",
+      "label": "Activation storage",
+      "sublabel": "1 \u00b7 Checkpointing  |  4 \u00b7 BF16",
+      "pos": [
+        40,
+        90
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "attention",
+      "type": "backend",
+      "label": "Attention working set",
+      "sublabel": "5 \u00b7 Fused SDPA  |  6 \u00b7 GQA",
+      "pos": [
+        440,
+        90
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "logits",
+      "type": "backend",
+      "label": "Vocabulary projection",
+      "sublabel": "2 \u00b7 Chunked head + CE",
+      "pos": [
+        840,
+        90
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "corpus",
+      "type": "database",
+      "label": "Host corpus memory",
+      "sublabel": "3 \u00b7 Disk-backed uint32 mmap",
+      "pos": [
+        40,
+        350
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "ffn",
+      "type": "backend",
+      "label": "Feed-forward compute",
+      "sublabel": "7 \u00b7 Fused gate/up projection",
+      "pos": [
+        440,
+        350
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "math",
+      "type": "backend",
+      "label": "Matrix throughput",
+      "sublabel": "8 \u00b7 TF32 for eligible FP32 matmuls",
+      "pos": [
+        840,
+        350
+      ],
+      "size": [
+        240,
+        100
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "checkpoint-attention",
+      "from": "activations",
+      "to": "attention",
+      "label": "recompute blocks"
+    },
+    {
+      "id": "attention-head",
+      "from": "attention",
+      "to": "logits",
+      "label": "final hidden states"
+    },
+    {
+      "id": "mmap-activations",
+      "from": "corpus",
+      "to": "activations",
+      "label": "stage batches",
+      "labelDy": -90
+    },
+    {
+      "id": "ffn-activations",
+      "from": "ffn",
+      "to": "math",
+      "label": "matmul execution"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Bound the large tensors",
+      "items": [
+        "Checkpoint activations; project only 256 token rows per loss chunk.",
+        "BF16 reduces eligible tensor storage; Flash SDPA avoids the S\u00b2 matrix."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Speed is a separate budget",
+      "items": [
+        "Fused gate/up saves a projection launch; TF32 changes matmul arithmetic.",
+        "torch.compile and pinned prefetch are additional runtime optimizations."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Measure the combined result",
+      "items": [
+        "92 \u2192 20 GB is a documented estimate, not a benchmark from this run.",
+        "Triton kernels need both config opt-in and ENABLE_TRITON_KERNELS=1."
+      ]
+    }
+  ]
+}

@@ -20,6 +20,29 @@ python train.py  # Start training with one command
 
 ---
 
+## 🗺️ Visual Architecture Atlas
+
+> Explore the full **[Interactive Visual Systems Atlas](docs/diagrams/atlas/index.html)**: five verified Archify showcase maps, interactive parameter calculators, memory breakdown visualizers, and [verification receipts](docs/diagrams/atlas/RECEIPTS.md).
+
+<div align="center">
+  <a href="docs/diagrams/atlas/index.html">
+    <img src="docs/diagrams/atlas/model.visual-check.1440x900.dark.png" alt="LLaMA-3-Lite Architecture Overview" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);" />
+  </a>
+  <p><em>Figure 1: LLaMA-3-Lite Architecture Map — 16-layer decoder with 8 Q / 4 KV Grouped-Query Attention, QK-Norm, RoPE ($\theta=500K$), and fused SwiGLU FFN. Click image to open interactive guide.</em></p>
+</div>
+
+### Interactive Architecture & Systems Diagrams
+
+| Diagram | Description | Interactive HTML | Visual Preview |
+|---|---|:---:|:---:|
+| **Model Architecture** | 16-layer decoder blocks, 8Q/4KV GQA, QK-Norm, fused SwiGLU FFN, and RoPE positional embedding | [Open Map ↗](docs/diagrams/atlas/model.html) | [PNG](docs/diagrams/atlas/model.visual-check.1440x900.dark.png) |
+| **System Overview** | End-to-end component ownership, configuration hierarchy, and execution flow | [Open Map ↗](docs/diagrams/atlas/system.html) | [PNG](docs/diagrams/atlas/system.visual-check.1440x900.dark.png) |
+| **Optimization Stack** | ~78% VRAM reduction: FlashAttention-2, gradient checkpointing, chunked CE, and EMA weights | [Open Map ↗](docs/diagrams/atlas/optimization.html) | [PNG](docs/diagrams/atlas/optimization.visual-check.1440x900.dark.png) |
+| **Data Pipeline** | 8.25B-token universal pipeline, LLaMA 3 tiktoken BPE (128K vocab), SHA-256 deduplication, and disk cache | [Open Map ↗](docs/diagrams/atlas/data.html) | [PNG](docs/diagrams/atlas/data.visual-check.1440x900.dark.png) |
+| **Training Loop** | Pretraining loop, AdamW optimizer, warmup-cosine schedule, Z-loss log-partition penalty, and W&B logging | [Open Map ↗](docs/diagrams/atlas/training.html) | [PNG](docs/diagrams/atlas/training.visual-check.1440x900.dark.png) |
+
+---
+
 ## Table of Contents
 
 - [Features](#features)

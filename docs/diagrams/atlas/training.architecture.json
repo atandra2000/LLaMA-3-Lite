@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "One training run, from setup to artifacts",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1120,
+      650
+    ]
+  },
+  "components": [
+    {
+      "id": "init",
+      "type": "backend",
+      "label": "Configure + load data",
+      "sublabel": "CUDA or CPU \u00b7 cache or synthetic",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "build",
+      "type": "backend",
+      "label": "Build + warm up",
+      "sublabel": "torch.compile \u00b7 real batch shapes",
+      "pos": [
+        440,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "state",
+      "type": "backend",
+      "label": "Optimizer + resume",
+      "sublabel": "AdamW \u00b7 warmup/cosine \u00b7 EMA",
+      "pos": [
+        840,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "fetch",
+      "type": "backend",
+      "label": "Stage input batches",
+      "sublabel": "Pinned memory \u2192 nonblocking H2D",
+      "pos": [
+        840,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "forward",
+      "type": "backend",
+      "label": "Forward + chunked loss",
+      "sublabel": "BF16 on CUDA \u00b7 CE + z-loss",
+      "pos": [
+        440,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "backward",
+      "type": "backend",
+      "label": "Backward + update",
+      "sublabel": "clip \u2192 AdamW \u2192 EMA \u2192 zero \u2192 LR",
+      "pos": [
+        40,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "hooks",
+      "type": "backend",
+      "label": "Periodic hooks",
+      "sublabel": "Log 50 \u00b7 val 2k \u00b7 save 5k \u00b7 gen 20k",
+      "pos": [
+        40,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "repeat",
+      "type": "backend",
+      "label": "Continue training",
+      "sublabel": "Repeat fetch \u2192 hooks until 42k",
+      "pos": [
+        440,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "final",
+      "type": "database",
+      "label": "Final artifacts",
+      "sublabel": "Full training state + weights file",
+      "pos": [
+        840,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "init-build",
+      "from": "init",
+      "to": "build",
+      "label": "initialize",
+      "variant": "emphasis"
+    },
+    {
+      "id": "build-state",
+      "from": "build",
+      "to": "state",
+      "label": "construct state",
+      "variant": "emphasis"
+    },
+    {
+      "id": "state-fetch",
+      "from": "state",
+      "to": "fetch",
+      "label": "start loop",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "fetch-forward",
+      "from": "fetch",
+      "to": "forward",
+      "label": "consume current",
+      "variant": "emphasis"
+    },
+    {
+      "id": "forward-backward",
+      "from": "forward",
+      "to": "backward",
+      "label": "differentiate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "backward-hooks",
+      "from": "backward",
+      "to": "hooks",
+      "label": "check cadence",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "hooks-repeat",
+      "from": "hooks",
+      "to": "repeat",
+      "label": "next iteration",
+      "variant": "emphasis"
+    },
+    {
+      "id": "repeat-final",
+      "from": "repeat",
+      "to": "final",
+      "label": "loop ends",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Update contract",
+      "items": [
+        "Loss is divided by gradient_accumulation; default 1.",
+        "Clip, optimizer, EMA and LR run at accumulation boundaries."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Evaluation and persistence",
+      "items": [
+        "EMA evaluates; improved scores save live model weights.",
+        "Periodic checkpoints may save asynchronously; keep last 3."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Recovery boundary",
+      "items": [
+        "Resume restores model, optimizer, scheduler, EMA and RNG.",
+        "Data iterator position is not saved; writes use torch.save directly."
+      ]
+    }
+  ]
+}

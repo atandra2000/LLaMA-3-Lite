@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e90332d8178a8faf14eee61925b2370948810614f9bcfe7e5167307731a00e12",
+  "claims": [
+    {
+      "id": "claim_1fd8421bb29b498fa9a55d469fe87020",
+      "statement": "The main CI workflow runs on pushes to and pull requests targeting main, uses Python 3.11 with a CPU-indexed PyTorch installation, performs import checks, runs the full configured pytest suite on CPU, and then runs the documentation-reference test as a separate visible step.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L1-L30",
+          "version": "repo-lines-v1:sha256:a1d055de46d07b232cdf8f59a44c124908aaa9cd3e6a12dfab193754fc8217cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZTFiMzJmYTA5MDc5YWUyZjAwMDFmZmYwZWNhMjdiNDk4NTk1N2Q0ZWI0ODU3OTI5YjNjZjA1OGZhYWU1NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZThiODJlMzgwNWEzYTE4MDAzZjJmZTQ1ZDRmNWRiYjQ3YWZkZThjMmRkZjU1OWNlZDJiNGZkYzRmNDA2MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YmQ5ZjJiZjkxNTlkMzRlY2I2ZWVjZjU1OTk4ODI1MjBjN2ZhYTkxZWM1MThlZDRiNTJlNWExNmNjMTAzZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cabab8bea9ce4323830fba3608aadff7",
+      "statement": "pytest is configured to discover tests under tests, use test_*.py naming, enable strict markers and strict configuration, disable the cache provider, and register slow, gpu, and numeric markers.",
+      "evidence": [
+        {
+          "resource": "repo://pytest.ini#L1-L19",
+          "version": "repo-lines-v1:sha256:ee0adbca438d10e24c46670e8f88bea54a8d1ab33ebfe2063956de1aac440f02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNTBkMjBmNDJiNDE5YWY0MDcwNjQ5MGVhZDc4YWFiYWI5ZmViYTkzZWFiMDlhM2Y2MjZlM2RlNTI1NmUxZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwY2JhZmZjZjMxMWE1MzZhMmFiYjgwZjJjYTI1MmRhYTVjNDQxOTg5OGZmNjEyMmYyZTYyOTE0NTdmYmQyNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_054b9268abc74d8da5d73e2931047f53",
+      "statement": "The test harness defaults its device fixture to CPU, accepts --device cpu or --device cuda, skips when CUDA is explicitly requested but unavailable, uses FP32 on CPU and bfloat16 on GPU, and skips gpu-marked tests unless --run-gpu is supplied.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L60-L103",
+          "version": "repo-lines-v1:sha256:e4b909b937590b713d62de16aacce88b0452680e7115c60e00aa0241c193a525:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5OWRlODg3N2JkMjlmMmUwOTZmNzE3NDlhMGQ5MzU4NDg1MGI4NjFhNTM2MDgxYjg0NzhkMmIyMjE0YTcxN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3MGYzNzI3ODY0NWE0ZDA1ZDk5Mjk1YmRjNzBhMDNiOTc2YzIzYjg5ZTljYzg3NDNlNDRmZmZlNGYxNDJlMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYjBjM2JkZDlmNTdiYjI3N2FkNmE0NzEzODQyMTI5ODQxMDI4YzZiMDY3YzQ3MWExOTEzOTJiOTQ5ODY1MDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a02e122a2524edda08ef789ea2b3470",
+      "statement": "The shared test setup makes tokenizer execution non-parallel, defaults W&B to offline and disabled modes, and injects a minimal wandb stub when the package is unavailable so train imports and offline tests can proceed.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L16-L52",
+          "version": "repo-lines-v1:sha256:8e896a2f4211aab054ccf255859dc9611541a6f506c2c28ff17dad5697919ba9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNzY4MTA5NjQyM2Y3Mzc4YjA4ZjViNDA5M2RlMWUwODE0ZDcwNDk1ZjhjNjZkNWM0NTM1MTQ3ZTFkMjk0NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YjY1NzcxYTI1YjA1OGQzYmMxMzdhOTBhNGI5NDZmYWMyMzRmMzMyZWQxMDg1YmE0Njg5YTliYTllYmY1NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWI0ZDEyNjcwMTc3NjRjMWFjNTRlZTIxMDBiYjUwZmI4YWZhOTZlNDY0MzY4MmEzY2RiZmZjZTNjNzk4YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxY2ZhMzQ0NjUwN2YyYTI2NGEwNDJiZTM5MzEwYWY5OWIyNzNhYjYxZDg5ZTkzMWU1ZTY3YjhjNTNmMmYxMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f688ae8c6b51438c83b643bf56be494c",
+      "statement": "Configuration tests treat get_config as a schema and invariant contract: they reject missing or extra keys, verify production defaults, require evenly divisible attention heads and positive data-source weights, and validate learning-rate schedule relationships.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_config.py#L9-L75",
+          "version": "repo-lines-v1:sha256:cdf8a01ef51af568daa5897f3c50c13f5798497d154276bde9ff2f222e365410:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZDc5YzY4ZjQ2OTlhZDk3NmMwYjJkYzcwOTQ4YjUwMzY0NmQyY2VlYjZjYzRkZDE4ZDljYTc4NDFmZDk4OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZGNlMmE5MGU5Zjc5N2FmMDVlYjVmMTE5MjIyNmZiZWI1ODg1ODgwMDk1Y2ZhZDk0ODNkNTJjMTZiNjdlYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyYTc0MjlkZTJjOTUzMGNmYmU4OTZkM2Y4YWQ0MDg0ZWU4NTA0ZjExZmRjNmRhYWY3ZjlkODEwMWNjOGMwMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56aebfae955a4fc3a346058d3962e305",
+      "statement": "Data-pipeline tests verify manifest-ordered, byte-exact shard concatenation, atomic temporary-file cleanup, failure for missing or empty manifests, mmap readability, and benchmark_data.py text and JSON subprocess modes.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_data_pipeline.py#L20-L138",
+          "version": "repo-lines-v1:sha256:53600fbc9bb8912c2ac6d74bea21dc92685cc7115c9cd73456b1fe18d779c265:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZTBlMzMyMTYyMzIxNmYxMTE1MjVkMWVkM2UwMWU3MTViZDhkOTMxMTM2YTYwYmNlZDNlYTA5M2RkNDE1ZGZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhM2I1OThlMjc3Y2RkYWQ3YWI1MTM4MWUwODEzMDA2YTQ4OGM2NDAzYjhhZWI4Yjg0ODhmMDQ3NDI4ZmY5Zjc3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0YTdmYmI0N2Y5NzE2YTZjOWVmYjFkOTlkOGIwNjdmMzQ5NDBkNjg1OTliNmVmYmYyYzlkZWY4YjZiZTlhNWNiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_efa07abf339b450cb0f25a7efe306f02",
+      "statement": "The model test suite protects RMSNorm and RoPE mathematical properties, grouped-query attention shape, repetition and causality behavior, SwiGLU fused-projection equivalence, and transformer parameter-count contracts.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_model.py#L23-L242",
+          "version": "repo-lines-v1:sha256:90b5b6528e3f88d2255d0ade8ed29c40628a9cb34c7ccc5ee8fc1b0324bdbc8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMGZjY2Q5OGU2YmIwODhmYzY0NmYxNWNiZjViOWEzMzk3OTY5NmJjZmM5YTY2NDc0OGJjOGU5ZTA4ZWIxZDNlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2ZjY4ZmVkMDVjMGY0MGRkODJkNmNhNGYxM2Y4ZGQwMjNiZTA2YjNlNWE4YzQyNzI4ZTk4NTc5YzM1NWI5MmVkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4abb0a07f8ee4a0c8357d70fc99485d5",
+      "statement": "The model tests verify forward shapes, finite gradient flow through every parameter, equivalence of gradient-checkpointed and normal paths in evaluation and training, and gradient flow through checkpointed training.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_model.py#L245-L342",
+          "version": "repo-lines-v1:sha256:d1d6a90ac42949ea1eead0eac15787550ff04f3bf42c0d9ab6dc0f395c7ac4e4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyY2FiMjM2MzcwMTc3NDhhOTZkMjc3MGQ1MTY3ZTdmOWNkYjhjYTFiNzZkMGE2NDIzM2VhMTUyYmEzNmJmYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmU0YjUwNzk2MWM0YWQ2MzYxZTJiZjcxOTZiMjZjYTBhMGEyNWI5NGJlNmE4Njg0Nzk3YmU3ZGJjZWE1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjY2UyYjNjZTc4MTVlOWY2YjNiZTg1ZTA1ZTA4NDE3ZmFlOGMyN2Y1ZGU5OWI3Y2VlYjE3NTZiY2JhZGUxNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95bedc55c9a54143bd91f0073ded5903",
+      "statement": "Numerical loss tests verify chunked cross-entropy with z-loss against dense reference calculations, the zero-penalty reduction to pure cross-entropy, finite backward gradients, growth with logit magnitude, ignore-index handling, and memory-bounded LM-head loss equivalence and gradient flow.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_model.py#L344-L499",
+          "version": "repo-lines-v1:sha256:24c75117b93b51995bb170f68b4d4c77d23585fed677e9bc45e0b594b29e29c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmNjkwMTZlM2ViNGViMTA2MGZlNzk0NzFkMWYwZGViMWE5Nzc0Y2IyOTZmOTJjZTMxZmU2ZWE5YTU1NjExNDVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwNjZkZTdiNTdiNDRkY2I4ZDcwYmEzNTM3YTEzNWFkOTVhZGEyOGQzMjc4OTgwZjRlNjAwZWRjZDUyN2Y5OGQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMzg2ZTY0MTljOTFjOGM2MmI2MWUzMzY5MjMyOTkxZTRlNGYzNGMyMDE4YWUzYmQ2ZTFjNjBjNmEwN2MxMDUyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7bdd69a1891f4b5fb2d9bf71f54672e2",
+      "statement": "Training tests cover deterministic and constrained top-k/top-p sampling, checkpoint creation and restoration of model/optimizer/scheduler state, exact Python/NumPy/PyTorch RNG restoration, no-checkpoint behavior, final and asynchronous checkpoint artifacts, and a CUDA-to-CPU checkpoint regression.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_train.py#L25-L301",
+          "version": "repo-lines-v1:sha256:e403818aa079f180a3f9ee1a5dc66e92595afed90097911c5bd210360f59f6ea:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjc3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMjMzMWZjNjljOWJkMzM4YzBlNTgyNGJjOGYwZmEyMzZiNTQyZjZjY2UxODJkMmE2YjJhYjY4OGI0ZDliN2U2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3ZjE5ZjdlYjkyZTBlZDZkMWU5ODBhYzJjMDUxYzZhZmFiZmEzZmE5NTY4OWYyOWM2MzIzMjE5OTliNTRmYzk2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNmU1MjU0YjA5ODU4YmQxNGMxNTA3YmM4MjFiYmE0NWE3YzIwOTI1YjEwNzAyYjUxZDJlMGY1Y2RlOTUzZjE5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MTlmODQ5YzMzMDBhNmM2YWYyMGE5MjFmOTA5OTQyNGMxOTk3NDQzOTY5ZTBhYWY2MzU5ZTVkYjc3MTY4MTMwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d3ddb52f2fa4709a9175817e7760b85",
+      "statement": "Synthetic end-to-end smoke tests verify finite one-step training and gradients, tiny-batch loss reduction, dense versus chunked CE equivalence during a model forward, and finite validation with exactly one offline W&B log call.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_smoke.py#L17-L138",
+          "version": "repo-lines-v1:sha256:1a6fb1b519693ca41f58da7edf62d059a6832da0e6b38f6c293e4d0b3dbfbcf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyM2YzNjZiOWJkOWE4ZDBmMzQwYTJiYzBiZTFlMjJlZWEyMDU2OGRkNzhhNDUyODFiNzIxYjMwZjIyZDA4N2YwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiZTcyNjFjZDQ3NmZkZmI5OWMxMGI2MGU4ZjdmZDEzOGQ4ZTUxOGZhNWEzNTI5ODk4MjdmZGU2Y2Y1YWQyZGY5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzYzQ5YTAzMzQyMmM3NDg3MzBlNDFjZWZiNzkzYTZjM2IzM2IwYjRmOWI3YTFjZTM4ZWEyNThjZGEzM2YwM2U5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_0cee72ecf9b945e981b55fa8642e57e7",
+      "statement": "tests/e2e_gpu_smoke.py is a direct eight-stage diagnostic covering environment, synthetic data loading, model construction, training, chunked CE equivalence, validation, checkpoint round-trip, and optional Triton RMSNorm/SwiGLU/cross-entropy checks; it falls back to CPU with a warning and skips the Triton stage without CUDA or Triton.",
+      "evidence": [
+        {
+          "resource": "repo://tests/e2e_gpu_smoke.py#L1-L6",
+          "version": "repo-lines-v1:sha256:8a486b4440a9053c758a7ca6f43c2dd78956f8eca2d89d05ad824e6d123ae0ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM3ODVkYjIyYWU0ZWEwMzg2ZmJmZWNmMTA4MmE0MTUyYjNmODlkMWY2YzVmNmJmMWMxY2NhNDNhNzY2MjQyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg2Nzg4ZGM5NTMxYTdmOTE4ZWQ5ZjFkNjc4Njk0YWFhM2ZlZjM3ZTE2MTYwN2JhNDE5ZTNlOGQxYTA2YmM3OCJ9"
+        },
+        {
+          "resource": "repo://tests/e2e_gpu_smoke.py#L322-L410",
+          "version": "repo-lines-v1:sha256:5da57bc06a3d6d0871e62786ecb1467cb8ec9505a2f5bc01b38ac1d3c452e41c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OTFlYjgyNDI2ZDZmZGFlZDYzYjhmYmQyZWZjNjIwZTc2MGQzZWZlMDYwODJhMTk2MDYwMzAxZDU5M2JhMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNjRlOTIwMDBhMTljYTM4NTkzYTRlNmEwYmFjNzcwOTZkMWU5ODY5NDlhM2I2MjgyNmI3Y2VhNGY3M2Q5ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwZjBjM2MyZWE0YWFiM2JhMTU1MDg1YjVhNGVjNGYzMDg3YzdkYjQ3Njc2OWJlMjEwOTg2NGU3MjA4MDZjN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/e2e_gpu_smoke.py#L37-L58",
+          "version": "repo-lines-v1:sha256:0e6b286cc71d430758359e24e05a4b1e28391b73ded7ef9e09e4fc3cd778e1b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2YWI2YTNhOTc2Mjk3YTFmZGE4Mzk4Nzc1MGY0YTJhZTczZDhhZmYxYzRkYTVmMGFkYzc4NmI2YzY4OTYzMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZjM2ZjM1YmRhOWU2Mzk1YTU0NjdhMmFlMmY2NzJjOWFmYmE0MzIwNzA4Y2YzYzk0YjJlN2Y3NWQ5NWNmZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NTIwYjY5Nzg0ZjVlMTkzOTFiZmVhZDlmMjEyZTVkN2ViODVmMmRhZThhZTJhY2E3OGFjM2Y4Mzk2NWE2MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc0c82cd49cf44149f295789b8605c2c",
+      "statement": "The documentation-reference tests resolve file.py:Symbol and file.py::Class.method citations by importing modules, ban line-number anchors, validate intra-repository Markdown links outside code fences, and require non-trivial Python snippets to be marked illustrative or verified.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_doc_refs.py#L1-L4",
+          "version": "repo-lines-v1:sha256:2230e1a01c355ad00b2b1a82eb278e6d940db5d35290deacacdbc1b69fffc3a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjEyMjFlYWYwMjMxYWNkN2Q4NTNiZTNkODYwMDg2MjVmYTgxYzFmMmYzYzkxYTU0OTRhNTg2ZWY2YTdiMDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTBjNGJmYjBlMWVjM2NlOTY4ODBjYzRkOGY2YTNmMzI3MmIwZGZjMGI3ZDdkYTQzNWI4MmM0ZDI0NTRmZjZhNiJ9"
+        },
+        {
+          "resource": "repo://tests/test_doc_refs.py#L24-L33",
+          "version": "repo-lines-v1:sha256:0a6fed1d914ad4c0c40a40b3949f1b239ee2b7d115b635c521b4dbfa6b3330de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkODUzNTRiMzkxZmM0OGUyMzdmOWU5NDM2MzVhNGNiNWI3ODQ4ZGU0YWYyMDA3ZTMzZWE2ZTZiYmRiNWZhYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4YzY2MDBjYzU0NGY4YTI1YzlmYjNhOTg3Yzk2NTdmNmVhMWRmNDAwN2JjMTMwNjE0ZDNjMzNiNDJkYjNjZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMzI1ZWE1Y2ZkZjgwNjExM2NiMzc3NDRmNjU1Njk1OGI2NWIwYzQ3MGZiYTEwYjE1YmFjZmQxNjNmYjgwZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUifQ"
+        },
+        {
+          "resource": "repo://tests/test_doc_refs.py#L37-L58",
+          "version": "repo-lines-v1:sha256:131227f1cf682266727542eab57ce7e58112f67527ea387f33f6f1caa141e0ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZDE5MGMxNmI5NWQ3YzlmOGM3ZTljODBmMjg4NzE2MGMwMTQ4YjIyNWE5YTI3NjQ2NDgxZTU5MjhjM2FhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNTU3OGQ3YzFjOTNlYzFhZmI0NDlhOWQyYjkzY2MwOWNkMDc5NDQ5ZWE2OWUzMGI1ZmYwZDUyNGIwNGRmZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmQ4NDNmOWMyN2NmMGJhMzQ0ZGNkZThmYTA3M2IxMjhhYzQzMzI1YmQ3MGZjODcwNzQwZjhiYTIxOTZjMWQifQ"
+        },
+        {
+          "resource": "repo://tests/test_doc_refs.py#L86-L152",
+          "version": "repo-lines-v1:sha256:1fa8608df9f2936cde45fb2b033cddd9bbbdf643cadf1cb4daba84a112a274d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMGU5ZWM4NTIxZGYzZmYxMGM2OTIyOTY1MjMxNjRkYTRlMWQ5YTc3OWRhOTk3N2EzMWU3YzkzMjViYzYzNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZTI0ZDg3YjQyZjY0NTdkZTM5OWM3NDNjZTYwNWM0YTIwNmM3YWExOWI4ZDRmOWE3YmI3MjBjYzNhY2E3NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c3a36a1dc694f008b419f92c2ed4345",
+      "statement": "Documentation generation is separate from documentation-reference testing: build_docs_html.py converts an explicit Markdown manifest into docs_html, rewrites links and renders the portal, while test_build_docs_html.py runs the generator and checks assets, relative paths, boot wiring, widgets, fonts, and the dark-only theme contract.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/build_docs_html.py#L179-L184",
+          "version": "repo-lines-v1:sha256:99e578c027d6fc86f19cdf03b9896a5883ac7203de61dd4ba325bbfcc414b2f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ4MWNmOTFkNWYzNDUxNDRmMDc2NGZkYmVmNzdiNTdlYjAzYTk1MTAxYzQwOGVmN2JhMjUwMWFlNzQyOGNmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI2NmJhZjMyMTc2Yjk4ZGI0MDA1YjYyYmNlZWM2ZjFkZjE0NzM4YTg2ZjFlZGVmNzljZGQyZjdiZTVjMzc1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRkMTQ5MTBjNTJiYmQ4YTdmYTgxNjBkN2Q1NmVlZGEzNWU3YTgzY2RiOWQyYmRkNGVhOWJhZWJkYjNiNTg5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjEzNDc3NGY4ZTNjMDU5ZmEwOTYxNzc5NzI5ZWQ5OTExNTA1ODVjNTUzMTM5ZTE1NGMyOGE0ZWRmM2UxYzUzMSJ9"
+        },
+        {
+          "resource": "repo://scripts/build_docs_html.py#L21-L51",
+          "version": "repo-lines-v1:sha256:9fe0d778f90b833cb3de80b78224f264137235ce50e774c082c1026d69649668:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OWFiODRlYjQwMGFlMjg2Zjk2YWQ2YmM4NjdlOTg0ZGRkZWQzNGYzYzFjZTg0NzJlMzYxMzg3ZTlmMjY5MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNGM4ZDBkOTBmYjI5NDYzYzM4NmZlYmU3MDZkNjkzODhmYmNkY2I5MmM4OTY5NmFhYWMxMmZiZmRjNGFlYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZDFmMzQ1NzRjNDI2OGMwMzI0OTkzOGE0MGFkOGI3ZmMyZDkxOTI1NzNiZTM0ZTdmNGYwYWY5NmI3ZmJhZDIifQ"
+        },
+        {
+          "resource": "repo://tests/test_build_docs_html.py#L1-L84",
+          "version": "repo-lines-v1:sha256:2806bf7fe4068ff226a5359e11943fa445ec0d87c65b729206bc0206f7eef0cd:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYTczYWU5NTQ3MzBkYTUzYjEyMzRkMmZmM2U1YjYwYmJkNjcxNmNjODgwNDg1YjhlZWZjZWRjYmQxMGUyNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNGUzZjg4NmE1NDk2ZjYxOWYwMWZlMGU0NzdjNGU1YTkzYjMxMTQxYTdmYTQzZTRlYWRlMDE0ZTMxNDgzNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7c0fafae297444b3bf1262cd86063b5f",
+      "statement": "The GitHub Pages workflow builds docs_html on main pushes or manual dispatch with Python 3.11, uploads it as a Pages artifact, and deploys it through a dependent github-pages job; it does not run pytest or documentation-reference tests.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/deploy-docs.yml#L1-L39",
+          "version": "repo-lines-v1:sha256:4ff9cbc2671e613571c8687587340b332694acf5dd974a9db44be56891ad2d49:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWI5YjcyODExNzdjZjUwYTIyZDdmMGZmMzZhNjI3YzhkZjIzMzBiYjRlZTgzODk4OTliYzQwN2I0ZTI5NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MzQxMzJhMWI5YWUwNmQ4YjQ5YjY1ZTY0YmVhNTExZGQ2MGI5N2NkYjJhNDM1ZTQ2ZDAwYjIwYjUwODJjZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_062d220c522e4c66a88d49e2c783d881",
+      "statement": "The scheduled OpenWiki workflow runs manually or daily at 08:00 UTC, checks out full history, installs Node.js 22 with pinned OpenWiki, Mermaid, and jsdom packages, runs openwiki code --update --print, and creates or updates an openwiki/update pull request limited to documentation and workflow paths.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L63",
+          "version": "repo-lines-v1:sha256:bb145033d1344266e4dd752b7b3f45367c50d33c84b36f1377cc518a42b368c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MDI3ODdhZjZkY2MwODM0ZGUxMjFjYmIxY2I5NWY5NDU5YjcyMWVhYjAzNDlmMTA1MDFiOTk2YzFjNzdmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b12dcaae148645ddbf90e2439910f6bf",
+      "statement": "The benchmark_data.py entrypoint supports auto, CPU, or CUDA device selection, optional pinned memory and model-forward measurement, and human-readable or JSON metrics including tokens per step and throughput.",
+      "evidence": [
+        {
+          "resource": "repo://benchmark_data.py#L105-L154",
+          "version": "repo-lines-v1:sha256:267588a86a026cc5a740e37695267fe071690e689338abf8bba14f8e29bf2a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0M2YzMzg2NGYyYTdlYmZhMjJlMDAwYTk1NDU5MWRmZjE3NjJmZDJhNjA2NDE4MmY2ZWJiMzc5NzU0NTVlYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://benchmark_data.py#L35-L102",
+          "version": "repo-lines-v1:sha256:ed4a4ece58220653cb43830f91b776a4d14ff00905553c9ccad218447c457d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiZGVkNmI5MTdlNTc3YWEwNTExZTFmNjA4YmU4YWNkN2FjN2UzMGVlZjVkN2EyYTUwNWQzMmQzYmUxYTRkMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0Yjc1ODMzZWQxYjAyZjYzOGE0MGZkNmEyMDI5NGQxODA2ZDNlNDUxYWVlZGMxM2UxMWUyODYxMzhlMTA3NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5M2JkNjZlMmJiNzFmM2I4YTkyNDA2NGJiZjdiMDdjNTkwM2E3NzNmYTRmOGMzNTQ2MDYwMzg2NjcxZDNhNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c18e7b2b4bf040b5912a0cf703f03a46",
+      "statement": "Checkpoint save/load persists model, optimizer, scheduler, step, token count, best validation loss, host RNG states, optional CUDA RNG state, configuration, and optional EMA state; loading selects the latest step checkpoint and restores these states, while final checkpoints use separate full and weights-only names.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L168-L247",
+          "version": "repo-lines-v1:sha256:d5cab5a58ba0edfbab075fde2c6cd26b12c90ea6809498439db7930a7a826edb:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMjBlNWJmOWYwMzE5ZGRjY2IyMzI1OGI1YTFmZWJiNjQ2ZjM4NWVjY2ZjNzViMGVlODIzNjQ5Y2MzZjJiZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWIyNGUwZmMwMjQzZTcyMDE1YWY5OGU4N2U1ZWEwNTRiNGEwYTRhNmVlYzI3MmFlOTE0NDIzOThiYjY4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNDhjM2Q4OWE4MWE4YzQ3MmYyN2IwZDVkNTY3YzI2OGZkNTlkMGY2MjM4YTY2MmRlODQ3MTBhYTg0OGI3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NjE2OWYxNGJiNGIxYmMzMDZiYmUxMTMzM2Q3YWNlM2I4YThiMTBjMTI5ZjIxNTI0MzYzNGVkZTBmNzgzMzcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

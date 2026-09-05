@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:87dd89ef666c6ea71364ffd496e2e3f420edadef9608ef68fedf82a6825f01bc",
+  "claims": [
+    {
+      "id": "claim_d8005d204d0040699ab145b8cf6a2e7b",
+      "statement": "The production configuration targets a single A100 workload with `batch_size=96`, `seq_len=2048`, `gradient_checkpointing=True`, `ce_chunk_size=256`, BF16/TF32 settings, z-loss enabled at `1e-4`, and `torch.compile(mode='reduce-overhead')`; the repository treats the 256-row chunk size as a load-bearing invariant.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L251-L261",
+          "version": "repo-lines-v1:sha256:beff0c0aae1f7a85b32b561e059064080cccbab306790f471e31e2fc729fa13a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMmNlNTI1MDM5NjllYTMwNjdjYjA5NTBjMDE1YTMzNDc2ODc3OTA1Njk1ZTU1MWI1ZjJhNTQ5MTY2OTA3YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYjczYzNmN2IzZjVhMGU3Yzk2YzBmOWE5MDQ5YjVhN2UwY2NlM2ZmYjM3NDU0ZGFhNDMxMWQ2MGJiNzcyNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OGQyMGI3MjM5ZTEzMzFkMTc0MWI2Nzg3ZTMwM2YxZmIyYzA1YzlmYWQzZWRlY2EwNGYyOTk2Nzg1ODQ5MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://config.py#L18-L48",
+          "version": "repo-lines-v1:sha256:9ef50dd52de09e29dc6de9dde631d3dc476d214c7504fe22e808b6a4ec3c3c09:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NWNkODhmOTFkMmY2ZTEyZTU3MzU3NjBmYTEzYzBlODQ5N2NiMTFiMGVkMTFhMTk1MGMyZWIwMzQ3ZmI1OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OTAzYWEwOWZjNmY0NzA5OTBmOWY2YzZhM2Y5M2I0NDdkNDMwODhmYmE0MWM3NDgwMjBlMWIzOGJiODc3ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExNDRhYTQ0Mzc5MTc2OWUxOTY5ODZhZWJhOTk4NjcwMzc3N2UzYmQ3ZDRhMzllYzk1MjY5ZGIxODAxNWM5YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhNWExOGU1MDU1MTZkNWMwNzc4NTZmZWJkMTE5NTNjMzA3NDlkYmYyMmM2N2MyZmU2NTE3NTZkODc2NjM5MGYifQ"
+        },
+        {
+          "resource": "repo://tests/test_config.py#L52-L59",
+          "version": "repo-lines-v1:sha256:874bc05df96ec4e841b71e6247227ff82a4c834634f1d9def8f9e24fc7dfabd5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc0MDRlOWUxMmJmNTI3MTI3NTQ5NGE2MGZjODk4OWJmMTQ5ZGJiN2QyMzk2NWUzMGM4MzlmOTY4YTYwNThhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBkMWRmYWMxNTY2YzIxYzJhODFkYTlmOGViMGUyN2JjOTk2YzA1ZGU5ZWJlODFiYWJhN2JlMTFkMzQ5MTBjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjMThmMzE1ZjEyZDE1ZTJlZTFlNGIxMmNiNWJmZThhYjE1YjBiNzE1OTBiMTAzNmVmZTZhMzZjYWIyYjZlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTVkNTY2ZWU0Y2I4Y2I2YTY2NDNhODUyMGI5ZWEzNzY1NjlmNDE4MmRkMDUzNjViMmFlMzg5OGIzYjBlNzJkNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_596347ea88c04bbeb9239d37b2bab565",
+      "statement": "Training and validation request `return_hidden=True`, flatten the decoder output, and apply `chunked_head_cross_entropy_with_z` with the LM-head weight, so the production loss path does not first materialize the full vocabulary logits tensor.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L194-L205",
+          "version": "repo-lines-v1:sha256:88bd80bd4cd901c7f0b8e680e1932d7bc3b07cfbc99aa18f779b4c0f3136ac18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MTE5NzA1Mjc2MjI4NjRkNzJhMmU2N2EzOGE1YzIyMGE4NDg0N2I0MjY1NzkzNjhhNDk0NTVkZTJlNjY4MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODBjNWIwNTNlYmU4OTQ4ZTY5ZDU2Y2QyY2Q1MGVlNTBjZjVkNjM5OWQxYTNlNjc2MDZiOGRlOTZlNGQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNzA2Zjk3ZWZjZWM4YWIzZjI2MzM2NTQwNDFjN2I5MTJiYzNjNTI3ZmYxZmViYTBiYjg5OWEzMWI2M2VjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZDhlMjJiOWVjODkyZWE0N2QxOTQyZGJmOTY2YzcxNzRkMjBjNjhlN2ZmY2ZiZGVkZTNhYmNlMDExZWYxYTgifQ"
+        },
+        {
+          "resource": "repo://train.py#L141-L151",
+          "version": "repo-lines-v1:sha256:b0ca69aed029c15b0c54825fd63c55263d19760bff33558b4faa043aaf44f0e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMTBhZDRkOWEyOGFmOGM3MmZmYjJhZDZiMzQ0MGViN2E5OWM0M2MzMDAzZWUwZDUzMmU2YWM2YmMzNjQxMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMjBhZTY3YzJjYzZkYTEyMTdlMDM3MTBiYTRiMWNhMzM5MzgyNjBkZWQxOTFjZjhmNmY2YmJhYjdlM2Q0NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZWE2MTZkYzU4ODQxZTc0M2U4ZGUyZGI0YWYzMGFiMjZmZjNiMGM1YThhMjY5NWQ5MzA2ZWFmZGQ2MmYwMTUifQ"
+        },
+        {
+          "resource": "repo://train.py#L492-L503",
+          "version": "repo-lines-v1:sha256:35c746d8009fa85563c5bc217dfa2e056510ab1698335733db3984adb938eed7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMTJiNjUwMjkwMjBmNjM1ODU5NTFlNzVmMzY2Yjc4OTgwMDQ1NDdlNTQwNTVmNDJlNTJhMjE0OTdlMGY2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYjZlOWE3MDZiYzczNTUxMTAxMjM4NmM0MzE2ZDk5OTFjNDZhY2YyNTNhOTNjYjY2MGJkMTc3ZDQxMGVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDlhODYxYThhN2E2NWExNmI5M2NjYThlYTY2ODAyMzllMzY2OWVjNTM0NGMzMjkxNGE3YjgwM2JlNGU3YTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_75649648279b4c1fb97f1312c5da93ab",
+      "statement": "`chunked_cross_entropy_with_z` and `chunked_head_cross_entropy_with_z` have distinct contracts: the former accepts already-materialized logits and chunks only the loss calculation, while the latter computes `F.linear` in row slices inside checkpointed calls and is the memory-bounded LM-head path.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L217-L230",
+          "version": "repo-lines-v1:sha256:1d5982ae7939951b35ea57099ba8e43654b03838f42ff7209915d2fa0e3ccd8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNTAzNWUxODBkY2FiN2VjYjRhZjgwZTRkOGY3ZjI2MzdmMGU3NGE3NjlkZDIzMTIyNDU5ZjRiYzQxNmQzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNmY4ZWM4YjU4ZmVkYTlhZjk3YTFjMGNmZDQ0ZTc0ZTk3Njg5NjQ2N2FhYTBiMWRkZjdhMTI2OThkYmExMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4ZjE2N2QwMWZjNWFiNzU1MTY2NmNiZDdhMjQ4MjVmYWI2MTc0NjAyZjI1OWRkZThjMWI5ZDA5MjdkNmNmYTcifQ"
+        },
+        {
+          "resource": "repo://model.py#L264-L315",
+          "version": "repo-lines-v1:sha256:b89a29004cfe5a5f5371bf0dda9396b9d72b66092cc16a3715ec35259e992be9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2Y1MzViNzU0N2FmZDMxMmU4NmYzYmM0Y2I1ZDJlNmNjMjZkYTYwMjFmMzM0MjA0MDMwM2ZjNDNiMWVmMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2Mjg0ODMxMjlhZjYyZjk4MGNiZmYzMjE0OTM3ZjBhMTJmNGU2NTU3ZDM4ODA0ZmQ4N2JlNTRkY2EzYzZhOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmJiZGIxNGY5OWFjMTIwMzEyNWVkNTQwZjVlNzhiMzM5N2I5MGE2MjQ5YzBmOTRlODQxNmM2MWU3ZDYyMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwOWZmMmEyNzdhN2QyZjg0MjhiMDhkNjEzOGFkZDc4Y2ZhN2FkZWE1NmQ1NTIxMjRkYmIwNDQzZmZmMDhjYTYifQ"
+        },
+        {
+          "resource": "repo://model.py#L325-L330",
+          "version": "repo-lines-v1:sha256:97a5e9aa1e146c07cce18cd42d78af36959268e5ba76d08452cd35a5e7c1e41b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU1YjQ1ZGM5YzEzMzBiMmI1YWM1ZTY3MDI0OTQ2YTVkOGNkNTVjYmNmMDQ0ZTU1YmQ5YzAwMTFmYzE0NzliMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE5YzE4NWMxYmQzNTE5MzcyMGE5ODYzYjY2N2I3MzcyZWU0YmQwNmZhYzMwYjY5NmRhNjJjY2UyZTU2MzAwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0MTBkOWExMDUzNzYyNjZmMmNiNDc3NDc3OThmMGM4MTkxZTI4ZjkyMDI3ODYzMzNkYWI1NzQ4M2QzMDBmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGZmNDcxNGRjZDgzOWNiMDY0YjVhOGUwYTczMDUxYzNmZTRiNjkwN2IwNmI3NDJkNGIyYTVkNGRkYjJiYjIyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5180b2e90a4a472d8455675087778162",
+      "statement": "The pure-PyTorch head loss accumulates CE numerators, valid-token counts, and z-loss numerators across chunks, excludes `ignore_index` rows from both averages, and safely returns zero terms when there are no valid targets; gradients flow through the chunked computation to both hidden states and the head weight.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L291-L330",
+          "version": "repo-lines-v1:sha256:5df6176482b707e0f3abd9f5134d09d04e7545e2ac2bd560c14d0dce615072c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMGM3OTQ5ZTNmN2QwZjMxYzE3MjBkOWQzYWNjMTllN2FlZjcwY2NhMjg2MmY3MGUwYWI3MThmYjhmM2NlZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOWMxODVjMWJkMzUxOTM3MjBhOTg2M2I2NjdiNzM3MmVlNGJkMDZmYWMzMGI2OTZkYTYyY2NlMmU1NjMwMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNTY5YWRkMDZiN2EwMWY1YjQ1OTIzNTFmMTJmNjQ3YWFmZDQ4N2Y1ODBkNDU0ZWMwNTVmZDdlMzg0NGQ5MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZjQ3MTRkY2Q4MzljYjA2NGI1YThlMGE3MzA1MWMzZmU0YjY5MDdiMDZiNzQyZDRiMmE1ZDRkZGIyYmIyMmQifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L402-L419",
+          "version": "repo-lines-v1:sha256:bc8d245222237edc9abbddb12836abebcc8c6808c77ca99d336787a7e7dda740:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YzYyMjg5NmQwNTBkOGYxNjk5NTljZGExN2Q1YTI0YzIxZmY4MzY5MjE3ODc2MjRlZGIxMDJlOWFlNjQ3YTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0NmNjMzA2MGUwYzkzNGE0MWE1MzZkYjlhZTRkOWNlZDg1NTM1OGMwYWFlNjljMDNmMDMyNDBiNDRjNDk4N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NzhiZDNkZjM4NTdjZWVmYzFhNGU1YTEwNzAzOWU4MTZhMjA4OThjOTY5YThmOTVhNzU2NTNiMzVhNThiZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwOTY1NWM1MTY2NmZjYmMxNDY2YzQxZmI5MWNkOGRkZGY3MjU3ZGQyMjY5NjczYzAyNDM1ZGRlMmVhZGU4NTYifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L467-L489",
+          "version": "repo-lines-v1:sha256:36e4a65dc09221f7efae3ff568ac36771a5a61d421eead7e0c409e6c1107672c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZjFhZDVlYWNhNjA5ODZkNzkyMTBhMGM4ZjgwYTVhMmE4OTMyNGRkZGM5NTc0Yzk5NTY1ZWMyOTFhZjcxNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZGIyYmRlYTdjZmYzZGZlODQ3OGUyNWFhZjBmYjJlMDQyNDJiNzIwM2Y3ZTdkYjgxOWM0YTc3MDdhOWVjZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNWE5ZTYxNGU3MDExYTAwZDU4M2U4NWFkOGZiMDFhMjY5Mzg1NDFjZWEwMThjZmUzYjc4ZWYxZDBjZTFiMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxODI2YjA5YWQzMDcyYzgxMWFiMzE2ODVmMDUzNGQwZGE5ZGE4YmQ0YjMwODg2ZDU3NjViYjczZDVlZjRiYzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d80f910700254976bba64e277c597e76",
+      "statement": "The intended numerical objective is cross-entropy plus `z_loss_weight * mean(logsumexp(float(logits), dim=-1)^2)`; loss reductions promote logits to FP32, and tests compare the chunked and dense objectives within representative `1e-5` tolerances while checking finite gradients and increasing penalty with larger logit magnitude.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L239-L261",
+          "version": "repo-lines-v1:sha256:990103017985e2bcc5815830ed5bc4a804348cfe93bb2ac037eec6ebafbe13ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZmIzZTFhZDI3NGMzZGMyYmNmMDBhM2FhMTE0ZDIwYjA2YTJkODc3ZjIxYjYzOTMyZDIxMTE1MDAxMjk4ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOWMxODVjMWJkMzUxOTM3MjBhOTg2M2I2NjdiNzM3MmVlNGJkMDZmYWMzMGI2OTZkYTYyY2NlMmU1NjMwMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYzhhZGE5OTE5ZjVmN2Q0ZjdlYmQwYTk4OGJhYWM5Nzk2MDUwNjg1Njc5NWJhYzI5ZDYwMTk5OTU5YTRkOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1YTNiZWY3MzY1ZDVkNDAxZWUyZmJhMWVmMWNkMzAyODZjNDc5N2MwMGQwNjIwOWZjNGI2M2ZhMDM5NTUwZmUifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L344-L400",
+          "version": "repo-lines-v1:sha256:10ecf70efea316e5d9dc7c90caaf66f6174b84f45a489ab1637e9171aca6a5a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OTAxNmUzZWI0ZWIxMDYwZmU3OTQ3MWQxZjBkZWIxYTk3NzRjYjI5NmY5MmNlMzFmZTZlYTlhNTU2MTE0NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MTc0MmJiNjA0YWUwMzZkYTg0MjU5NWQ0NDE0ZmNiYWJmOGFkYTQyZGQ0NjlmMTBiY2U2NmViYmJlNGVkNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2NmRlN2I1N2I0NGRjYjhkNzBiYTM1MzdhMTM1YWQ5NWFkYTI4ZDMyNzg5ODBmNGU2MDBlZGNkNTI3Zjk4ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNjhiMmFlMGNmZGMzMGFiYzcxMmQzNGFlN2JjZTI3N2U4ZmUyMjdiNjI4NzQwMDFmYzBiNDIzNmU2ZDBmMGMifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L422-L465",
+          "version": "repo-lines-v1:sha256:73b30e40fa207bfc621c9f80bdd361e7a399bb5026371b44fb7fb2ed73d98a2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODFjNzEwNGJhMjZlNTY4YmZkYTA1ZWE4OWFiMDA2N2VjNDQ4OTNkMzBlZGRkMmMyM2NmNGIyNTFmMjE4ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZjJjOTU1NDNkNWExZGU1YTJmNDk4NzZhMjBlNmFiODExNTAwOWI2NGRkZjcwOGNmZThkMzg0MjMwNWE3OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0Mjg2YzM4YzI1ZDhlNzk5MjNhZDQxZTc1YjNhYjViOGI2MGEwZjg0ODQ4ZGRkY2M0MmM4MzdjZTIxNmNmY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNTFmZDM2Mjg1MTFmNTY4MzhjNTAyM2YwN2Q0Y2JlMmY4YTc4MmZhYjY3ZTkwN2Y3MGYzN2YzOGRlMjQ5Y2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa79bc8df3fb41c9805d3e28f373e5b0",
+      "statement": "The standalone Triton CE implementation has different edge semantics from the pure-PyTorch path: its z reduction currently includes every row and its kernel loads the target logit before checking validity, so ignored-target or uneven-chunk cases are not a general equivalence guarantee for the Triton head path.",
+      "evidence": [
+        {
+          "resource": "repo://kernels/cross_entropy_triton.py#L24-L34",
+          "version": "repo-lines-v1:sha256:3100a672dfc164dd700f851898884906c242341d157f4c8a6b99ec8986267c2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MGNmYWNmYWI0MDk4OGNhMThlMDc2NmE1YjJiYjg4NTFjMGVmZmFiODUwOTQ1N2Q0ZWM5NGQ4ODIwOGFiM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTM1ZmU1MTIxYmQwNWZmOTBhNGNmOTdmNWMyYTRlYWRjNTc5NzE1ZjRiZjc0YWQzYTUxNGIwYTZjNTg1MWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5MzcyMmNiYjAwZWI1ZjM0ZTk5NjI5ZjNhYWYwNDZiZmE2MDI4OTY2Y2Y4MzFjNTRiN2E5YmE1MDVlOTMxYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZTRhNGVmYjkyMWMyZmIyMWMxZDNmYmY3NGE3MTNhNjQyNDBkMjA2MmM1OWIxODM3ZDFmNTllNWQzYjc1M2UifQ"
+        },
+        {
+          "resource": "repo://kernels/cross_entropy_triton.py#L56-L79",
+          "version": "repo-lines-v1:sha256:e42700590e29515e7dcc26dbf73e3489fa2446fca70f357a5c7a0bca54d4032d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMTJiMjIwMjY1Y2IwZjQzNGYzMDkxY2YxYjA2YmYyNWUxNzRiNTQ0MzI1YzA5Zjc3NzgzOTRjZDBhN2EwYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZjBkNzIwYzRiOGRmZjNmODIwNGU3ZGFmOGI0MTE3MGMzYTg4ZTk4MDVkYzVhYTAxNmExM2U4Mjg3OGU2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYTNmYTU4ZjI2MzRjOTA0N2E4OWY2ZmI0NmNlNTUzZjAyNWE3M2VmMDEyNDlmMzU2YjY4ZDc3NjAxZmI4NGQifQ"
+        },
+        {
+          "resource": "repo://model.py#L312-L330",
+          "version": "repo-lines-v1:sha256:7ba921adb927015da1f71a0a4580e2144ecb8626ddbbbc79ba255faf2bc5bb6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjMzNzViZWRkMDAwZjhjMjFlYTM1ZjBkOWU5MWY1NTY5YzBkNWNkODlkNzM3ODYzMTRhNDYzMTQ5OWE4M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOWMxODVjMWJkMzUxOTM3MjBhOTg2M2I2NjdiNzM3MmVlNGJkMDZmYWMzMGI2OTZkYTYyY2NlMmU1NjMwMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNjc0NzMzYjg1Y2E2ZGUxYWRhZjMxZjY4YTRmYjFlOTliMzEzNTI4NjFhMjI2NWFjODRlMTRhMWNkYWFkMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZjQ3MTRkY2Q4MzljYjA2NGI1YThlMGE3MzA1MWMzZmU0YjY5MDdiMDZiNzQyZDRiMmE1ZDRkZGIyYmIyMmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_822c54ed40904686abb2eda393a2281f",
+      "statement": "When training, the Transformer checkpoints each decoder layer only in training mode and uses `use_reentrant=False`; the memory-bounded head loss independently checkpoints each row chunk, trading recomputation for activation and logits residency.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L197-L212",
+          "version": "repo-lines-v1:sha256:01a58a47a053b1fe5df01df9924ae15f78cf508a05d0d654d71f84f234e3bba9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZjQwNjM5N2UyMjM5MTYxZjUxZDRjODVlNzEzMTA0ZjEzYWU0MTk4Mzk2NmE3YTMyNjU5N2Y5OTFmZjYwMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NDRkZTRkMWQxMjg2YTExZGQxMzU0N2M5NjcxMzQzOGE4ZWVmMGRkNTQ2ODQ3MzcyNmFiMTNjNzg1ZmRhNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkODVlZTYxNzE0ZTdkOGQwM2U5NDAzYTY0OTQwMTBkNTgyZjMwZGRmNWQwY2ZhYmVjNjgwODllNTY4YTFmNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOTQ3YTlmNGQzZWE3YmVhMDdlYjI5MTA5ZTM1N2VkNDZlZjAyMTlkNWNmMWYwYjMyNzcyYmViZDZjMjBmOTgifQ"
+        },
+        {
+          "resource": "repo://model.py#L194-L205",
+          "version": "repo-lines-v1:sha256:88bd80bd4cd901c7f0b8e680e1932d7bc3b07cfbc99aa18f779b4c0f3136ac18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MTE5NzA1Mjc2MjI4NjRkNzJhMmU2N2EzOGE1YzIyMGE4NDg0N2I0MjY1NzkzNjhhNDk0NTVkZTJlNjY4MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODBjNWIwNTNlYmU4OTQ4ZTY5ZDU2Y2QyY2Q1MGVlNTBjZjVkNjM5OWQxYTNlNjc2MDZiOGRlOTZlNGQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNzA2Zjk3ZWZjZWM4YWIzZjI2MzM2NTQwNDFjN2I5MTJiYzNjNTI3ZmYxZmViYTBiYjg5OWEzMWI2M2VjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZDhlMjJiOWVjODkyZWE0N2QxOTQyZGJmOTY2YzcxNzRkMjBjNjhlN2ZmY2ZiZGVkZTNhYmNlMDExZWYxYTgifQ"
+        },
+        {
+          "resource": "repo://model.py#L312-L315",
+          "version": "repo-lines-v1:sha256:0d3351f43e4a046570bfbb16d47f1954a36ef66fb9f09dabc05675324daef083:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2MzM3NWJlZGQwMDBmOGMyMWVhMzVmMGQ5ZTkxZjU1NjljMGQ1Y2Q4OWQ3Mzc4NjMxNGE0NjMxNDk5YTgzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYyODQ4MzEyOWFmNjJmOTgwY2JmZjMyMTQ5MzdmMGExMmY0ZTY1NTdkMzg4MDRmZDg3YmU1NGRjYTNjNmE5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM2NzQ3MzNiODVjYTZkZTFhZGFmMzFmNjhhNGZiMWU5OWIzMTM1Mjg2MWEyMjY1YWM4NGUxNGExY2RhYWQyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjA5ZmYyYTI3N2E3ZDJmODQyOGIwOGQ2MTM4YWRkNzhjZmE3YWRlYTU2ZDU1MjEyNGRiYjA0NDNmZmYwOGNhNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a113863e561448faf9eca21438d4a62",
+      "statement": "CUDA training uses BF16 autocast without GradScaler, while `setup_gpu_optimizations` separately enables TF32, high float32 matmul precision, cuDNN benchmarking, and the configured CUDA allocator behavior; TF32 is a throughput setting rather than a memory-reduction mechanism.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L355-L360",
+          "version": "repo-lines-v1:sha256:60cb6879b8c4db4372ac7ab4fef2ba8441dd8ed5327708f230226968e54929d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE2MWI2MmM5NjMyZTM2ZWQ1Nzc3NTMwOGRjMWNmZWFhNzkyYzdiMThjZjc4Zjc3MTE2ZGVhNzdlMDFmMzNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFhNDEwYWM4MzY3NzFkYWI5ODhmZGRiODcyNjM0OWQ5NGMxOWYxMDhjOWFjODUwZTgyYzA2YTg2NjU3OWY4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVkOGU4NDkyZDcwMTEwMjcyYmE4ZmVhNTkyZDAyMjFhNDBlOGM1ZTc4ZmZhZDkxZjI0MWU1NDg5NGQzN2ZiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWVmNzRjZTIwNmVmOWQyYzYyYWI3YjllYTRmMGI2N2QxNzYxYzJjZGNkMWIzNjE0ZWE2NWI1MjllYzU5NTBlMiJ9"
+        },
+        {
+          "resource": "repo://train.py#L30-L48",
+          "version": "repo-lines-v1:sha256:06c39b9b9006620905344a65788294b6fd237fe9aec671bef82924d37b3209cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzFjZTQyODU5YmM1NDRjN2Y3MjMwYzlmOTZjN2M4ZGQ5YzIyYTEwOGFiYWMxZjc5Y2Y3OWQ5ODE1ZmY5ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzM0ODlhMmI5YThlMzMzZDFiMGM4ZjIyNjllYzFjMmQyYWMyMTJjN2FjZTAxOWUyYzM4M2Q2MTJjMTZjNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxODJlM2JlODE5Njk3YzUzNDFkNDFmOTYyNzUyNjg4MTYwNjhjODliODFiNmU5ZDBmYTBlZWE1ZTg0ZGMxYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYTcwYjRlN2JiOTQ4OGQzMjhkZGMwMmJkNzAxNjNiNjA5ODY3ZjBjMjYwOTZlZjgzMGI2MTVmMDY4MjNiOTMifQ"
+        },
+        {
+          "resource": "repo://train.py#L492-L507",
+          "version": "repo-lines-v1:sha256:50658ce0a8d6249ab3c3de6d4936aa313f5792fe544a813be4ef7c3e038118a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMTJiNjUwMjkwMjBmNjM1ODU5NTFlNzVmMzY2Yjc4OTgwMDQ1NDdlNTQwNTVmNDJlNTJhMjE0OTdlMGY2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NWNkMWE3NDdlNDRmM2Q5MWVmMDdmYzM3NjFjMWFlMDU4NThiYzNjNmI2YWVkYjc3MTQ1NDA4MDkxYWQwYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYjZlOWE3MDZiYzczNTUxMTAxMjM4NmM0MzE2ZDk5OTFjNDZhY2YyNTNhOTNjYjY2MGJkMTc3ZDQxMGVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyOGRmNWIxMzA5NDE4YzBhNWRiMzhiNDE3NzQ3YWU0Yzg5NmRkY2NhMWEyNmE3NWFmYTQxM2I1YTI1YjRiNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a671b0cd9c7842c387ad10b67dd31b68",
+      "statement": "RMSNorm uses the `x * rsqrt(mean(x^2) + eps) * weight` formulation with `eps=1e-5`, and QK-Norm optionally applies RMSNorm to each projected query and key head before RoPE; disabling QK-Norm substitutes identity modules.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L34-L50",
+          "version": "repo-lines-v1:sha256:618048afd60304e8d06916ba225f164bb1df5cf3b42f4d972a755ef6f913cc7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZThjNjgyMWUxMjEzZDc5ZGQ1OTM3Yjg4YWU3NTdjZWFmNDViMGFmZTMxMmNlZDgyZjMzMWRkMDk0OTE5ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMjA0ZDg2MTIzYzE2Mzc5ODlmNDJkOWQyODI1ZGYzZjRkM2Y3NmFiMmE4MGVkYWExOTQ1YjQ0YjE2YmNjNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWQyNTA5NDYwNzUyNGY0MDkzMTdjM2Y5MTIwNDk2Nzc2NzI4ZmZhZmZhMGVhNmVlNmMyYmZiMWQ0NGM0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YzMyODNhZmQwMGFlMWNjNTg0NTk1NzRkY2E4NDQ0MjExZTY3YmE0Y2MxZWQ4ZjkxZjJkOTViMzRmNWM4ZmMifQ"
+        },
+        {
+          "resource": "repo://model.py#L69-L93",
+          "version": "repo-lines-v1:sha256:41aeab968ba8cbc5e1b03030135ed0804b6b30f2f612e5a68bcbcb8acf89fd81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2NDExNTM5MzA1OTNmYmZkMGNlZjNmZjUzZDEwMzAzOTJhOTM3MDU3NTIzNWZjMDRlZjcyMTYyMzE0ZTEwOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYTM4ZjJiMDdmNDkxYTdiYzAyMWM0NjI5NmJjMGI4YWJlZWNhZjZmZTAwYzZlYmJiMTAxZjQ5ZDJjOGUwZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3M2ZhNjkxZDBjZWNiMGM4ZWYzMDY2MDg2ZDlkMzA0MGJkZDVmMzUyNWVjNjhmMjM2ZWUwOGU0NGFlYmYxMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZDgyNWU4MTYyMWQ3OTM3NjdkNmMxOTYxMDdkN2VmOTJkNmRjYTlhMzBjYjc2ZTIzMjBjN2U3OWRkNzljYmEifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L501-L573",
+          "version": "repo-lines-v1:sha256:907a42edddc49da0b237424d65509297576f8c353da01520def72c5f5c4cb262:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZDAxNGE0NjNkMDY5YWEyZDcwMGQzZGVhNTYxNjNjNGYwNGY2YzVjZGI5OTIyYzdkOWZhMTg0ZmU1ZTFmMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNzA2ZDk5MDJmODVkMWJhYjc1ZmFhMWM2MTNhN2NkZjBkNzc0YTkyMGQ1YTNjNzc3NDhmZDMzN2JmM2EzYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlYzkyZTk2MDY0MmRkZTU5NmZiY2MwNWUxZGIxYjBkYzI3ZGY4YjM4YmVmYTk3OTBkNDUwNmU2YWNlMTU2NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2892ed81e55e42f5987fddab2596b383",
+      "statement": "GroupedQueryAttention projects 8 query heads and 4 key/value heads, repeats each KV head according to `n_heads // n_kv_heads`, and calls causal `F.scaled_dot_product_attention`; the repository therefore relies on PyTorch SDPA backend dispatch and does not implement a persistent KV cache.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L53-L102",
+          "version": "repo-lines-v1:sha256:0929452ae7a0f250f09f6695567da472733f43349d023719be9502a91c6814f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2M2YzMDdiZmM4NjJlNmUyYWYwNTIwZDY2YTUxZDYwMGI2YWI3YTg0MDA5YTY1MGQzMWY1ODU0NWM3NzI1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZDZiMDI1MWY3YjA2NmQyMTVkZGJiN2E1NDAyNmQ4ZGFjM2IwNDIxZTMwN2FmYmRlNDZkZWI5NDZkZTU2OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNTc4NmE0NjllMTMzN2QzMDIyYWE2YjUzNWQyY2Q3MDNjZGU3ZGJmMDlhYjUyOGNmYTg2ZDY0ZjVkZTQ3NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNzQwMzM0YjUwYWZhZjJmNzg2YmI0NTAzZTFmODE2MTAzNmNkZjA4MTNhOTM5Mjc3M2YwNjcyZTk5NzU5MDQifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L114-L158",
+          "version": "repo-lines-v1:sha256:b0b50eeaa745e2d1851875cc3a31e487b344372d1005ed4d9686e5ae7548eb93:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMTUyOTliYTgzYTk2MGQzZjVmNjA2ZmVkYTBhOTNkZDJiOTY2MjgyMDI4YmM3NjQ4YTUxOWE1ZmI5NjkyZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhM2E3NmE1ZTYzMTM4YzYwMjJlYmVjNGJlOWZmMmMyYTNkNGZlNmUzM2ZiYWQ0YTFiNGQ2YWMxODZjNjgyZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NzZjY2VjM2MxYjNiNGFiYmI5YmRmN2VmMmM2N2RmYzE4MDkyYjM0Y2ZlZGU3ZDdiNzIyYzQyMTQ3OWViOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8973d42d32b4d18bfebfcfe3d699c8a",
+      "statement": "Each SwiGLU block packs gate and up projections into one `gate_up_proj` of width `2*d_ff`, computes `F.silu(gate) * up`, and applies `down_proj`; the test reconstructs separate projections and verifies equivalence to the packed path.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L105-L122",
+          "version": "repo-lines-v1:sha256:e737582350fefadb4c5a4863bff8b2ccda03fb369769f4e174c73b0fb53f4a44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZWFkYWJjNmNhNThhZDc3NTk4MGI0M2Y5NmE1MTEwNGJiY2M3ZGIyY2RlZTM2ZGFiZDlhYTA5MjJmOTUyZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZTM0NTFlODk0Nzc5MjljNDA0MWNhMTc2ZmEwNjg5MTgwNTdlZmU1ZDliYzdiZGE5NGZmMzY4Y2E1MTU4NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTY4Y2NlYzI5OTBkNTUyZGFiOTk5OWM5MTI2OTA5NWI4MGM5NDRhM2NjZjRkNDg0ZDA0NDFjZWQwOGY2ZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NGM4OTkwZjg3ZjJlYmFkNDkzOWUzOWVmZmFlZGJkZGZjMjk3OGMxZmRmMzJiYWFlNzIwNzZiZDE3OTQ0MmMifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L161-L186",
+          "version": "repo-lines-v1:sha256:466fcee37f4b064d57985cc38bc41c9042f206d39d5b014dc17e810e905d3951:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYTU1Y2U0MTFkMDcxNjQwNjc0Y2EwZjhjMTU5NDIxOGUzNDA0OWNhOTQ3ZWVjYzc3NTMyNGE1ZDUxZTk3YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1M2U0YjAwZTlhZjkzYTEzNmU3ZDRiNzU1ZDYxM2UxNjJlZGFhZmRjNWVlN2JlOTc3Mjc2MWE1YTlmNTljNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNjc2N2YwNGUxZTRiZThkZGI5NmY4MWM4NTdhNDY4OTYyN2Q2YmRmYzM3ZWMwNTZiNTQzZjRiZjU2ODk2N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d045b3739ff543ac8284334a1c347a21",
+      "statement": "If enabled, `train_model` consumes a real batch before compilation and runs a hidden-state forward, configured chunked head loss, backward, and CUDA synchronization as compile warmup; compilation is conditional on `compile_model` and the availability of `torch.compile`.",
+      "evidence": [
+        {
+          "resource": "repo://train.py#L347-L376",
+          "version": "repo-lines-v1:sha256:ce91f26cb8b6c7f7976b30be08a06e2b587bef24b8ab5a0d9c160b733a215095:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYTQ4Yzc0MDdhZmFiY2UzOTM4MTJkZjg1MGNkZTY3NjE5ZTEyN2I3MDM2MWY3MTcxZGU4OWI2NGI2MTJiMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlODdkODQ4YzAwY2ViOTRjMzQ4NjBmNjliMWEwOGM4N2I0ZDc4MWFkZWY4MTU2ZjU2YTIxYTg2OWQzNTYyYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZDBhYTczY2JlNTUzMGRhY2UyZjgzMmU2ODg0MDJlZGI2YjUxMWY3MTUyYjRjZGQ5NTg0ZWU1YWJjZjgwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZWJiODU1ZTBhNzI5OTllMzg5Mjk1ZGFmM2NkNmFlMGNhMGY0MDQ4OTk5NzY3M2YwZDVmZTA1OTM4NjRiNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d2a1b8575e9447f98e0375988fda812f",
+      "statement": "Exactly three Triton modules are sanctioned under `kernels/`: RMSNorm, SwiGLU, and chunked CE; each has a pure-PyTorch reference, detects Triton with an import gate, and wraps its forward in a custom autograd function whose backward recomputes through the reference.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L94-L110",
+          "version": "repo-lines-v1:sha256:371074af9df332da6062c9c64b9f8501b1e2c6c6d2e64f01a3af9f16a641fa19:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMGJkMjZiZjRiNTRlZmQwMDE0YjY5MDNiM2EyZTU1OTc0NGQ1NTJhOGMzZGMxNDMwNjVhN2Y5MDgyYjA2NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYTMwNDZjNDAxYzgxMmZmYjk2NDZkNTU5MjU5ZmEyNGNmZTRkOTIxZDU0NTU5ZmQ2MjY4OWM1ZDkzMGEwOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZmFjOGY2NjhhMWE2ODJkNzZlYjU0N2RmMjE0YTAyZTgwYTdkMjdkZmJjYTkxMmQ3M2U2Yzg1Y2M2ZmI3NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2Y2ExNjRjN2Y3ZThkNmI5NWExNjA0YzVlOGI3NTk1ZDhiNmIyY2EzOTIzZjFmNGIwZmYyMTI1NzljM2I3ZGEifQ"
+        },
+        {
+          "resource": "repo://kernels/cross_entropy_triton.py#L11-L34",
+          "version": "repo-lines-v1:sha256:6205cb36920c6744122b411020eb208ec528b49dca280cc5b6d0dcc1f5ef7273:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYzVhZWI1YmMwNjg0MDRhYTVmNGI1NTAxNzQ0YzMxYmUyMmQ4NWY2NTQ4ZGFmMGJiNzVlNjkxMDgzMjJjNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTM1ZmU1MTIxYmQwNWZmOTBhNGNmOTdmNWMyYTRlYWRjNTc5NzE1ZjRiZjc0YWQzYTUxNGIwYTZjNTg1MWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmMWQzODhiYmMxNGE1MTJmNjBhZDhkODk1ZmZiYmE0MDc0NDZjZDJjMTBkNjRiNmI0YjZkODg3YmQ4ODM3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZTRhNGVmYjkyMWMyZmIyMWMxZDNmYmY3NGE3MTNhNjQyNDBkMjA2MmM1OWIxODM3ZDFmNTllNWQzYjc1M2UifQ"
+        },
+        {
+          "resource": "repo://kernels/cross_entropy_triton.py#L115-L148",
+          "version": "repo-lines-v1:sha256:dcb7acbcd5e7b36c0ebc34614a82fbef1f103859798944c5a5b9d496034f4d15:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMmU1MmM0ZGM5MWIxYmZkZjhiZjViYzMxYTRhZGEyMTllY2IxMzBlYTA3YjA0YTQ1ZjE4OGUzOWJjMjZhN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMTFkODhhNWJkM2JmYjExZGI2Y2IzNTQ1ZmJkNTg2N2FlZDU0NDJmNjM4NzBkOTc1MWYwYTQ1MTY2ZWZjMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzOTgxZjQ0NTI4NmIzN2U3NmNkODJiMGVjYzQzMWZjNTY4Yzg5NDNiMjc4MTVjOThlMDkxMmQwNWIzNmUzZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://kernels/rmsnorm_triton.py#L10-L24",
+          "version": "repo-lines-v1:sha256:dcf6e498c5511cddf292c65dd12834ebafdc4371adbee8a26db495aa9363ba30:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYzVhZWI1YmMwNjg0MDRhYTVmNGI1NTAxNzQ0YzMxYmUyMmQ4NWY2NTQ4ZGFmMGJiNzVlNjkxMDgzMjJjNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNGZmNmMzNzU1Y2IxNTIyMDlmNGFiZDJkYjM5ZjIwZDczNmUxOGEwMTAxZTFlYzUyNWFkOWEyNWMxMTRjNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjOTcxNjVjNDg4ZGNjMzFkYzQwNTg1NzNjZGFlOTZlMmM0NzMwYzJhMmY4ZGZhMTdmY2QwZjhkYTk5YTczNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZTRhNGVmYjkyMWMyZmIyMWMxZDNmYmY3NGE3MTNhNjQyNDBkMjA2MmM1OWIxODM3ZDFmNTllNWQzYjc1M2UifQ"
+        },
+        {
+          "resource": "repo://kernels/rmsnorm_triton.py#L78-L104",
+          "version": "repo-lines-v1:sha256:387690f0fabd569ce48c1ab128146392c436bb26f4da5335fb0449305c13dfa2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZGJmMGI0Y2IzYmRmZmI0ZTU2ODkyMjRjMmNkNzE3YjY0YjE2NzUyMDQwZTY2MzgxYWZmMDFkZjFkM2NhNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhOWJjYzY2NjM0MDYwZmJhNTJlYWMzYThjOWU0Yzc5YWY4OTU1NGZlZmUzOWI0YmM3NzNhMDE2MDVlNmRkNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzliMzBiOTNiMGNlNmY5NDQ3MzE0Mzc3MjYzYTY2MmI5ZGYxOTA5MzhjZGFlMmNhNDM4MDIwNjI1NmQyOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://kernels/swiglu_triton.py#L12-L26",
+          "version": "repo-lines-v1:sha256:5bd006aa7402cba66de1faf2f7c5f83f470f2da961b826c7e2f13d07a4f6d989:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYzVhZWI1YmMwNjg0MDRhYTVmNGI1NTAxNzQ0YzMxYmUyMmQ4NWY2NTQ4ZGFmMGJiNzVlNjkxMDgzMjJjNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMDNiMDEzYWRlMzAzMDQwZWU4YjUxNzk3ZGI5NjlkYTJlMDAzMDgxOGE4MGMwNzg0ZmJjMjE1MGM0NDNlMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmMWQzODhiYmMxNGE1MTJmNjBhZDhkODk1ZmZiYmE0MDc0NDZjZDJjMTBkNjRiNmI0YjZkODg3YmQ4ODM3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZTRhNGVmYjkyMWMyZmIyMWMxZDNmYmY3NGE3MTNhNjQyNDBkMjA2MmM1OWIxODM3ZDFmNTllNWQzYjc1M2UifQ"
+        },
+        {
+          "resource": "repo://kernels/swiglu_triton.py#L78-L105",
+          "version": "repo-lines-v1:sha256:9b89f98158f1624fd00e1e6cf90c41b90645060f7caab866ba2a8d41c44849d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTE5NThlNTlmMGQ4YWQ4MTQ0OGM4ZDA1YmYzNjE1YWM1MDU0MDBiOWJmMTZmMDlmMzY0YmUzMDJkY2M3ZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OWZlMjYyNTQ3YjZkNWU2Njc4ODhhZTYwNDgyYzQzNDI5ZDgzYWNlOTA2YWYzZWZkZDgyYWZlMTFkMjA1MzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMDE1ZjYxMDJlMzBhNzhmYWZmOTM1ZTc0ZGU3YWQ3OWUyZjkwMWM0NWIyYTFlZjAxZTFiY2YzOTRlMDVkMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b6bb56197784adf9a0f7a6b3670c41f",
+      "statement": "All three Triton implementation settings default to PyTorch, and a Triton request is active only with the matching per-kernel setting plus the exact `ENABLE_TRITON_KERNELS=1` environment opt-in; without that opt-in the trainer force-restores all three settings to PyTorch, while opted-in missing or failing kernels surface errors instead of silently falling back.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L31-L42",
+          "version": "repo-lines-v1:sha256:5ec4a9e7c3dd2c715d62bbb36a0603d2d07e2b548ceb279b552941267a5e22df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NWYxOWQ3MDMxNDdkOTMxMmFkNTg3OGI5NjQzMmFjNDY3MDUwNGVkOTQ0MzA5ZjljNDE0Y2ZhOGFlZDJhNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwY2NiMWNkMDM4MmNiOTU5NTM3NDE4YWExZjIzZDNjZWE1MDE0N2RlM2U1Mjg4MDI0ODIwYTkwNjkzNDI4ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NWFiODIyMjZiMDc5YjFhYTJjOGRkMGU4ODJiOGFjNTI5ZWNlNDI5YjkwZTM4NmMyNzJkZWUzODYxMzQ2MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZjRkNDFkNGIxM2VlMTFiOGZhZDMxZjVhODQzYjNlMjdkZDc2NWQwZWFkMDY5MjIyMTAwZmZkNjc2ZDY2MDQifQ"
+        },
+        {
+          "resource": "repo://kernels/cross_entropy_triton.py#L135-L148",
+          "version": "repo-lines-v1:sha256:0086aa06e1d2ab90e1698e74c0ec316939c38df8a546ad2d57b784ffb67e5cf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMTllNjc4MTEwYjBkMmU1NDMyOTk3MzZjYTA3Njg5MmNmOWE5NWQ1NTk0M2MwZTEyZjk2MWI1ODcyZjFlNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMTFkODhhNWJkM2JmYjExZGI2Y2IzNTQ1ZmJkNTg2N2FlZDU0NDJmNjM4NzBkOTc1MWYwYTQ1MTY2ZWZjMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmOWJkN2ZkN2IyNzQ2YTdiOWUyOGM1YzFlMjI2MTRmOTZjMDMwMjA4ODM3ZDQ1Y2ZiYjM1MzVhOTllMTgxNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://kernels/rmsnorm_triton.py#L96-L104",
+          "version": "repo-lines-v1:sha256:c7abe6dff4c03be9713895737147db27b83bedcbe9315ce8ff335baef8c21231:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA1ZWYzOTY5ZGZmMGZlZTkxZmQxYTg5NjJjZDkxNTc4NWU3Y2M2NTk2MTg5NDI5YjhkZmVlZGY3OGNkNjBlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E5YmNjNjY2MzQwNjBmYmE1MmVhYzNhOGM5ZTRjNzlhZjg5NTU0ZmVmZTM5YjRiYzc3M2EwMTYwNWU2ZGQ0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyODE0NThhZTEyNTcwZGMxZmJmNzk2OTk0N2MxYjZmZTk0MWQyNjdkNjg4MjFiNDgwOGI1NWZlNTY1ZWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://kernels/swiglu_triton.py#L97-L105",
+          "version": "repo-lines-v1:sha256:4ff2df2c1a3b71bd52921d6f59c6ac750a6c7a2cbeca0e362da891d3b96a3a9b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1ZjhiZGU5ODZlMjRlNGU5M2E2MGM0NDVmNWE4MjMyZjU3ODQ3ZDc0YjEzNWM0MGI1NTIxYmEzN2U0ZjhiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU5ZmUyNjI1NDdiNmQ1ZTY2Nzg4OGFlNjA0ODJjNDM0MjlkODNhY2U5MDZhZjNlZmRkODJhZmUxMWQyMDUzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ2MTAzNjdlZjNlYTYwMzlkNGJmYThjZTMzNTI2YWI4YWIwNzlhN2ZiMTUwM2E4YmJiZGU3ZTYwMzMxNDczNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://model.py#L217-L230",
+          "version": "repo-lines-v1:sha256:1d5982ae7939951b35ea57099ba8e43654b03838f42ff7209915d2fa0e3ccd8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNTAzNWUxODBkY2FiN2VjYjRhZjgwZTRkOGY3ZjI2MzdmMGU3NGE3NjlkZDIzMTIyNDU5ZjRiYzQxNmQzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNmY4ZWM4YjU4ZmVkYTlhZjk3YTFjMGNmZDQ0ZTc0ZTk3Njg5NjQ2N2FhYTBiMWRkZjdhMTI2OThkYmExMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4ZjE2N2QwMWZjNWFiNzU1MTY2NmNiZDdhMjQ4MjVmYWI2MTc0NjAyZjI1OWRkZThjMWI5ZDA5MjdkNmNmYTcifQ"
+        },
+        {
+          "resource": "repo://model.py#L281-L289",
+          "version": "repo-lines-v1:sha256:9b1d12421da6085122b4915b9ef2c9afea056cd56abd27c85a176d04bfa136c0:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcyMDAwY2E2ZWI3MzIzMzU0NjQwMzFhNzE0N2JlYmMyN2U5MGI5ODI5YWUxNDM2NDFjMDZkYzhkYzkwYjQ0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y3MGQwZGU5NGZhZjVlNzdlNDM2ZjY3Y2VjY2Y0ZGI3OGVhNmFkNTYyNzcxYmJmYzljMTUyMTEyMWQ4NmQxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODI2MmJlN2U1Mzk2OGZjNDdkOTEzZDgwYmI1OGFkYmM5OWMzYzYwYjkwNjIzYTg1YTRlMTE1MjRiNDBiODJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMyMGQ0MzNjYTNmNmQyMmEzYmYyMjYwMDVjYTllYjFmMWViYjE4ZjIwNGE5OGIzMmY0ZmYzYzkxMTg4MWQ5MyJ9"
+        },
+        {
+          "resource": "repo://train.py#L293-L313",
+          "version": "repo-lines-v1:sha256:87b53dd90a40428b46964efadbe6d0ff9bf7751d0492c1055e8eb5b23e5914c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmODkwNjY0NjFlMmQ0YzY2Yjc4Yjc5MmQwYTlhZGI5MzRlMjk5ZTJhYWM3MTJmOWE2MjQyMDNiYzhmYzVkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMDE0OTI0OWQ1YmY5NjUwMzgyYWJmODViNmFhYmFlOWYyYjU5ZGNiNGE3YzI4ZGViNmI4MjY1NzllNThhODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZDZlNTc5Nzk4NTliOGRiOTNkNDY2YTAwM2RiNDQxMmY2NjI5MDdlY2NlNDE5M2IyYjgzOWQwM2RhNjlhNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZTJlMjRiNGY5NGNkMDg2MjlhMjdlMzJiMzI3NjI3YjhiYWE5YzA5Mzk0ZGJhZWRlMjRlM2RlN2IyMTFlZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b772bdf068a844eb9fb676b4572c9b69",
+      "statement": "The focused tests protect the memory and numerical contracts: model tests cover checkpointed versus ordinary outputs, CE/z equivalence, ignored-target masking, dense versus head-bounded loss, gradients, GQA, RMSNorm, SwiGLU, and QK-Norm; smoke tests exercise the same loss boundary end to end; GPU smoke checks Triton references only when CUDA and Triton are available.",
+      "evidence": [
+        {
+          "resource": "repo://tests/e2e_gpu_smoke.py#L322-L375",
+          "version": "repo-lines-v1:sha256:4959ef8dccbf0d901a7c4d19892cf74dbde983d9827a20759c30cf16baa17bc2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OTFlYjgyNDI2ZDZmZGFlZDYzYjhmYmQyZWZjNjIwZTc2MGQzZWZlMDYwODJhMTk2MDYwMzAxZDU5M2JhMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNTYxODY5YWJhOWYxNDgzN2EwNzU4OTE2MThjYmVlMDYyZmU5NDU4YjQ1YTE5OGNmOGY1YzRhNzU5ODliYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwZjBjM2MyZWE0YWFiM2JhMTU1MDg1YjVhNGVjNGYzMDg3YzdkYjQ3Njc2OWJlMjEwOTg2NGU3MjA4MDZjN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L267-L342",
+          "version": "repo-lines-v1:sha256:196f8a9eaf6cf73cc325aa01d8bbcd96ccd959efdf06def722b494cf94a9076e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzNjZWEzOGM3MmIwODM2MWQyZjE0NzRiNTNiZTVjNjM4MDhiNTM2NjAzNTExNWZhY2Q3OGEzNjBmNGNjNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmU0YjUwNzk2MWM0YWQ2MzYxZTJiZjcxOTZiMjZjYTBhMGEyNWI5NGJlNmE4Njg0Nzk3YmU3ZGJjZWE1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjhjMmE2MTgwMTlmNWY1ZWFmNzYzYjY0NTNjMjhlMjI0YzUzMTJhMTczMTczMGNhZjA1NTlmZjFmMTgwOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjY2UyYjNjZTc4MTVlOWY2YjNiZTg1ZTA1ZTA4NDE3ZmFlOGMyN2Y1ZGU5OWI3Y2VlYjE3NTZiY2JhZGUxNjQifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L344-L489",
+          "version": "repo-lines-v1:sha256:3f9a53de020794c26dd569e51f8591b01a1871f642302c9dea467b2febc949c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmNjkwMTZlM2ViNGViMTA2MGZlNzk0NzFkMWYwZGViMWE5Nzc0Y2IyOTZmOTJjZTMxZmU2ZWE5YTU1NjExNDVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhN2RiMmJkZWE3Y2ZmM2RmZTg0NzhlMjVhYWYwZmIyZTA0MjQyYjcyMDNmN2U3ZGI4MTljNGE3NzA3YTllY2ZlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwNjZkZTdiNTdiNDRkY2I4ZDcwYmEzNTM3YTEzNWFkOTVhZGEyOGQzMjc4OTgwZjRlNjAwZWRjZDUyN2Y5OGQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MTgyNmIwOWFkMzA3MmM4MTFhYjMxNjg1ZjA1MzRkMGRhOWRhOGJkNGIzMDg4NmQ1NzY1YmI3M2Q1ZWY0YmMyIn0"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py#L40-L138",
+          "version": "repo-lines-v1:sha256:64371e980a935729a1486f4ba4453d557959f09a29bc0aa14522f89c66114c78:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYzMyMTcwYTU1N2NmYTZmYTYzYzM0ZWYyYTI3OTI3N2Q3ZDIwMGI5YjJjMWY3ZGE1MTdhMGFiMTg1MTA5NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzI2MWNkNDc2ZmRmYjk5YzEwYjYwZThmN2ZkMTM4ZDhlNTE4ZmE1YTM1Mjk4OTgyN2ZkZTZjZjVhZDJkZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwZmY1MmM1YWRkMTk2NjExMzA3MTU3ZGE3ODM4M2FmOGRhNGU1OWMyN2IyYmFiZGE4NDlmYjJlYjNiYzYwYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}

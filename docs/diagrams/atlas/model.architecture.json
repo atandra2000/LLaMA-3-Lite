@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Inside the LLaMA-3-Lite decoder",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1120,
+      650
+    ]
+  },
+  "components": [
+    {
+      "id": "ids",
+      "type": "external",
+      "label": "Token IDs",
+      "sublabel": "[B, S] integers",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "embedding",
+      "type": "database",
+      "label": "Untied embedding",
+      "sublabel": "[V, 1024] lookup",
+      "pos": [
+        440,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "attention",
+      "type": "backend",
+      "label": "Pre-norm attention",
+      "sublabel": "RMSNorm \u2192 QK-norm \u2192 RoPE \u2192 GQA",
+      "pos": [
+        840,
+        70
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "residual_a",
+      "type": "backend",
+      "label": "Attention residual",
+      "sublabel": "h = x + attention(norm(x))",
+      "pos": [
+        840,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "ffn",
+      "type": "backend",
+      "label": "Pre-norm SwiGLU",
+      "sublabel": "gate/up 8192 \u2192 SiLU \u00d7 up \u2192 1024",
+      "pos": [
+        440,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "residual_b",
+      "type": "backend",
+      "label": "FFN residual",
+      "sublabel": "h = h + ffn(norm(h))",
+      "pos": [
+        40,
+        285
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "norm",
+      "type": "backend",
+      "label": "Final RMSNorm",
+      "sublabel": "After 16 decoder blocks",
+      "pos": [
+        40,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "hidden",
+      "type": "backend",
+      "label": "Final hidden states",
+      "sublabel": "[B, S, 1024] \u2192 [B \u00d7 S, 1024]",
+      "pos": [
+        440,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    },
+    {
+      "id": "loss",
+      "type": "backend",
+      "label": "Chunked head + loss",
+      "sublabel": "256 rows \u2192 CE + z-loss",
+      "pos": [
+        840,
+        500
+      ],
+      "size": [
+        240,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "ids-embedding",
+      "from": "ids",
+      "to": "embedding",
+      "label": "lookup",
+      "variant": "emphasis"
+    },
+    {
+      "id": "embedding-attention",
+      "from": "embedding",
+      "to": "attention",
+      "label": "residual stream",
+      "variant": "emphasis"
+    },
+    {
+      "id": "attention-residual_a",
+      "from": "attention",
+      "to": "residual_a",
+      "label": "attention output",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "residual_a-ffn",
+      "from": "residual_a",
+      "to": "ffn",
+      "label": "normalize",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ffn-residual_b",
+      "from": "ffn",
+      "to": "residual_b",
+      "label": "FFN output",
+      "variant": "emphasis"
+    },
+    {
+      "id": "residual_b-norm",
+      "from": "residual_b",
+      "to": "norm",
+      "label": "repeat block \u00d716",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "norm-hidden",
+      "from": "norm",
+      "to": "hidden",
+      "label": "return_hidden=True",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hidden-loss",
+      "from": "hidden",
+      "to": "loss",
+      "label": "project per chunk",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Attention geometry",
+      "items": [
+        "8 query heads share 4 key/value heads; head dimension 128.",
+        "Causal SDPA selects its backend; FlashAttention is hardware-dependent."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Two output paths",
+      "items": [
+        "Training supplies hidden states and separate head weights to the loss.",
+        "Ordinary forward returns full vocabulary logits for generation."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Dimensions are runtime-aware",
+      "items": [
+        "Configured V = 128,000; training uses max(configured V, tokenizer length).",
+        "RoPE \u03b8 = 500,000; the implemented position cache is 2048 long."
+      ]
+    }
+  ]
+}

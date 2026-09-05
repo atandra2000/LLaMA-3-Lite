@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/optimization.architecture.json",
+  "output": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/optimization.html",
+  "specification": {
+    "sha256": "dd33236a9408ed5aba3ade21171a3d5e6b1df77c8a51801833dd4cefa669b67d",
+    "bytes": 3140
+  },
+  "artifact": {
+    "sha256": "1bdd8e2fb1d7e54209bc12fd8e4aa6066569b06006382d06805f1fe37bfaefa8",
+    "bytes": 705705
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

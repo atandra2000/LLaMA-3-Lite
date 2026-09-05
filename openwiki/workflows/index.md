@@ -1,0 +1,4 @@
+# Files
+
+- [Prepare Data, Benchmark, and Train](prepare-and-train.md) - Operational runbook for producing or reusing the token cache, validating the loader with synthetic data and benchmarks, launching training, interpreting validation and log output, and locating checkpoints and final artifacts. Distinguishes the external workspace preparation dependency from this repository's vendored loader and explains the automatic synthetic fallback.
+- [Resume, Checkpoint, and Recover](resume-and-recover.md) - Explains how training checkpoints are named, discovered, persisted, retained, and safely resumed, including complete trainer-state and RNG restoration, EMA behavior, asynchronous-save synchronization, and final artifacts. Provides recovery actions for interrupted, missing, incompatible, or invalid runs.

@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a04894db04746cc689b54547d0b8788172925ea16fd55241dd5c9dc33184389a",
+  "claims": [
+    {
+      "id": "claim_19cc6271fdea45e2b1a0ed7b58c33fc7",
+      "statement": "The production decoder configuration is a 16-layer model with d_model=1024, 8 query heads, 4 key/value heads, head_dim=128, d_ff=4096, vocab_size=128000, seq_len=2048, and rope_theta=500000.0.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L7-L16",
+          "version": "repo-lines-v1:sha256:ce153d186ae7e188573bd1132d64941f9204826f2476d12982b909743bf3426c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZDVhNzZjODViYzY1YTAzM2U0ZTllZWZiMGVmNWVhOGM4NDk3M2Q1NjdkZTNmOGZiMTg3ZjE1YTg3MjNiNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NmQxYWE5NWVjYzc5MzI1NGI1MjcyNTk0YjFhNDVlY2YwZmZiNWQxNzQ4MTE2ODgxNjg5NWVkYTI1ZDkyMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMTdhMTA3MDI1MzFhM2ZlMzcyYjU4MjlkYjUyZTEyYTUyNmJkYjdhZTJjZTU2NTc5YzQ4MTA3OGI2ZmEzODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzOTYyNzE2N2NiNmUxMThlYzViZmY1NmVjNDgyNjA5Y2Q0OTYxODk5NjJhOTU4Mzg5YjBjZjc4NzRjNzZiNzEifQ"
+        },
+        {
+          "resource": "repo://tests/conftest.py#L118-L138",
+          "version": "repo-lines-v1:sha256:da0e544c8650f32586f65ca15bee6ec70a2522cf7da725e5c6497238daac2c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjZTlmYjFmMjljYTQ5ZGU2MTY0YTVjMTA1MDc2NWE1MjkwMDZkNTU0MDkyZGFkZTQ0ZWI3ZTg0NDk1MDgzNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNDE5MmExYjg2Y2Y5NWYzZmFiYjBmY2VjY2Q1ZmM3Y2Q5Yzg0ZDQ3Y2YyOTFiMTIxMTg3ODE1NzNmMWQ5ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4Y2ZkOGY2ZWViNDlkNGI5MWQ4NjFkMTg5N2EyODUxNmFlMDVjODlhMzA3Zjg4OWY0YjA0ZTU3MzdlMjBkZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02cca19e0ce847d4bb15330d9ac910bb",
+      "statement": "Transformer.forward embeds token IDs, runs the decoder, and returns final normalized hidden states when return_hidden=True; otherwise it applies the separate output projection and returns vocabulary logits.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L161-L205",
+          "version": "repo-lines-v1:sha256:8ce25e93a8cea8f099c824f8cb220699c9bd6063b2a65ee2778484cd702eb0af:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2N2ZmOWVlYzYxMmI2MDc1OTU3NWUwNmVjMDQwNWNiZDliZTI2MjNiOGEwMGZmMjQxNzExYzZhMGQwNGJmY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODBjNWIwNTNlYmU4OTQ4ZTY5ZDU2Y2QyY2Q1MGVlNTBjZjVkNjM5OWQxYTNlNjc2MDZiOGRlOTZlNGQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMDNmZjVkNmJhNjkwOWJmZTZhYTZjZDc1NmYzOTY5Mjg0YjMzZDUzMDY3ODA0YjgzYzc5YzQ4ZDEwZGZhYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZDhlMjJiOWVjODkyZWE0N2QxOTQyZGJmOTY2YzcxNzRkMjBjNjhlN2ZmY2ZiZGVkZTNhYmNlMDExZWYxYTgifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L491-L499",
+          "version": "repo-lines-v1:sha256:f97ead79b8039b3890375b4e7f9a1fa114aaa09d2a7e730e081fb2891503509d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdiMTUwOWJiYzAzYTk4YzhlMWI2MTE1YWY4ZDcyZGUxY2Q4MGQ1YmU1NTMxNjVlMDk0M2IwODk0YTNmZjhjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmExMmQyMzM1OGY4YzM3ODBlYzcwZmZiOTk4ZDFhZjk2NGNmMzY0YjIyNmI1N2JkOWJlZDU0NmJiYzY3ZWYzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM4NmU2NDE5YzkxYzhjNjJiNjFlMzM2OTIzMjk5MWU0ZTRmMzRjMjAxOGFlM2JkNmUxYzYwYzZhMDdjMTA1MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9075a9842dde41759ed421b510c15e81",
+      "statement": "The decoder stack is pre-norm and preserves residual width: each DecoderBlock performs x = x + attention(attention_norm(x)) followed by x = x + ffn(ffn_norm(x)), and Decoder applies a final RMSNorm after all layers.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L125-L158",
+          "version": "repo-lines-v1:sha256:b088d2a30f63ba52f6844f5f847f73582122f412d88c23a5b5d3f0b1f21d07d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkOWU3MjBiODNjYjg0YTk3YWQzYTBlYjg1NTlmZTdmZjhhZmFkNzYxZDRiNzQ3MTY1OTAzOGMxNTNjODY4YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxOWE0YWViYjcxYmQ2ZmE1MTc2ZmE0NjhkY2NlZGFhNjQ4MzFjNzkxZjNlYzI2MjhlM2E1ODYyOWJkOGYxNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkYjcyZGIxODJmMWM5MTExM2I0ZTEzM2VjYzkyMDFhODlhMTUwMzFhN2FlOGQ0Y2Y0MjBmODg4ODFjYjU0NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZjE0NTIxODQzYTUzYWE5ZmZiZTYyYjE5ODhiYjAzMDhkMjc1ZWMyNzIwMjg0NjRjN2YyZGE4OTIxZjU4MTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L267-L342",
+          "version": "repo-lines-v1:sha256:196f8a9eaf6cf73cc325aa01d8bbcd96ccd959efdf06def722b494cf94a9076e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzNjZWEzOGM3MmIwODM2MWQyZjE0NzRiNTNiZTVjNjM4MDhiNTM2NjAzNTExNWZhY2Q3OGEzNjBmNGNjNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmU0YjUwNzk2MWM0YWQ2MzYxZTJiZjcxOTZiMjZjYTBhMGEyNWI5NGJlNmE4Njg0Nzk3YmU3ZGJjZWE1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjhjMmE2MTgwMTlmNWY1ZWFmNzYzYjY0NTNjMjhlMjI0YzUzMTJhMTczMTczMGNhZjA1NTlmZjFmMTgwOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjY2UyYjNjZTc4MTVlOWY2YjNiZTg1ZTA1ZTA4NDE3ZmFlOGMyN2Y1ZGU5OWI3Y2VlYjE3NTZiY2JhZGUxNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35d65f45e23640eeadb127e85ab95a88",
+      "statement": "GroupedQueryAttention projects Q to n_heads*head_dim and K/V to n_kv_heads*head_dim, repeats K/V by n_heads // n_kv_heads, uses causal scaled dot-product attention, merges heads, and returns d_model-width output.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L53-L102",
+          "version": "repo-lines-v1:sha256:0929452ae7a0f250f09f6695567da472733f43349d023719be9502a91c6814f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2M2YzMDdiZmM4NjJlNmUyYWYwNTIwZDY2YTUxZDYwMGI2YWI3YTg0MDA5YTY1MGQzMWY1ODU0NWM3NzI1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZDZiMDI1MWY3YjA2NmQyMTVkZGJiN2E1NDAyNmQ4ZGFjM2IwNDIxZTMwN2FmYmRlNDZkZWI5NDZkZTU2OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNTc4NmE0NjllMTMzN2QzMDIyYWE2YjUzNWQyY2Q3MDNjZGU3ZGJmMDlhYjUyOGNmYTg2ZDY0ZjVkZTQ3NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNzQwMzM0YjUwYWZhZjJmNzg2YmI0NTAzZTFmODE2MTAzNmNkZjA4MTNhOTM5Mjc3M2YwNjcyZTk5NzU5MDQifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L114-L158",
+          "version": "repo-lines-v1:sha256:b0b50eeaa745e2d1851875cc3a31e487b344372d1005ed4d9686e5ae7548eb93:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMTUyOTliYTgzYTk2MGQzZjVmNjA2ZmVkYTBhOTNkZDJiOTY2MjgyMDI4YmM3NjQ4YTUxOWE1ZmI5NjkyZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhM2E3NmE1ZTYzMTM4YzYwMjJlYmVjNGJlOWZmMmMyYTNkNGZlNmUzM2ZiYWQ0YTFiNGQ2YWMxODZjNjgyZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NzZjY2VjM2MxYjNiNGFiYmI5YmRmN2VmMmM2N2RmYzE4MDkyYjM0Y2ZlZGU3ZDdiNzIyYzQyMTQ3OWViOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d690ecae537a4790b64d9b31183a3062",
+      "statement": "Causal attention is a correctness invariant: the attention call uses is_causal=True, and the focused test verifies that perturbing a later token does not change earlier outputs.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L95-L102",
+          "version": "repo-lines-v1:sha256:f2a16c89582cfc566b760126c8f4a364c8ef5d1d66b4022716dbd30c3ecd0d40:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTczOTFhMzZlNTExNTgyYTg5Mjk3YjQ3MmRmMzhhYzI1M2Y4YzU2MDYyODY5YWY5NTVlODM5YWFmNTk4MjAzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdkNmIwMjUxZjdiMDY2ZDIxNWRkYmI3YTU0MDI2ZDhkYWMzYjA0MjFlMzA3YWZiZGU0NmRlYjk0NmRlNTY5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjVhMzM0OTEwNWM4MGUwMjA0MzU2ZjIwOTM0MmY4MjQ0M2UxMTJmMjQ3MzdhMjEwYzhjNWM0OGY2ODY4NWVkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWM3NDAzMzRiNTBhZmFmMmY3ODZiYjQ1MDNlMWY4MTYxMDM2Y2RmMDgxM2E5MzkyNzczZjA2NzJlOTk3NTkwNCJ9"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L124-L138",
+          "version": "repo-lines-v1:sha256:06b18a54fe607784d8e833a8273e1f2fe90cb84130e9428ace510873bb7af9c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZWMwZDk2MDE1ZmE3MGY0NzlmMWQ3ZjE3MWMxOWU0ZTYwNDU5YzdmOWM4Y2VlMGMyZDkwMDlhMWVjYjVmNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMmE1ZjkxYTk1YzllMjQzMDU0NDRkODg3NWFhMWVmZmUzYTg2YmZmNTVhOTY2Mjc0YTkzMGVmNGRmN2VjYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhN2E4NjBmODE5NmE1YzI0ODBhODIxODE2NWVkMDczODU5N2UwNDA2ODg0NmJlODdjZWQ0NzcyM2EyZjFjYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d5215e7aedc4ababd9953b7254c89f4",
+      "statement": "RoPE precomputes cosine and sine frequency tables, applies rotations to Q and K but not V, preserves the input shape, and uses the configured theta with a production default of 500000.0.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L7-L16",
+          "version": "repo-lines-v1:sha256:ce153d186ae7e188573bd1132d64941f9204826f2476d12982b909743bf3426c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZDVhNzZjODViYzY1YTAzM2U0ZTllZWZiMGVmNWVhOGM4NDk3M2Q1NjdkZTNmOGZiMTg3ZjE1YTg3MjNiNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NmQxYWE5NWVjYzc5MzI1NGI1MjcyNTk0YjFhNDVlY2YwZmZiNWQxNzQ4MTE2ODgxNjg5NWVkYTI1ZDkyMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMTdhMTA3MDI1MzFhM2ZlMzcyYjU4MjlkYjUyZTEyYTUyNmJkYjdhZTJjZTU2NTc5YzQ4MTA3OGI2ZmEzODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzOTYyNzE2N2NiNmUxMThlYzViZmY1NmVjNDgyNjA5Y2Q0OTYxODk5NjJhOTU4Mzg5YjBjZjc4NzRjNzZiNzEifQ"
+        },
+        {
+          "resource": "repo://model.py#L15-L31",
+          "version": "repo-lines-v1:sha256:b26f8b9e3ec3949097286a5527a4f3f30cd8219b902d837e1c0597c1c4cdcb26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YzBlMDc1ZjY4MjUxZmE3ZjZmZmFkZDhmZDU4NDUyYmQ4YjdmOWZhMjRiZTdkZmRjZTlmNTc1MWFiYzk3YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NTRiZDI2NDA5MGI1NTcxYTI4MTIwNjBmYzk3NDQ2NGQyMmQ4MDkyODk5YjAxMTc2MjNkZGFjZDFiYTI4N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2I4MGRhMzgwMDJhMDlmOGUzZDQ1NzA4NjYxN2RhOWMyNDM4OGZmM2E2Y2Y0ZmIwMDFlOThmOTkxNDkzZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3YWVjNjM3NjdmMTg4MTQ5NWZhNDFiZDVlNDRiZjZmMWRmZmE0MDcxNGI4NGY2YTg2NjE1YzBiYWZjZWE0Y2YifQ"
+        },
+        {
+          "resource": "repo://model.py#L77-L93",
+          "version": "repo-lines-v1:sha256:f3617500516f341997db35faf4bde45eee9dbece3706b4e0f8b7a55368ed10bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZjE3ZDNmNWEwZGViOTgzODIzYWNmM2FlNTQ1ODhiNGVhMTRhZWZmZDc1ZTE0ODVhODFmODZhMTlhMTNhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYTM4ZjJiMDdmNDkxYTdiYzAyMWM0NjI5NmJjMGI4YWJlZWNhZjZmZTAwYzZlYmJiMTAxZjQ5ZDJjOGUwZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlMWZhYmE0OTgwMDMwYjEzZjFhYmQ2NjIxNzcyMjQxNzFjYmMyYWRkY2UwZDhiYmM5NjhhMjBkYmE0MzI4YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZDgyNWU4MTYyMWQ3OTM3NjdkNmMxOTYxMDdkN2VmOTJkNmRjYTlhMzBjYjc2ZTIzMjBjN2U3OWRkNzljYmEifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L59-L111",
+          "version": "repo-lines-v1:sha256:bec0878e7cec576266dda656af4a996cda7249bf491e5d7770aae23f088c32c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkM2VkNzdjNzI0MWIxNTU1ZTNiZTA3NzhmNzJhYjMzYTM5ZTYwZjFmMzVmMjczNGI4NWU0ZTA1NGQxYjFhOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMmViN2RkMjMzNGYwZDVhMjdjM2M0NzY2MjM4MTdiYjRmOTdlYWI5ZDQxYjg1ODE3NWQ0OGM1YzljMTIxYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxMGU4OWQ4YTUyZTUxMTZmZWNmYTI1NmYwNjA1ZDUxMDFkNDFlNGE4ZjMyYTVmZjUyMzhhMzk5M2FhNzM2MTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_684638f9b8494b8bb06147cbc0d5252b",
+      "statement": "RMSNorm computes x * rsqrt(mean(x.pow(2), dim=-1, keepdim=True) + eps) * weight with a learnable d_model- or head_dim-width weight; qknorm optionally applies per-head RMSNorm to projected Q and K before RoPE, while qknorm=False uses Identity modules.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L34-L50",
+          "version": "repo-lines-v1:sha256:618048afd60304e8d06916ba225f164bb1df5cf3b42f4d972a755ef6f913cc7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZThjNjgyMWUxMjEzZDc5ZGQ1OTM3Yjg4YWU3NTdjZWFmNDViMGFmZTMxMmNlZDgyZjMzMWRkMDk0OTE5ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMjA0ZDg2MTIzYzE2Mzc5ODlmNDJkOWQyODI1ZGYzZjRkM2Y3NmFiMmE4MGVkYWExOTQ1YjQ0YjE2YmNjNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWQyNTA5NDYwNzUyNGY0MDkzMTdjM2Y5MTIwNDk2Nzc2NzI4ZmZhZmZhMGVhNmVlNmMyYmZiMWQ0NGM0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YzMyODNhZmQwMGFlMWNjNTg0NTk1NzRkY2E4NDQ0MjExZTY3YmE0Y2MxZWQ4ZjkxZjJkOTViMzRmNWM4ZmMifQ"
+        },
+        {
+          "resource": "repo://model.py#L69-L75",
+          "version": "repo-lines-v1:sha256:17c4592306c9aff4f43b5ae06421bb2c68f6041b7cfb008f5dd08fb5b12ca953:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY0MTE1MzkzMDU5M2ZiZmQwY2VmM2ZmNTNkMTAzMDM5MmE5MzcwNTc1MjM1ZmMwNGVmNzIxNjIzMTRlMTA5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI5MGEyNWI2YWU5MDcyOGZmNzk0NTg3MjQ5M2M1ZjNkNTIxNGQzMzk3YzQzNDU1MTlhZWM3YjM0OGU0MTVlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTczZmE2OTFkMGNlY2IwYzhlZjMwNjYwODZkOWQzMDQwYmRkNWYzNTI1ZWM2OGYyMzZlZTA4ZTQ0YWViZjExZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTRmMDZiNjk1YzRhNjhkNzdmOTczMmU1OTYwYjU0OWUwOTMzZjg5YWEyZmY2OTE2YmEyNmJiZThiMjNjMmU3YSJ9"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L23-L56",
+          "version": "repo-lines-v1:sha256:d0a20e7174b3e7fed9776f5e56d41aaf3ef6c476bc8e14db762697851c69dc3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZmNjZDk4ZTZiYjA4OGZjNjQ2ZjE1Y2JmNWI5YTMzOTc5Njk2YmNmYzlhNjY0NzQ4YmM4ZTllMDhlYjFkM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODViODVhMTQ5ZmJiYjdhOGE0OWM5NWZjNWY5ZmJlYzViMjNiNmRhMjVhNzIxODNjNzJhZTM2NzE4MGNlMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ZGY2NjQ2YjVjMmNmZTU4ODYwMDBlM2E4OWMwOTg1ZGM5Y2IxOGUxOGJhMjVhMjllNWMwMGY0NWE3NTk2MjkifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L501-L573",
+          "version": "repo-lines-v1:sha256:907a42edddc49da0b237424d65509297576f8c353da01520def72c5f5c4cb262:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZDAxNGE0NjNkMDY5YWEyZDcwMGQzZGVhNTYxNjNjNGYwNGY2YzVjZGI5OTIyYzdkOWZhMTg0ZmU1ZTFmMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNzA2ZDk5MDJmODVkMWJhYjc1ZmFhMWM2MTNhN2NkZjBkNzc0YTkyMGQ1YTNjNzc3NDhmZDMzN2JmM2EzYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlYzkyZTk2MDY0MmRkZTU5NmZiY2MwNWUxZGIxYjBkYzI3ZGY4YjM4YmVmYTk3OTBkNDUwNmU2YWNlMTU2NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1189978b48ce4b3dada7b6fec7de7699",
+      "statement": "Each SwiGLUFFN packs gate and up into one bias-free projection of width 2*d_ff, splits it into two d_ff tensors, computes silu(gate) * up, and applies a bias-free down projection back to d_model.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L105-L122",
+          "version": "repo-lines-v1:sha256:e737582350fefadb4c5a4863bff8b2ccda03fb369769f4e174c73b0fb53f4a44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZWFkYWJjNmNhNThhZDc3NTk4MGI0M2Y5NmE1MTEwNGJiY2M3ZGIyY2RlZTM2ZGFiZDlhYTA5MjJmOTUyZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZTM0NTFlODk0Nzc5MjljNDA0MWNhMTc2ZmEwNjg5MTgwNTdlZmU1ZDliYzdiZGE5NGZmMzY4Y2E1MTU4NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTY4Y2NlYzI5OTBkNTUyZGFiOTk5OWM5MTI2OTA5NWI4MGM5NDRhM2NjZjRkNDg0ZDA0NDFjZWQwOGY2ZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NGM4OTkwZjg3ZjJlYmFkNDkzOWUzOWVmZmFlZGJkZGZjMjk3OGMxZmRmMzJiYWFlNzIwNzZiZDE3OTQ0MmMifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L161-L186",
+          "version": "repo-lines-v1:sha256:466fcee37f4b064d57985cc38bc41c9042f206d39d5b014dc17e810e905d3951:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYTU1Y2U0MTFkMDcxNjQwNjc0Y2EwZjhjMTU5NDIxOGUzNDA0OWNhOTQ3ZWVjYzc3NTMyNGE1ZDUxZTk3YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1M2U0YjAwZTlhZjkzYTEzNmU3ZDRiNzU1ZDYxM2UxNjJlZGFhZmRjNWVlN2JlOTc3Mjc2MWE1YTlmNTljNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNjc2N2YwNGUxZTRiZThkZGI5NmY4MWM4NTdhNDY4OTYyN2Q2YmRmYzM3ZWMwNTZiNTQzZjRiZjU2ODk2N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e437eb9c858f411eab3326ff0a0d082f",
+      "statement": "The decoder owns the final normalization while Transformer owns an untied bias-free output_proj from d_model to vocab_size; output_proj.weight is distinct from input_embedding.weight.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L44-L50",
+          "version": "repo-lines-v1:sha256:7f0f1270f2825345091d7a12936c92281a11b3241fcfd624adc976c1bd99a5ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc0NTgwY2U5OGE1MTYzOGViMTA0ZjEyZTg0YzM2MGMxZWM2M2Y0ZDdjMTllMDJkNjBiMDlmZjkzZDBjZTMyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRhODUxOTE2ZjAyZTQ3Zjc0M2RkNzBmOTc0NDlhMjhmZThmNjI0MTFlMTMzYTlkNjQ3MDIxNWRkZTMwNmFkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ3NDNiM2VmNTc5NTc1Y2YxNmQ3ZTFkOGM1YWMzMWZiZDM0NGUyNjZlMDExZTRhNWRjZjM5YTJhZjMxY2UyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg1NmIzY2VkMDEwZWMzOGJkYTNmYTRlZGMwNjg4MzY5ODkwNTA5YTZjMDExMDBkYzNjNTk5Mjk1ZTdkZjAzNyJ9"
+        },
+        {
+          "resource": "repo://model.py#L146-L182",
+          "version": "repo-lines-v1:sha256:4a1574b2cb38e0771b02d5b4beb83570ebd08770db36c958fdba6e689175d935:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NzBiZjViYjFkNDJmMzU0Mjc2YTczMGNiNmFmZjQ5MTcyMjc3YzRmOGU3YmY2ZjNiYzI4MDEzMjViNjEyMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMWEwNzVhZDVmNGRiODM5ZmIzYmVkOGQ1ZTdjMmFmMjlhN2ZhZmYyZjU4YTBkOTg2NWRmYmQ4MTMyMWI5NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NzVlYTUyNTZmNmUyYmJjMWU1ZjdhZDMwNTNjNDY0MWJhNDQxM2U0YWJiZGNkYzgxNDIzMzgyOTAwOTBlNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYzIyMDJkYzdkNzJjYzkxYWRjNGRjMTAyMjhiMjk1ZmUzNWZiN2FmMTM5ZTQ4ZmMyNjY3NTY2NGNjZjdhMzcifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L491-L499",
+          "version": "repo-lines-v1:sha256:f97ead79b8039b3890375b4e7f9a1fa114aaa09d2a7e730e081fb2891503509d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdiMTUwOWJiYzAzYTk4YzhlMWI2MTE1YWY4ZDcyZGUxY2Q4MGQ1YmU1NTMxNjVlMDk0M2IwODk0YTNmZjhjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmExMmQyMzM1OGY4YzM3ODBlYzcwZmZiOTk4ZDFhZjk2NGNmMzY0YjIyNmI1N2JkOWJlZDU0NmJiYzY3ZWYzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM4NmU2NDE5YzkxYzhjNjJiNjFlMzM2OTIzMjk5MWU0ZTRmMzRjMjAxOGFlM2JkNmUxYzYwYzZhMDdjMTA1MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d529133c7d314a399fc2f1501d9b0bb2",
+      "statement": "Training and validation use return_hidden=True, flatten hidden states, and pass output_proj.weight to chunked_head_cross_entropy_with_z so the LM head and loss can operate in token chunks rather than materializing the full logits tensor.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L264-L330",
+          "version": "repo-lines-v1:sha256:9483d47a0e87be7ae1fa6099768d157a1b8c2e2801c0b2afaf6b6ebd51cb57b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2Y1MzViNzU0N2FmZDMxMmU4NmYzYmM0Y2I1ZDJlNmNjMjZkYTYwMjFmMzM0MjA0MDMwM2ZjNDNiMWVmMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOWMxODVjMWJkMzUxOTM3MjBhOTg2M2I2NjdiNzM3MmVlNGJkMDZmYWMzMGI2OTZkYTYyY2NlMmU1NjMwMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmJiZGIxNGY5OWFjMTIwMzEyNWVkNTQwZjVlNzhiMzM5N2I5MGE2MjQ5YzBmOTRlODQxNmM2MWU3ZDYyMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZjQ3MTRkY2Q4MzljYjA2NGI1YThlMGE3MzA1MWMzZmU0YjY5MDdiMDZiNzQyZDRiMmE1ZDRkZGIyYmIyMmQifQ"
+        },
+        {
+          "resource": "repo://train.py#L122-L151",
+          "version": "repo-lines-v1:sha256:9e5da22e86e70693a61e7f64a832c74dd50e556fa40099fc23b76b528a8995c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYmRiYTIxNWQyMjJlZDIxOGNkNTZlZjFiNWEwYmRlMThlNDk0YjBiNDdmNWQzY2M0OTg0MWNhOGE5MTkwNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMTE0Nzc4ZWQzZDZhMWMzM2ZlN2U5NzlkYTU5N2VmNWRjMTI1MWFiM2JjZGQwZTA5NTAzZTQxYmE0NzRmM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZWE2MTZkYzU4ODQxZTc0M2U4ZGUyZGI0YWYzMGFiMjZmZjNiMGM1YThhMjY5NWQ5MzA2ZWFmZGQ2MmYwMTUifQ"
+        },
+        {
+          "resource": "repo://train.py#L492-L503",
+          "version": "repo-lines-v1:sha256:35c746d8009fa85563c5bc217dfa2e056510ab1698335733db3984adb938eed7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMTJiNjUwMjkwMjBmNjM1ODU5NTFlNzVmMzY2Yjc4OTgwMDQ1NDdlNTQwNTVmNDJlNTJhMjE0OTdlMGY2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYjZlOWE3MDZiYzczNTUxMTAxMjM4NmM0MzE2ZDk5OTFjNDZhY2YyNTNhOTNjYjY2MGJkMTc3ZDQxMGVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDlhODYxYThhN2E2NWExNmI5M2NjYThlYTY2ODAyMzllMzY2OWVjNTM0NGMzMjkxNGE3YjgwM2JlNGU3YTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4545f4d392949739e8e235c597557b8",
+      "statement": "Transformer.get_num_params(non_embedding=True) starts with all parameters and subtracts both the input embedding matrix and the separate output projection matrix; non_embedding=False returns the full count.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L207-L213",
+          "version": "repo-lines-v1:sha256:155cdc1a4f3cee617718918ac8209e533b417d746b5b16f6ff9d4de2fc84fc1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZjMjk0MDc3NWI3ZGJjM2NkNGU2NTIxYmU3NjcxNzNhOTliNzExYjM3ZWNlMGQ2NTc0NjZkNmQ2NTg5NDAzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRhNDI1NTViOWRlYTUxOTYyNGM5OWM0NTc2YTZiZGMzZWEwOWU3ZGVlMDNlMjBkYjNhOWI3MWY1NWM2YTE4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGIwNDQyNzhlNmVjZmJhMWJmYTBhZWVmYTBjNjFkYmRlMWM4MWYyMTg3YWYzY2FiYjFkNmY5YzdhZjEyODIxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEzY2Y1MTkyMzU0ZjcxNjE1YWM1MTAzNGIzZTk3YzIwZWRhOTk2NDNmY2FmNWJiZTZkNDFhZDU5YmQxMjE2NyJ9"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L192-L242",
+          "version": "repo-lines-v1:sha256:8626f3748e17be0eaefeda0f54cf3cc21e74768f29051ef266969d6a62f7332e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZWMwNzY3MTg2MzkyMzNkY2JiZTExM2QyOGExMmRiMTNhMTVlM2JlYTZiMWQwNjA3YTFjYWJhMjE1MDYyYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNjhmZWQwNWMwZjQwZGQ4MmQ2Y2E0ZjEzZjhkZDAyM2JlMDZiM2U1YThjNDI3MjhlOTg1NzljMzU1YjkyZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d1d7bef1cbb461982516c84bbe112ac",
+      "statement": "When gradient_checkpointing is enabled during training, Transformer checkpoints each decoder layer and then applies the final decoder norm; otherwise it runs Decoder directly, and tests require the checkpointed and ordinary paths to agree and propagate finite gradients.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L194-L205",
+          "version": "repo-lines-v1:sha256:88bd80bd4cd901c7f0b8e680e1932d7bc3b07cfbc99aa18f779b4c0f3136ac18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MTE5NzA1Mjc2MjI4NjRkNzJhMmU2N2EzOGE1YzIyMGE4NDg0N2I0MjY1NzkzNjhhNDk0NTVkZTJlNjY4MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODBjNWIwNTNlYmU4OTQ4ZTY5ZDU2Y2QyY2Q1MGVlNTBjZjVkNjM5OWQxYTNlNjc2MDZiOGRlOTZlNGQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNzA2Zjk3ZWZjZWM4YWIzZjI2MzM2NTQwNDFjN2I5MTJiYzNjNTI3ZmYxZmViYTBiYjg5OWEzMWI2M2VjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZDhlMjJiOWVjODkyZWE0N2QxOTQyZGJmOTY2YzcxNzRkMjBjNjhlN2ZmY2ZiZGVkZTNhYmNlMDExZWYxYTgifQ"
+        },
+        {
+          "resource": "repo://tests/test_model.py#L267-L342",
+          "version": "repo-lines-v1:sha256:196f8a9eaf6cf73cc325aa01d8bbcd96ccd959efdf06def722b494cf94a9076e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzNjZWEzOGM3MmIwODM2MWQyZjE0NzRiNTNiZTVjNjM4MDhiNTM2NjAzNTExNWZhY2Q3OGEzNjBmNGNjNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmU0YjUwNzk2MWM0YWQ2MzYxZTJiZjcxOTZiMjZjYTBhMGEyNWI5NGJlNmE4Njg0Nzk3YmU3ZGJjZWE1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjhjMmE2MTgwMTlmNWY1ZWFmNzYzYjY0NTNjMjhlMjI0YzUzMTJhMTczMTczMGNhZjA1NTlmZjFmMTgwOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjY2UyYjNjZTc4MTVlOWY2YjNiZTg1ZTA1ZTA4NDE3ZmFlOGMyN2Y1ZGU5OWI3Y2VlYjE3NTZiY2JhZGUxNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b46712b54ba144d98f89f0b43420aac8",
+      "statement": "build_transformer constructs Transformer from explicit architecture settings and initializes every Linear and Embedding weight from a normal distribution with mean 0.0 and standard deviation 0.02.",
+      "evidence": [
+        {
+          "resource": "repo://model.py#L164-L192",
+          "version": "repo-lines-v1:sha256:9c8b3a12b934bece70443ed55828abc1ff27d0733f357716fa7495b7043168e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMTQxMzk4ZTU5MmMwYzg3MGViNmI1YWFiMTMyMzFkMTMzOTgxNjdkMGJiZDA0MGQ2OTZiOGM5NTRlNjQwODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNWNmZjIzOGYzMDU0NjliMWU4NjMwZDIxNWNjODdkYjFjM2U4YTFkZWQ0MzY1NGU0ZWFmODA3NjMxYjRkYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjMTgzMTFmMjA5ZGM0ZjU2OTM1OGQ3ZDdjMTMxMTQ0ZGRjZTlhYTM0MDEyZTAwNzFlNTlmYjY1MTBjMzAwODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0MjYyOTdmZTllNDVhM2Y3NzAwMDkyZGRlOWFkZGVkODE4M2Q3Mzk2OTc3OTVhZmI2OTQxMzUxMDBkNTJlNDUifQ"
+        },
+        {
+          "resource": "repo://model.py#L333-L369",
+          "version": "repo-lines-v1:sha256:d2ea8aa821566ec2d4b4cf2b89ad4e484bc67b3e80b1f3754c57d4edf1bb1d56:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MGI3NWI3MmJkMDNlYjZjY2ZhOGYzMGY5MDUzYjk1ZGQxYmFhNTYxOWY0OTdmMzBkNmQ1N2M5ZTRlNmZjN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTg5MjY2MGFkN2JjMjkxYTYwOTdkN2Q2MjU5ZTU3ZmI0Njg2NjdhYjc5Mjc3Yzc2YTJiZmI5YmQ0MTNmOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmJiZGIxNGY5OWFjMTIwMzEyNWVkNTQwZjVlNzhiMzM5N2I5MGE2MjQ5YzBmOTRlODQxNmM2MWU3ZDYyMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dfe928e071444aecbaee1a91fa246160",
+      "statement": "The model defaults to pure PyTorch implementations, while rmsnorm_impl='triton' and swiglu_impl='triton' are explicit narrow substitutions; train.py forces requested Triton implementations back to PyTorch unless ENABLE_TRITON_KERNELS=1 is set.",
+      "evidence": [
+        {
+          "resource": "repo://config.py#L31-L38",
+          "version": "repo-lines-v1:sha256:3d1ece3a9edca50093ce941c6949b83eb2d03e1476be352642e0671901818016:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY1ZjE5ZDcwMzE0N2Q5MzEyYWQ1ODc4Yjk2NDMyYWM0NjcwNTA0ZWQ5NDQzMDlmOWM0MTRjZmE4YWVkMmE1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI4MDdhMGZmNzQ4MTk3NzQ1YTRkYmRjNDRjM2RjMjJhYjFkMTU0OTI1ODliZmY0MDllN2M5ZmM2ODkzNTFlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ1YWI4MjIyNmIwNzliMWFhMmM4ZGQwZTg4MmI4YWM1MjllY2U0MjliOTBlMzg2YzI3MmRlZTM4NjEzNDYxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA4OTQ0OWU0OGMxNWQxNDU4YmUwODNiNmU1NDRiYWZhNmZlOWZkNDM1MDljYWYxZjhlNmY0Yzk3NjUwNmI0YyJ9"
+        },
+        {
+          "resource": "repo://model.py#L1-L3",
+          "version": "repo-lines-v1:sha256:961f1546d23e72598352cfbfca1ebc46e6b0c46a1512711a3541e313fca6cf5b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVlMjIzNjRkM2NhZDQ5MGQ0MjQ4YjE1MDAwYWQzMzIwMDYyMzRkZjI4NWM2MmMxODg3ZTdiOGRhZGMzN2RmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc5MzNhNGJkNTUxNThhMGZlM2IzNTU0OTliOWEzOWZhNjBkM2ZjZWRlMzFjNDk5ZDc3ZGRlNGViNTVkYjYzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJjZWIzMDgwMjg5ZDE3NzZmYWU0ZTk3YmFjMWJhZDI3NzUxOWIxMzUwYTkzMGRjYmUwYzJjYWExZmZjM2JjNSJ9"
+        },
+        {
+          "resource": "repo://model.py#L105-L109",
+          "version": "repo-lines-v1:sha256:a44147f15ce11b727390cdb3de729865a89f825555d2cf8b0f80dcaf4d3ab83a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJlYWRhYmM2Y2E1OGFkNzc1OTgwYjQzZjk2YTUxMTA0YmJjYzdkYjJjZGVlMzZkYWJkOWFhMDkyMmY5NTJmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJlNjhjY2VjMjk5MGQ1NTJkYWI5OTk5YzkxMjY5MDk1YjgwYzk0NGEzY2NmNGQ0ODRkMDQ0MWNlZDA4ZjZlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEwNzhiZTg1YzgwNTIyZmU0NzQ5OTA4Yjg5M2QyYmEwOTRmY2MzNTc1YTc3YjY4OWRlMTAyYTMxM2FkMzBjYSJ9"
+        },
+        {
+          "resource": "repo://model.py#L34-L39",
+          "version": "repo-lines-v1:sha256:f98c97bc7e44784c4c08508d6a594cd035647037c9b39372242c4efea6bcd126:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFlOGM2ODIxZTEyMTNkNzlkZDU5MzdiODhhZTc1N2NlYWY0NWIwYWZlMzEyY2VkODJmMzMxZGQwOTQ5MTlmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkM2Q0Y2Y4Y2IyZTc5M2YxMzdlNDVlODVkMmY3YTE0Y2FjZjRhOGQ0MWQxOGM3NzVhNWFiZjM2OWFhNjliZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZDI1MDk0NjA3NTI0ZjQwOTMxN2MzZjkxMjA0OTY3NzY3MjhmZmFmZmEwZWE2ZWU2YzJiZmIxZDQ0YzQ2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzkyNzk0OTlkOWJkYmM5NDhmNWQ0MmFkZWYxMWYxMDY2Njc5MzRiZTllMWE3NTk1ZTdmMmI5NzkzNjgxNzc4YyJ9"
+        },
+        {
+          "resource": "repo://train.py#L293-L313",
+          "version": "repo-lines-v1:sha256:87b53dd90a40428b46964efadbe6d0ff9bf7751d0492c1055e8eb5b23e5914c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmODkwNjY0NjFlMmQ0YzY2Yjc4Yjc5MmQwYTlhZGI5MzRlMjk5ZTJhYWM3MTJmOWE2MjQyMDNiYzhmYzVkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMDE0OTI0OWQ1YmY5NjUwMzgyYWJmODViNmFhYmFlOWYyYjU5ZGNiNGE3YzI4ZGViNmI4MjY1NzllNThhODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZDZlNTc5Nzk4NTliOGRiOTNkNDY2YTAwM2RiNDQxMmY2NjI5MDdlY2NlNDE5M2IyYjgzOWQwM2RhNjlhNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZTJlMjRiNGY5NGNkMDg2MjlhMjdlMzJiMzI3NjI3YjhiYWE5YzA5Mzk0ZGJhZWRlMjRlM2RlN2IyMTFlZDMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T14:42:48.429Z"
+  }
+}
