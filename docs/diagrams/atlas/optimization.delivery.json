@@ -6,12 +6,12 @@
   "input": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/optimization.architecture.json",
   "output": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/optimization.html",
   "specification": {
-    "sha256": "dd33236a9408ed5aba3ade21171a3d5e6b1df77c8a51801833dd4cefa669b67d",
-    "bytes": 3140
+    "sha256": "30d90d7ac6c74f5fab45608f717c6476209b3d3fef43f1b7bc518565c8fd8ba6",
+    "bytes": 3221
   },
   "artifact": {
-    "sha256": "1bdd8e2fb1d7e54209bc12fd8e4aa6066569b06006382d06805f1fe37bfaefa8",
-    "bytes": 705705
+    "sha256": "5a685bed45c2442decf1e6134508bd01ee6d3198cd83e1b65837c82c6b982770",
+    "bytes": 705919
   },
   "validation": {
     "checksPassed": 9,

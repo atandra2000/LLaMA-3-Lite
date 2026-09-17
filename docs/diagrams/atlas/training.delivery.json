@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "ok": true,
   "command": "deliver",
-  "type": "architecture",
+  "type": "workflow",
   "input": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/training.architecture.json",
   "output": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/training.html",
   "specification": {
-    "sha256": "99c4cea417ae1a97ba3f9c42383458246bb6d0d4601513ceb79b4404b7d9588a",
-    "bytes": 4481
+    "sha256": "d0f988c1b4f74cc775fd16e1e8cc470ff3406ceb54e8970ec00daad03c7713cb",
+    "bytes": 5094
   },
   "artifact": {
-    "sha256": "a4eba4069d50515350888ca5d53b546196c6a84da6ab41a5e623817464d5c676",
-    "bytes": 711660
+    "sha256": "18382df299475910e3664d8c1bfd765f05bbb5e82154ba350bb29e03dd6981b0",
+    "bytes": 712322
   },
   "validation": {
     "checksPassed": 9,

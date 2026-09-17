@@ -6,12 +6,12 @@
   "input": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/system.architecture.json",
   "output": "/Users/atandrabharati/Desktop/CoreProjects/LLM/LLaMA-3-Lite/docs/diagrams/atlas/system.html",
   "specification": {
-    "sha256": "1dac4e5c5b735ad7bb5c7fbbb734b0eee067ac089ea82504bd9e634c6d61e7e0",
-    "bytes": 4530
+    "sha256": "c33fa1c45303e41b853b77dd2f6f40326e69b75b3c167f5f8910e2cba8ed7481",
+    "bytes": 4845
   },
   "artifact": {
-    "sha256": "70337a3692575c16caa5e0ff1fde2250153c36ea98e38ab06b725dfd5fb72fbf",
-    "bytes": 712328
+    "sha256": "d869f571a87193e9c10be734ba5ac4a50d0c8d27728b091398f1c65c7cd5b077",
+    "bytes": 712575
   },
   "validation": {
     "checksPassed": 9,

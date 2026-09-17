@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Corpus \u2192 cache \u2192 next-token batches",
+    "title": "LLaMA-3-Lite · Data",
     "quality_profile": "showcase",
     "viewBox": [
       1120,
@@ -28,7 +28,7 @@
       "id": "clean",
       "type": "security",
       "label": "Clean + dedup",
-      "sublabel": "Quality filters \u00b7 SHA-256",
+      "sublabel": "Quality filters · SHA-256",
       "pos": [
         440,
         70
@@ -84,7 +84,7 @@
       "id": "mmap",
       "type": "database",
       "label": "Read-only mmap",
-      "sublabel": "tokens.bin \u00b7 uint32",
+      "sublabel": "tokens.bin · uint32",
       "pos": [
         40,
         285
@@ -97,8 +97,8 @@
     {
       "id": "windows",
       "type": "backend",
-      "label": "Train / validation",
-      "sublabel": "Contiguous tail held out: 5%",
+      "label": "Partition stream",
+      "sublabel": "Train / ~5% held-out tail",
       "pos": [
         40,
         500
@@ -111,8 +111,8 @@
     {
       "id": "split",
       "type": "backend",
-      "label": "Next-token windows",
-      "sublabel": "2049 IDs \u2192 input / target",
+      "label": "Slice prediction windows",
+      "sublabel": "2049 IDs → shifted pairs",
       "pos": [
         440,
         500
@@ -126,7 +126,7 @@
       "id": "batch",
       "type": "backend",
       "label": "DataLoader batches",
-      "sublabel": "int64 tensors \u00b7 pinned H2D",
+      "sublabel": "int64 tensors · pinned H2D",
       "pos": [
         840,
         500
@@ -186,7 +186,7 @@
       "id": "windows-split",
       "from": "windows",
       "to": "split",
-      "label": "slice + cast",
+      "label": "slice then cast",
       "variant": "emphasis"
     },
     {
@@ -202,23 +202,25 @@
       "dot": "cyan",
       "title": "Shared preparation",
       "items": [
-        "Web 55% \u00b7 code 20% \u00b7 math 10% \u00b7 arXiv 10% \u00b7 synthetic 5%.",
-        "The workspace owns download, cleaning, deduplication and tokenization."
+        "Configured recipe weights, not observed corpus quotas.",
+        "config.py:get_config + ../shared_data/config/mixture.yaml",
+        "Revision: c99a925e97339fbaa771488f4036817ad535b90e"
       ]
     },
     {
       "dot": "emerald",
       "title": "Local consumption",
       "items": [
-        "The project shim already bridges shards to the flat token cache.",
-        "Read windows are cast to int64; batching allocates tensors."
+        "data/prepare_data.py:concat_shards_to_cache adapts shards.",
+        "Partition is chunk-aligned; not document-disjoint.",
+        "Read windows cast to int64; batching allocates tensors."
       ]
     },
     {
       "dot": "amber",
       "title": "Memory accounting",
       "items": [
-        "8B uint32 tokens occupy approximately 32 GB on disk.",
+        "Calculated at 8B uint32 tokens: ~32 GB on disk.",
         "Resident pages, sampler indices and prefetched batches still use RAM."
       ]
     }
