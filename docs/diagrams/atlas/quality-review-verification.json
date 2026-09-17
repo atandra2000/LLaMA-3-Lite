@@ -1,0 +1,114 @@
+{
+  "source_revision": "c99a925e97339fbaa771488f4036817ad535b90e",
+  "configuration": "config.py:get_config",
+  "diagrams": [
+    {
+      "html": "data.html",
+      "specification": "data.architecture.json",
+      "type": "architecture",
+      "specification_sha256": "c6e9b1dd68cfed154df8ca70eb50efd8f550d6f6365c18c22fb22afb958523e3",
+      "artifact_sha256": "bf449b148f3dbc0f6a6cf25e326983de974167883c5ce08541a2e3a20e13c2c0",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "minimum_node_px_1440": 7.7785714285714285,
+      "visual_review": "skipped (image input unavailable)"
+    },
+    {
+      "html": "model.html",
+      "specification": "model.architecture.json",
+      "type": "architecture",
+      "specification_sha256": "2a74c294cf2dd0313efbf06693b83c4eeddfee0d49f3f6bc7bbbf5180f70e75e",
+      "artifact_sha256": "c58c698cfb789be0a415bccd76290e765c90b6c4fc9d79cae6966978d9c6d944",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "minimum_node_px_1440": 8.003571428571428,
+      "visual_review": "skipped (image input unavailable)"
+    },
+    {
+      "html": "optimization.html",
+      "specification": "optimization.architecture.json",
+      "type": "architecture",
+      "specification_sha256": "30d90d7ac6c74f5fab45608f717c6476209b3d3fef43f1b7bc518565c8fd8ba6",
+      "artifact_sha256": "5a685bed45c2442decf1e6134508bd01ee6d3198cd83e1b65837c82c6b982770",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "minimum_node_px_1440": 8.389285714285714,
+      "visual_review": "skipped (image input unavailable)"
+    },
+    {
+      "html": "system.html",
+      "specification": "system.architecture.json",
+      "type": "architecture",
+      "specification_sha256": "c33fa1c45303e41b853b77dd2f6f40326e69b75b3c167f5f8910e2cba8ed7481",
+      "artifact_sha256": "d869f571a87193e9c10be734ba5ac4a50d0c8d27728b091398f1c65c7cd5b077",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "minimum_node_px_1440": 8.003571428571428,
+      "visual_review": "skipped (image input unavailable)"
+    },
+    {
+      "html": "training.html",
+      "specification": "training.architecture.json",
+      "type": "workflow",
+      "specification_sha256": "d0f988c1b4f74cc775fd16e1e8cc470ff3406ceb54e8970ec00daad03c7713cb",
+      "artifact_sha256": "18382df299475910e3664d8c1bfd765f05bbb5e82154ba350bb29e03dd6981b0",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "minimum_node_px_1440": 8,
+      "visual_review": "skipped (image input unavailable)"
+    }
+  ],
+  "guide_static": {
+    "guide": "LLaMA-3-Lite/docs/diagrams/atlas/index.html",
+    "links": 38,
+    "navigation": [
+      "#system",
+      "#model",
+      "#data",
+      "#training",
+      "#optimization",
+      "#evidence"
+    ],
+    "source_symbols": 18,
+    "errors": []
+  },
+  "perceptual_review": "skipped (image input unavailable)",
+  "premium_11_12px_target": "not met",
+  "doc_import_gate": "passed: 23 docs via isolated scratch venv with real wandb 0.26.1; initial missing dependency resolved",
+  "model_code_changes": false
+}

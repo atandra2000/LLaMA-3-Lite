@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Inside the LLaMA-3-Lite decoder",
+    "title": "LLaMA-3-Lite · Model",
     "quality_profile": "showcase",
     "viewBox": [
       1120,
@@ -17,10 +17,10 @@
       "sublabel": "[B, S] integers",
       "pos": [
         40,
-        70
+        65
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -30,11 +30,11 @@
       "label": "Untied embedding",
       "sublabel": "[V, 1024] lookup",
       "pos": [
-        440,
-        70
+        370,
+        65
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -42,13 +42,13 @@
       "id": "attention",
       "type": "backend",
       "label": "Pre-norm attention",
-      "sublabel": "RMSNorm \u2192 QK-norm \u2192 RoPE \u2192 GQA",
+      "sublabel": "RMSNorm · QK-norm · RoPE · GQA",
       "pos": [
-        840,
-        70
+        40,
+        255
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -58,11 +58,11 @@
       "label": "Attention residual",
       "sublabel": "h = x + attention(norm(x))",
       "pos": [
-        840,
-        285
+        320,
+        255
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -70,13 +70,13 @@
       "id": "ffn",
       "type": "backend",
       "label": "Pre-norm SwiGLU",
-      "sublabel": "gate/up 8192 \u2192 SiLU \u00d7 up \u2192 1024",
+      "sublabel": "Gate/up 8192 → SiLU × up",
       "pos": [
-        440,
-        285
+        600,
+        255
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -86,11 +86,11 @@
       "label": "FFN residual",
       "sublabel": "h = h + ffn(norm(h))",
       "pos": [
-        40,
-        285
+        880,
+        255
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -100,11 +100,11 @@
       "label": "Final RMSNorm",
       "sublabel": "After 16 decoder blocks",
       "pos": [
-        40,
-        500
+        880,
+        480
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -112,13 +112,13 @@
       "id": "hidden",
       "type": "backend",
       "label": "Final hidden states",
-      "sublabel": "[B, S, 1024] \u2192 [B \u00d7 S, 1024]",
+      "sublabel": "[B, S, 1024]",
       "pos": [
-        440,
-        500
+        550,
+        480
       ],
       "size": [
-        240,
+        200,
         76
       ]
     },
@@ -126,13 +126,27 @@
       "id": "loss",
       "type": "backend",
       "label": "Chunked head + loss",
-      "sublabel": "256 rows \u2192 CE + z-loss",
+      "sublabel": "256 rows · CE + z-loss",
       "pos": [
-        840,
-        500
+        220,
+        480
       ],
       "size": [
-        240,
+        200,
+        76
+      ]
+    },
+    {
+      "id": "logits",
+      "type": "backend",
+      "label": "Inference logits",
+      "sublabel": "Untied head → [B, S, V]",
+      "pos": [
+        880,
+        65
+      ],
+      "size": [
+        200,
         76
       ]
     }
@@ -149,16 +163,17 @@
       "id": "embedding-attention",
       "from": "embedding",
       "to": "attention",
-      "label": "residual stream",
-      "variant": "emphasis"
+      "label": "first block",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "attention-residual_a",
       "from": "attention",
       "to": "residual_a",
-      "label": "attention output",
-      "variant": "emphasis",
-      "labelDy": 24
+      "label": "add to x",
+      "variant": "emphasis"
     },
     {
       "id": "residual_a-ffn",
@@ -171,14 +186,14 @@
       "id": "ffn-residual_b",
       "from": "ffn",
       "to": "residual_b",
-      "label": "FFN output",
+      "label": "add to h",
       "variant": "emphasis"
     },
     {
       "id": "residual_b-norm",
       "from": "residual_b",
       "to": "norm",
-      "label": "repeat block \u00d716",
+      "label": "after block 16",
       "variant": "emphasis",
       "labelDy": 24
     },
@@ -195,6 +210,29 @@
       "to": "loss",
       "label": "project per chunk",
       "variant": "emphasis"
+    },
+    {
+      "id": "norm-logits",
+      "from": "norm",
+      "to": "logits",
+      "label": "ordinary forward",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1100,
+          518
+        ],
+        [
+          1100,
+          103
+        ]
+      ],
+      "labelAt": [
+        1098,
+        420
+      ]
     }
   ],
   "cards": [
@@ -218,9 +256,23 @@
       "dot": "amber",
       "title": "Dimensions are runtime-aware",
       "items": [
-        "Configured V = 128,000; training uses max(configured V, tokenizer length).",
-        "RoPE \u03b8 = 500,000; the implemented position cache is 2048 long."
+        "Configured: config.py:get_config (V may grow to tokenizer size).",
+        "Revision: c99a925e97339fbaa771488f4036817ad535b90e",
+        "model.py:DecoderBlock.forward; model.py:Transformer.forward"
       ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "DecoderBlock ×16: repeat all four enclosed operations",
+      "wraps": [
+        "attention",
+        "residual_a",
+        "ffn",
+        "residual_b"
+      ],
+      "pad": 25
     }
   ]
 }
