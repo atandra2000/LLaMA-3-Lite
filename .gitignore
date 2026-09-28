@@ -39,3 +39,6 @@ docs_html/
 
 # Brainstorming visual companion session artifacts
 .superpowers/
+
+# Agent session/tooling state (autoharness queues, session files)
+.claude/

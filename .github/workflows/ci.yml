@@ -29,3 +29,9 @@ jobs:
       - name: Doc reference checker
         run: |
           python -m pytest tests/test_doc_refs.py --no-header -q
+      - name: Doc reference gate
+        run: |
+          # Docs↔code alignment: anchor resolution, uncited public symbols,
+          # line anchors, markdown links and #heading anchors. This is the
+          # coverage half — test_doc_refs.py above does not enforce it.
+          python scripts/check_docs.py --coverage --links
