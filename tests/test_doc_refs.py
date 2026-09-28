@@ -32,6 +32,56 @@ LINE_ANCHOR_RE = re.compile(
     r"([A-Za-z_][A-Za-z0-9_./-]*\.py)\s*[:L]\s*\d+"
     r"|\bL\d+(?:\s*[–-]\s*\d+)?\b(?!\s*(?:norm|regularization|reg|loss|penalty|distance|ball|error|regularizer)\b)"
 )
+# Heading-anchor machinery: a link target may carry a `#fragment`, which must
+# match a heading id in the target file. GitHub derives ids as: drop inline
+# markup, lowercase, keep word chars and hyphens, spaces -> hyphens, and give
+# a repeated heading the `-1`, `-2` suffix.
+FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
+HEADING_RE = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$")
+SETEXT_RE = re.compile(r"^(?:=+|-{2,})\s*$")
+MD_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+HTML_TAG_RE = re.compile(r"<[^>]+>")
+SLUG_STRIP_RE = re.compile(r"[^\w\s-]")
+
+_SLUG_CACHE: dict[Path, set[str]] = {}
+
+
+def _slug(text: str) -> str:
+    """GitHub heading id for a heading's text."""
+    text = MD_LINK_RE.sub(r"\1", text)
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = HTML_TAG_RE.sub("", text)
+    text = re.sub(r"[*~]", "", text).lower()
+    # GitHub maps EACH space to its own hyphen — never collapse runs, or
+    # "Part B — Config" would yield `part-b-config` instead of `part-b--config`.
+    return SLUG_STRIP_RE.sub("", text).strip().replace(" ", "-")
+
+
+def _heading_slugs(path: Path) -> set[str]:
+    """Every anchor id `path` exposes. Setext headings count, thematic
+    breaks do not, and a repeated heading gets GitHub's `-1`, `-2` suffix.
+    """
+    if path in _SLUG_CACHE:
+        return _SLUG_CACHE[path]
+    lines = FENCE_RE.sub("", path.read_text(encoding="utf-8")).split("\n")
+    counts: dict[str, int] = {}
+    slugs: set[str] = set()
+    for i, line in enumerate(lines):
+        m = HEADING_RE.match(line)
+        if m:
+            title = m.group(1)
+        elif line.strip() and i + 1 < len(lines) and SETEXT_RE.match(lines[i + 1]):
+            title = line.strip()
+        else:
+            continue
+        base = _slug(title)
+        if not base:
+            continue
+        n = counts.get(base, 0)
+        counts[base] = n + 1
+        slugs.add(base if n == 0 else f"{base}-{n}")
+    _SLUG_CACHE[path] = slugs
+    return slugs
 
 
 def _load_module(path: Path):
@@ -84,8 +134,9 @@ def _check_doc(path: Path) -> list[str]:
 
 
 def _check_links(path: Path) -> list[str]:
-    """Validate intra-repo markdown links; code fences are stripped so
-    kernel source is not scanned. Links may be doc-relative or root-relative."""
+    """Validate intra-repo markdown links *and* their `#fragment` anchors;
+    code fences are stripped so kernel source is not scanned. Links may be
+    doc-relative or root-relative."""
     LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
     FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
     errors = []
@@ -95,12 +146,16 @@ def _check_links(path: Path) -> list[str]:
         target = m.group(1).strip()
         if not target or target.startswith(("http://", "https://", "#", "mailto:")):
             continue
-        path_part = target.split("#", 1)[0]
+        path_part, _, fragment = target.partition("#")
         if not path_part:
             continue
         candidates = [(path.parent / path_part).resolve(), (ROOT / path_part).resolve()]
-        if not any(c.exists() for c in candidates):
+        resolved = next((c for c in candidates if c.exists()), None)
+        if resolved is None:
             errors.append(f"{rel}: broken link -> {target}")
+        elif fragment and resolved.suffix == ".md":
+            if fragment.lower() not in _heading_slugs(resolved):
+                errors.append(f"{rel}: dead anchor -> {target}")
     return errors
 
 
