@@ -163,7 +163,7 @@ Every key below lives in `config.py:get_config`; defaults are the current values
 
 | Key | Default | Meaning |
 |---|---|---|
-| `data_sources` | 6 entries | Vestigial mixture dict in `config.py` (fineweb_edu 0.5 / fineweb_code 0.1 / the_stack_python 0.2 / the_stack_multilang 0.05 / wikipedia 0.05 / stackoverflow_qa 0.05, sums to 0.95). **Nothing consumes it** — the canonical mixture is `LLM/shared_data/config/mixture.yaml` |
+| `data_sources` | 7 entries | Informational mirror of the canonical mixture in `LLM/shared_data/config/mixture.yaml` (fineweb-edu 0.40 / dclm-baseline 0.15 / the-stack-v2-python 0.15 / the-stack-v2-jupyter 0.05 / openmath 0.10 / arxiv 0.10 / cosmopedia 0.05, sums to 1.0). **Nothing consumes it** — `tests/test_config.py` pins it to the canonical recipe; edit the YAML first, then sync |
 | `num_workers` | 6 | DataLoader workers |
 | `prefetch_factor` | 16 | Batches prefetched per worker |
 | `pin_memory` | True | Page-locked host buffers for async H2D |
