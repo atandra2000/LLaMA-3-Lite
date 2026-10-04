@@ -22,6 +22,10 @@ from pathlib import Path
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = WORKSPACE_DIR / "docs_html"
 
+# The docs site is published from this branch (GitHub Pages + CI). Asset and
+# blob links must resolve against it even when built from a worktree.
+DEFAULT_PUBLISH_BRANCH = "main"
+
 DOC_FILES = [
     # (relative_path_from_root, category, display_title)
     ("README.md", "Core", "Project Overview (README)"),
@@ -114,9 +118,102 @@ def slugify(text: str) -> str:
     return text.strip('-') or "heading"
 
 
+# Tags the portal renders from raw markdown HTML. Anything outside this set is
+# dropped rather than passed through, so a doc can never inject script.
+RAW_ALLOWED_TAGS = {
+    'div', 'p', 'span', 'a', 'img', 'br', 'hr', 'em', 'strong', 'b', 'i',
+    'code', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th',
+    'td', 'details', 'summary', 'figure', 'figcaption', 'sup', 'sub', 'kbd',
+    'small', 'abbr', 'del', 'ins', 'u',
+}
+# Attributes kept per tag. `style` is deliberately absent: raw inline styles
+# would override the design system's tokens.
+RAW_ALLOWED_ATTRS = {
+    '*': {'class', 'id', 'title', 'align', 'width', 'height', 'colspan', 'rowspan'},
+    'a': {'href', 'target', 'rel'},
+    'img': {'src', 'alt', 'loading', 'decoding'},
+    'td': {'align'},
+    'th': {'align', 'scope'},
+    'abbr': {'title'},
+}
+RAW_VOID_TAGS = {'br', 'hr', 'img'}
+_RAW_TAG_RE = re.compile(r'<\s*(/?)\s*([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^<>]*?)?)\s*(/?)\s*>')
+
+
+def sanitize_raw_html(raw: str, src_rel_path: str, format_text=None) -> str:
+    """Filter a raw HTML island down to the portal's tag/attribute allowlist.
+
+    Relative `src`/`href` are rewritten so they resolve from `docs_html/`,
+    where the referenced images and sibling docs do not exist on disk.
+    `format_text` formats the text nodes between tags, so markdown emphasis
+    inside a passthrough island still renders.
+    """
+    out = []
+    pos = 0
+    for m in _RAW_TAG_RE.finditer(raw):
+        chunk = raw[pos:m.start()]
+        out.append(format_text(chunk) if format_text else html.escape(chunk, quote=False))
+        pos = m.end()
+
+        closing, tag, attrs_raw, self_closing = m.group(1), m.group(2).lower(), m.group(3) or '', m.group(4)
+        if tag not in RAW_ALLOWED_TAGS:
+            continue
+        if closing:
+            out.append(f'</{tag}>')
+            continue
+
+        allowed = RAW_ALLOWED_ATTRS['*'] | RAW_ALLOWED_ATTRS.get(tag, set())
+        kept = []
+        for name, value in re.findall(r'([a-zA-Z-]+)\s*=\s*"([^"]*)"', attrs_raw):
+            name = name.lower()
+            if name not in allowed:
+                continue
+            if tag == 'img' and name == 'src':
+                value = resolve_asset_src(html.unescape(value), src_rel_path)
+            elif tag == 'a' and name == 'href':
+                value = resolve_raw_href(html.unescape(value), src_rel_path)
+                if 'target' in attrs_raw.lower() and 'rel' not in attrs_raw.lower():
+                    kept.append(('rel', 'noopener noreferrer'))
+            elif tag == 'a' and name == 'target' and value not in ('_blank', '_self'):
+                continue
+            kept.append((name, html.escape(value, quote=True)))
+
+        attr_str = ''.join(f' {n}="{v}"' for n, v in kept)
+        # Void tags stay self-closing; a self-closing allowlisted tag is
+        # normalized to an open/close pair so following siblings stay balanced.
+        if tag not in RAW_VOID_TAGS and self_closing:
+            out.append(f'<{tag}{attr_str}></{tag}>')
+        else:
+            out.append(f'<{tag}{attr_str}>')
+    tail = raw[pos:]
+    out.append(format_text(tail) if format_text else html.escape(tail, quote=False))
+    return ''.join(out)
+
+
+def looks_like_raw_html_block(text: str) -> bool:
+    """True when a paragraph's opening line is a real HTML island, not prose.
+
+    Prose like "a < b and c > d" must stay escaped text; a line whose first
+    tag is allowlisted HTML is a passthrough block.
+    """
+    stripped = text.strip()
+    if not stripped.startswith('<'):
+        return False
+    m = _RAW_TAG_RE.match(stripped)
+    if not m:
+        return False
+    return m.group(2).lower() in RAW_ALLOWED_TAGS
+
+
 @lru_cache(maxsize=1)
 def github_base_url() -> str:
-    """Derive the GitHub blob base (https://github.com/<owner>/<repo>/blob/<branch>)."""
+    """Derive the GitHub blob base (https://github.com/<owner>/<repo>/blob/<branch>).
+
+    The branch is the published default, not the checked-out one: the site is
+    deployed from `main`, so a build on a feature branch or worktree must still
+    link to content that actually exists on GitHub. `DOCS_PUBLISH_BRANCH`
+    overrides.
+    """
     try:
         out = subprocess.run(
             ["git", "remote", "get-url", "origin"],
@@ -127,14 +224,85 @@ def github_base_url() -> str:
             return ""
     except Exception:
         return ""
+
+    branch = os.environ.get("DOCS_PUBLISH_BRANCH")
+    explicit = branch is not None
+    if not explicit:
+        branch = DEFAULT_PUBLISH_BRANCH
     try:
-        branch = subprocess.run(
-            ["git", "branch", "--show-current"],
+        head = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True, text=True, check=True, cwd=WORKSPACE_DIR,
         ).stdout.strip()
+        default_branch = subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            capture_output=True, text=True, cwd=WORKSPACE_DIR,
+        ).stdout.strip().removesuffix("/HEAD").split("/")[-1]
     except Exception:
-        return ""
+        head = default_branch = ""
+    # A local build of the published branch is exact; anything else falls back
+    # to the remote default so links never point at an unpushed branch. An
+    # explicit override always wins.
+    if not explicit and head and head != branch and default_branch:
+        branch = default_branch
     return f"{out}/blob/{branch}" if branch else ""
+
+
+@lru_cache(maxsize=1)
+def github_raw_base_url() -> str:
+    """Raw-content twin of `github_base_url`, for <img src> that must render
+    rather than open an HTML blob page."""
+    blob_base = github_base_url()
+    if not blob_base:
+        return ""
+    return blob_base.replace("https://github.com/", "https://raw.githubusercontent.com/").replace("/blob/", "/")
+
+
+def resolve_asset_src(src: str, src_rel_path: str) -> str:
+    """Point an <img src> at something that actually renders.
+
+    The build ships no PNGs, so a repo-relative path becomes a raw GitHub URL.
+    Absolute URLs and data URIs pass through untouched.
+    """
+    src = src.strip()
+    if not src or src.startswith(("http://", "https://", "data:", "//", "#")):
+        return src
+    raw_base = github_raw_base_url()
+    if not raw_base:
+        return src
+    src_dir = WORKSPACE_DIR / Path(src_rel_path).parent
+    candidate = (src_dir / src).resolve()
+    try:
+        repo_rel = candidate.relative_to(WORKSPACE_DIR).as_posix()
+    except ValueError:
+        return src
+    return f"{raw_base}/{repo_rel}"
+
+
+def resolve_raw_href(href: str, src_rel_path: str) -> str:
+    """Resolve an href inside a raw HTML island (fix_md_links never sees these)."""
+    href = href.strip()
+    if not href or href.startswith(("http://", "https://", "mailto:", "#")):
+        return href
+    path_part, _, anchor = href.partition("#")
+    src_dir = WORKSPACE_DIR / Path(src_rel_path).parent
+    if path_part.endswith(".md"):
+        for candidate in (src_dir / path_part, WORKSPACE_DIR / path_part):
+            if candidate.exists():
+                try:
+                    repo_rel = candidate.resolve().relative_to(WORKSPACE_DIR)
+                except ValueError:
+                    continue
+                rel = os.path.relpath(WORKSPACE_DIR / repo_rel, src_dir).replace(os.sep, '/')
+                return rel[:-3] + ".html" + (f"#{anchor}" if anchor else "")
+    repo_base = github_base_url()
+    if repo_base:
+        try:
+            repo_rel = (src_dir / path_part).resolve().relative_to(WORKSPACE_DIR)
+            return f"{repo_base}/{repo_rel}" + (f"#{anchor}" if anchor else "")
+        except ValueError:
+            pass
+    return href
 
 
 def fix_md_links(content: str, src_rel_path: str) -> str:
@@ -173,7 +341,9 @@ def fix_md_links(content: str, src_rel_path: str) -> str:
                 pass
         return f"[{label}]({url})"
 
-    return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', link_replacer, content)
+    # `(?<!!)` keeps markdown images out of the link rewriter: their src is an
+    # asset path, not a page to navigate to.
+    return re.sub(r'(?<!!)\[([^\]]+)\]\(([^)]+)\)', link_replacer, content)
 
 
 def parse_markdown_to_html(md_text: str, src_rel_path: str) -> tuple[str, list[dict]]:
@@ -291,6 +461,14 @@ def parse_markdown_to_html(md_text: str, src_rel_path: str) -> tuple[str, list[d
 
     def render_inline_formatting(text: str) -> str:
         text = escape_preserving_entities(text)
+        # Images before links: `[![alt](src)](href)` is a linked badge, and the
+        # link regex would otherwise swallow the inner image markup.
+        text = re.sub(
+            r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)',
+            lambda m: f'<img class="md-img" src="{html.escape(resolve_asset_src(m.group(2), src_rel_path), quote=True)}"'
+                      f' alt="{html.escape(m.group(1), quote=True)}" loading="lazy" decoding="async">',
+            text,
+        )
         text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
         text = re.sub(r'~~([^~]+)~~', r'<del>\1</del>', text)
@@ -440,6 +618,23 @@ def parse_markdown_to_html(md_text: str, src_rel_path: str) -> tuple[str, list[d
         if list_stack and list_stack[-1]['li_open'] and line[:1] in (' ', '\t'):
             html_lines.append("<br> " + render_inline_formatting(stripped))
             i += 1
+            continue
+
+        # Raw HTML island. CommonMark ends an HTML block at the first blank
+        # line, which is what lets `<div align="center">` wrap markdown: the
+        # tag is its own block and the prose inside is still parsed below.
+        if looks_like_raw_html_block(stripped):
+            flush_table()
+            flush_list()
+            flush_blockquote()
+            block_lines = [line]
+            j = i + 1
+            while j < len(lines) and lines[j].strip():
+                block_lines.append(lines[j])
+                j += 1
+            i = j
+            html_lines.append(sanitize_raw_html(
+                '\n'.join(block_lines), src_rel_path, format_text=render_inline_formatting))
             continue
 
         # Standard Paragraph
