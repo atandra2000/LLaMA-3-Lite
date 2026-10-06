@@ -7,7 +7,10 @@ metadata:
 
 # AGENTS.md — LLaMA-3-Lite
 
-> **CRITICAL RULE:** You must also read, understand, and strictly obey all higher-level rules: the workspace `LLM/AGENTS.md` (shared-data pipeline rules, repo boundaries, cross-project invariants) and the top-level `CoreProjects/AGENTS.md` / `CoreProjects/.agents/AGENTS.md`. Those instructions apply globally to all projects; this file wins only on LLaMA-3-Lite-specific conflicts.
+> Higher-level rules also apply: the workspace `LLM/AGENTS.md` (shared-data
+> pipeline rules, repo boundaries, cross-project invariants) and the top-level
+> `CoreProjects/AGENTS.md` / `CoreProjects/.agents/AGENTS.md`. Those apply
+> globally. This file wins only on LLaMA-3-Lite-specific conflicts.
 
 ## Quick checks (run before claiming work is done)
 
