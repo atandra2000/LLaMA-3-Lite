@@ -141,7 +141,7 @@ with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
 
 ## Skill 8: Tune stability knobs (z-loss, QK-norm, EMA)
 
-Three optional stability features were added in the 2026-07-15 refactor. All
+Three optional stability features are available. All
 default to safe values; all can be disabled independently.
 
 | Flag | Default | Disable by | Notes |
