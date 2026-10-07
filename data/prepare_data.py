@@ -25,13 +25,30 @@ _CONCAT_CHUNK_TOKENS = 1 << 26
 
 
 def _apply_llama3_defaults() -> None:
-    from shared_data.config import UNIVERSAL_TOTAL_TOKENS
-    print(f"[data/llama3] universal corpus: {UNIVERSAL_TOTAL_TOKENS:,} tokens")
+    try:
+        from shared_data.config import UNIVERSAL_TOTAL_TOKENS
+        corpus = f"{UNIVERSAL_TOTAL_TOKENS:,}"
+    except ModuleNotFoundError:
+        corpus = "8,000,000,000"
+    print(f"[data/llama3] universal corpus: {corpus} tokens")
     print(f"[data/llama3] tokenizer: {LLAMA3_TOKENIZER_NAME} "
           f"(vocab={LLAMA3_VOCAB_SIZE:,}, EOS={LLAMA3_EOS_TOKEN_ID})")
     print(f"[data/llama3] shard size: 50,000,000 tokens (uint32)")
     print(f"[data/llama3] note: identical byte layout to GPT-OSS-Lite; "
           f"shards can be shared verbatim between the two projects.")
+
+
+def _resolve_data_root(cli_root: str | None) -> Path:
+    """Mirror ``shared_data.common.DATA_ROOT`` without importing the workspace.
+
+    ``LLM_DATA_ROOT`` wins; the workspace package is not on the pod.
+    """
+    if cli_root:
+        return Path(cli_root).resolve()
+    env = os.environ.get("LLM_DATA_ROOT")
+    if env:
+        return Path(env).resolve()
+    return (Path.cwd() / "data").resolve()
 
 
 def concat_shards_to_cache(shards_dir: Path, manifest_path: Path,
@@ -88,40 +105,52 @@ def main() -> int:
     parser.add_argument("--skip-clean", action="store_true")
     parser.add_argument("--skip-tokenize", action="store_true")
     parser.add_argument("--skip-pack", action="store_true")
+    parser.add_argument("--concat-only", action="store_true",
+                        help="shards are already packed on disk; just build "
+                             "data_cache/tokens.bin. Needs no workspace package.")
     args = parser.parse_args()
 
-    try:
-        _apply_llama3_defaults()
-    except ModuleNotFoundError as exc:
-        raise SystemExit(
-            "LLaMA-3-Lite data prep delegates to the universal pipeline at "
-            "`LLM/shared_data/` (shared_data.config / shared_data.prepare_data). "
-            "That workspace package is not importable on this machine "
-            f"({exc}). This project vendors only the loader (data/shared_data/)."
-        ) from exc
+    _apply_llama3_defaults()
 
-    from shared_data.config import UNIVERSAL_MIXTURE_PATH, UNIVERSAL_DATA_CONFIG_PATH
-    from shared_data.prepare_data import run_pipeline
+    if not args.concat_only:
+        try:
+            from shared_data.config import UNIVERSAL_MIXTURE_PATH, UNIVERSAL_DATA_CONFIG_PATH
+            from shared_data.prepare_data import run_pipeline
+        except ModuleNotFoundError as exc:
+            raise SystemExit(
+                "The universal pipeline at `LLM/shared_data/` is not importable "
+                f"({exc}).\n"
+                "This project vendors only the loader (data/shared_data/).\n"
+                "If your shards are already packed (for example the "
+                "gdrive:llm-corpus/tok_llama3 set), skip the pipeline:\n"
+                "  python data/prepare_data.py --concat-only"
+            ) from exc
 
-    rc = run_pipeline(
-        mixture_path=Path(args.mixture) if args.mixture else UNIVERSAL_MIXTURE_PATH,
-        data_config_path=Path(args.data_config) if args.data_config else UNIVERSAL_DATA_CONFIG_PATH,
-        source=args.source,
-        skip_download=args.skip_download,
-        skip_clean=args.skip_clean,
-        skip_tokenize=args.skip_tokenize,
-        skip_pack=args.skip_pack,
-        data_root=Path(args.data_root) if args.data_root else None,
-    )
-    if rc != 0:
-        return rc
+        rc = run_pipeline(
+            mixture_path=Path(args.mixture) if args.mixture else UNIVERSAL_MIXTURE_PATH,
+            data_config_path=Path(args.data_config) if args.data_config else UNIVERSAL_DATA_CONFIG_PATH,
+            source=args.source,
+            skip_download=args.skip_download,
+            skip_clean=args.skip_clean,
+            skip_tokenize=args.skip_tokenize,
+            skip_pack=args.skip_pack,
+            data_root=Path(args.data_root) if args.data_root else None,
+        )
+        if rc != 0:
+            return rc
 
     # Convert the pipeline's shard layout to the loader's flat cache layout.
-    from shared_data.common import DATA_ROOT
+    data_root = _resolve_data_root(args.data_root)
 
-    # Resolve the shard directory from the manifest, relative to DATA_ROOT.
-    probe = DATA_ROOT / "shards" / "manifest.json"
-    shards_dir = DATA_ROOT / json.loads(
+    # Resolve the shard directory from the manifest, relative to the data root.
+    probe = data_root / "shards" / "manifest.json"
+    if not probe.exists():
+        raise SystemExit(
+            f"No manifest at {probe}.\n"
+            f"Set LLM_DATA_ROOT to the directory that holds shards/ "
+            f"(for the Drive corpus: the parent of tok_llama3/shards)."
+        )
+    shards_dir = data_root / json.loads(
         probe.read_text(encoding="utf-8")).get("shards_dir", "shards")
     manifest_path = shards_dir / "manifest.json"
 
