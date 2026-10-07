@@ -280,11 +280,18 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         try:
             train_dataloader, val_dataloader, tokenizer = build_training_data(config)
         except FileNotFoundError as exc:
+            # A multi-day pretrain must never silently train on synthetic
+            # tokens because LLM_DATA_ROOT was wrong. Opt in explicitly.
+            if os.environ.get("ALLOW_SYNTHETIC_DATA", "0") != "1":
+                raise RuntimeError(
+                    f"Real corpus not found: {exc}\n"
+                    f"LLM_DATA_ROOT={os.environ.get('LLM_DATA_ROOT', '<unset>')!r} must point at a "
+                    f"directory holding shards/manifest.json.\n"
+                    f"Set ALLOW_SYNTHETIC_DATA=1 only for smoke tests."
+                ) from exc
             print(
                 f"WARN: {exc}\n"
-                f"WARN: no token cache found — falling back to synthetic data. "
-                f"Run `python data/prepare_data.py` to build the real corpus "
-                f"cache at {config['data_cache_dir']}/{config['data_cache_filename']}."
+                f"WARN: ALLOW_SYNTHETIC_DATA=1 — training on synthetic tokens."
             )
             train_dataloader, val_dataloader, tokenizer = build_synthetic_data(config)
     # Packed windows have no padding; -100 leaves EOS separators learnable.
@@ -338,9 +345,10 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
         print(f"Non-embedding parameters: {non_embed_params/1e6:.1f}M")
     print(f"Gradient checkpointing: {'ON' if gradient_checkpointing else 'OFF'}")
     bs, seq = config['batch_size'], config['seq_len']
-    tokens_per_step = bs * seq
+    ga = config.get('gradient_accumulation', 1)
+    tokens_per_step = bs * seq * ga
     use_ema = config.get('use_ema', True)
-    print(f"Batch size: {bs} | Seq len: {seq} | Tokens/step: {tokens_per_step:,}")
+    print(f"Micro-batch: {bs} | Accum: {ga} | Effective batch: {bs * ga} | Seq len: {seq} | Tokens/step: {tokens_per_step:,}")
     print(f"QK-Norm: {'ON' if qknorm else 'OFF'} | Z-Loss: {'ON' if config.get('use_z_loss', True) else 'OFF'} | EMA: {'ON' if use_ema else 'OFF'}")
     print(f"{'='*60}\n")
 
@@ -452,6 +460,8 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     model.train()
 
     grad_accum_steps = config.get('gradient_accumulation', 1)
+    # Tokens per *optimizer* step. `step` counts optimizer steps, so every
+    # interval (val, ckpt, gen) below stays in optimizer-step units.
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
     if ema is not None and not config.get('preload'):
         print(f"EMA: enabled (decay={config.get('ema_decay', 0.999)})")
@@ -476,43 +486,44 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     next_target = next_batch['target'].to(device, non_blocking=True)
 
     for step in pbar:
-        input_ids = next_input
-        target_ids = next_target
+        # `step` is one optimizer step = grad_accum_steps micro-batches.
+        for _micro in range(grad_accum_steps):
+            input_ids = next_input
+            target_ids = next_target
 
-        data_start = time.time()
-        batch = _next_batch(step_iterator, train_dataloader, epoch_state)
-        fetch_time = time.time() - data_start
-        data_wait_time += fetch_time
+            data_start = time.time()
+            batch = _next_batch(step_iterator, train_dataloader, epoch_state)
+            fetch_time = time.time() - data_start
+            data_wait_time += fetch_time
 
-        # non_blocking=True + pin_memory=True gives async H2D; manual streams
-        # are off-limits while CUDA graphs own the device stream.
-        next_input = batch['input'].to(device, non_blocking=True)
-        next_target = batch['target'].to(device, non_blocking=True)
+            # non_blocking=True + pin_memory=True gives async H2D; manual streams
+            # are off-limits while CUDA graphs own the device stream.
+            next_input = batch['input'].to(device, non_blocking=True)
+            next_target = batch['target'].to(device, non_blocking=True)
 
-        with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
-                            enabled=(device.type == 'cuda')):
-            hidden = model(input_ids, return_hidden=True)
-            loss = chunked_head_cross_entropy_with_z(
-                hidden.view(-1, hidden.size(-1)),
-                _head_weight(model),
-                target_ids.view(-1),
-                chunk_size=ce_chunk_size,
-                ignore_index=ignore_index,
-                z_loss_weight=z_loss_weight,
-                cross_entropy_impl=cross_entropy_impl,
-            )
-            loss = loss / grad_accum_steps
+            with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
+                                enabled=(device.type == 'cuda')):
+                hidden = model(input_ids, return_hidden=True)
+                loss = chunked_head_cross_entropy_with_z(
+                    hidden.view(-1, hidden.size(-1)),
+                    _head_weight(model),
+                    target_ids.view(-1),
+                    chunk_size=ce_chunk_size,
+                    ignore_index=ignore_index,
+                    z_loss_weight=z_loss_weight,
+                    cross_entropy_impl=cross_entropy_impl,
+                )
+                loss = loss / grad_accum_steps
 
-        # BF16 has the FP32 exponent range; no GradScaler needed.
-        loss.backward()
+            # BF16 has the FP32 exponent range; no GradScaler needed.
+            loss.backward()
 
-        if (step + 1) % grad_accum_steps == 0:
-            grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=config['max_grad_norm'])
-            optimizer.step()
-            if ema is not None:
-                ema.update_parameters(model)
-            optimizer.zero_grad(set_to_none=True)
-            scheduler.step()
+        grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=config['max_grad_norm'])
+        optimizer.step()
+        if ema is not None:
+            ema.update_parameters(model)
+        optimizer.zero_grad(set_to_none=True)
+        scheduler.step()
 
         if device.type == 'cuda':
             end_event.record()
