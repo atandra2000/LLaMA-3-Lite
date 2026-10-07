@@ -15,8 +15,13 @@ def get_config() -> dict:
         'rope_theta':           500000.0,
         'rms_norm_eps':         1e-5,
 
-        'batch_size':           96,
-        'gradient_accumulation': 1,
+        # Micro-batch + grad accum, not one flat batch: the derived peak at
+        # batch 96 x seq 2048 is ~20 GB optimistic / ~26 GB strict (FP32
+        # residual under autocast), which does not fit a 24 GB card. 48 x 2
+        # keeps the documented 196,608 tokens per optimizer step and an
+        # effective batch of 96 at a derived peak near ~17 GB.
+        'batch_size':           48,
+        'gradient_accumulation': 2,
         'max_steps':            42000,
         'learning_rate':        3e-4,
         'min_lr':               3e-5,
@@ -101,6 +106,6 @@ def get_config() -> dict:
 
         'wandb_project':        'langgpt-llama3-pretrain',
         'wandb_entity':         None,
-        'wandb_tags':           ['llama3', '515M', 'a100', 'pretrain', 'code'],
+        'wandb_tags':           ['llama3', '515M', 'rtx4090', 'runpod', 'pretrain', 'code'],
         'log_interval':         50,
     }
