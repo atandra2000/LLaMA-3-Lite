@@ -308,3 +308,28 @@ class TestSetupGpuOptimizations:
         train_mod.setup_gpu_optimizations(cfg)
         train_mod.setup_gpu_optimizations(cfg)
 
+
+class TestAtomicTorchSave:
+    def test_failed_save_leaves_previous_checkpoint_intact(self, tmp_path, monkeypatch):
+        """A save that dies mid-write must not truncate the previous checkpoint."""
+        target = tmp_path / "ckpt.pt"
+        train_mod._atomic_torch_save({"n": 1}, target)
+        before = target.read_bytes()
+
+        def boom(obj, path):
+            with open(path, "wb") as fh:
+                fh.write(b"truncated")
+            raise RuntimeError("disk died")
+
+        monkeypatch.setattr(train_mod.torch, "save", boom)
+        with pytest.raises(RuntimeError):
+            train_mod._atomic_torch_save({"n": 2}, target)
+
+        assert target.read_bytes() == before, "previous checkpoint was clobbered"
+
+    def test_successful_save_is_loadable_and_leaves_no_tmp(self, tmp_path):
+        target = tmp_path / "ckpt.pt"
+        train_mod._atomic_torch_save({"n": 3}, target)
+        assert torch.load(target, weights_only=False)["n"] == 3
+        assert not target.with_name(target.name + ".tmp").exists()
+

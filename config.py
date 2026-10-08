@@ -17,11 +17,12 @@ def get_config() -> dict:
 
         # Micro-batch + grad accum, not one flat batch: the derived peak at
         # batch 96 x seq 2048 is ~20 GB optimistic / ~26 GB strict (FP32
-        # residual under autocast), which does not fit a 24 GB card. 48 x 2
-        # keeps the documented 196,608 tokens per optimizer step and an
-        # effective batch of 96 at a derived peak near ~17 GB.
-        'batch_size':           48,
-        'gradient_accumulation': 2,
+        # residual under autocast), which does not fit a 24 GB card.
+        # 48 x 2 was tried first and OOMed at 23.4 GB on a real 4090
+        # (torch.compile activations dominate). 32 x 3 keeps the documented
+        # 196,608 tokens per optimizer step and an effective batch of 96.
+        'batch_size':           32,
+        'gradient_accumulation': 3,
         'max_steps':            42000,
         'learning_rate':        3e-4,
         'min_lr':               3e-5,
@@ -34,7 +35,12 @@ def get_config() -> dict:
         'eps':                  1e-8,
 
         'compile_model':        True,
-        'compile_mode':         'reduce-overhead',
+        # 'reduce-overhead' captures CUDA graphs. Those conflict with
+        # gradient checkpointing: backward recomputes forward and overwrites
+        # the graph's output buffer ("accessing tensor output of CUDAGraphs
+        # that has been overwritten by a subsequent run"). Keep compile
+        # fusion, drop the graphs.
+        'compile_mode':         'default',
         'gradient_checkpointing': True,
         'ce_chunk_size':        256,
 
@@ -99,7 +105,7 @@ def get_config() -> dict:
 
         'model_folder':         'weights',
         'model_filename':      'llama3-515M',
-        'checkpoint_interval':  5000,
+        'checkpoint_interval':  500,
         'keep_last_n_checkpoints': 3,
         'async_checkpoint':     True,
         'preload':              None,

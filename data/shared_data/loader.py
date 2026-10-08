@@ -167,6 +167,17 @@ def build_training_data(config: dict) -> tuple[DataLoader, DataLoader, "object"]
     tokens = np.memmap(path, dtype=np.uint32, mode="r")
     chunk = seq_len + 1
     n_total = (tokens.size // chunk) * chunk
+    # drop_last=True keeps only full batches. A stub or stale cache (see
+    # RUNBOOK-4090.md "missing cache") otherwise yields zero batches and the
+    # training loop dies on a bare StopIteration with no hint of the cause.
+    min_tokens = 2 * batch * chunk
+    if n_total < min_tokens:
+        raise ValueError(
+            f"Token cache {path} holds {tokens.size:,} tokens; need at least "
+            f"{min_tokens:,} for one train + one val batch. Build it from the "
+            f"packed shards first: LLM_DATA_ROOT=<dir holding shards/> "
+            f"python3 data/prepare_data.py --pack-only"
+        )
     split = int(n_total * (1.0 - val_split))
     split = (split // chunk) * chunk
 
