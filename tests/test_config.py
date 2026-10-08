@@ -28,7 +28,7 @@ REQUIRED_KEYS = {
     "keep_last_n_checkpoints", "async_checkpoint", "preload",
     "wandb_project", "wandb_entity", "wandb_tags", "log_interval",
     # Triton dispatch keys (opt-in; force-back by default — see
-    # documentation/triton_kernels.md and AGENTS.md §Hard rules).
+    # docs/references/data-reference.md §Triton Kernels Reference and AGENTS.md §Hard rules).
     "cross_entropy_impl", "rmsnorm_impl", "swiglu_impl",
 }
 
@@ -66,7 +66,24 @@ class TestGetConfig:
         weights = [s["weight"] for s in full_config["data_sources"].values()]
         assert all(w > 0 for w in weights), weights
         assert sum(weights) > 0
-        assert 0.5 < sum(weights) <= 1.0 + 1e-9
+        # The workspace pipeline validates sum == 1.0 at load time and raises
+        # otherwise; the mirror must satisfy the same invariant.
+        assert abs(sum(weights) - 1.0) < 1e-9, sum(weights)
+
+    def test_data_sources_match_canonical_recipe(self, full_config):
+        # data_sources mirrors LLM/shared_data/config/mixture.yaml. If this
+        # fails, either the YAML changed (sync config.py) or config.py drifted.
+        canonical = {
+            "fineweb-edu": 0.40,
+            "dclm-baseline": 0.15,
+            "the-stack-v2-python": 0.15,
+            "the-stack-v2-jupyter": 0.05,
+            "openmath": 0.10,
+            "arxiv": 0.10,
+            "cosmopedia": 0.05,
+        }
+        got = {k: s["weight"] for k, s in full_config["data_sources"].items()}
+        assert got == canonical, got
 
     def test_learning_rate_schedule_invariants(self, full_config):
         assert 0 < full_config["min_lr"] < full_config["learning_rate"]
