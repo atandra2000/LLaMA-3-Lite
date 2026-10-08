@@ -84,14 +84,26 @@ number in the portfolio.
 
 **Files:**
 - `README.md`, `AGENTS.md`, `SKILLS.md`.
-- `config.py` — all hyperparameters.
-- `model.py`, `train.py`, `dataset.py`.
-- `tests/` — config, dataset, model, train, smoke tests.
+- `config.py` — all hyperparameters (incl. an informational mirror of the
+  canonical data mixture; see `data_sources`).
+- `model.py`, `train.py`, `dataset.py` (loader re-export shim),
+  `benchmark_data.py`.
+- `kernels/` — the three sanctioned Triton opt-ins (see the kernel contract
+  below).
+- `data/prepare_data.py` — shim into the workspace pipeline;
+  `data/shared_data/loader.py` — vendored loader.
+- `scripts/` — `check_docs.py` (doc gate), `build_docs_html.py` (docs
+  portal), `microbench_a100.py` (kernel speedup gate).
+- `tests/` — config, dataset, model, train, smoke tests, plus
+  `tests/test_data_pipeline.py` (audit C1/C2 regressions),
+  `tests/test_build_docs_html.py` (portal build contract), and
+  `tests/e2e_gpu_smoke.py` (standalone GPU script, not pytest-collected).
 - `docs/` — canonical documentation: `docs/concepts/` (theory,
   from-scratch concept building), `docs/references/` (code-keyed
   walkthroughs), `docs/guides/` (learning paths, quickstart,
   troubleshooting, glossary), `docs/training.md` (training pipeline +
-  memory stack + data pipeline). `docs/README.md` is the nav map;
+  memory stack + data pipeline), `docs/diagrams/atlas/` (visual atlas),
+  `docs/superpowers/` (plans/specs). `docs/README.md` is the nav map;
   `tests/test_doc_refs.py` and `scripts/check_docs.py --coverage --links`
   fail CI on any stale doc citation (see hard rule 10).
 
@@ -120,12 +132,12 @@ number in the portfolio.
    raw PyTorch. No HuggingFace Trainer, no Lightning, no high-level
    wrappers. The sanctioned Triton paths are the three `kernels/*.py`
    opt-ins listed above. No new component gets a custom kernel without
-   updating this file and adding a `documentation/<name>.md` plan.
+   updating this file and adding a `docs/superpowers/plans/<name>.md` plan.
 2. **Hardware Optimization:** Maximize hardware utilization. For any
    sanctioned Triton path, target ≥ 1.5× speedup over the
    raw-PyTorch path in a microbenchmark; below that, do
-   not enable by default. (No `scripts/microbench_a100.py` exists yet —
-   add one before benchmarking a new kernel.)
+   not enable by default. (`scripts/microbench_a100.py` is the gate —
+   run it on an A100 before benchmarking or enabling a new kernel.)
 3. **Always** preserve the chunked-CE chunk size (default 256 tokens).
 4. **Always** preserve `tie_embeddings=False` — the LLaMA-3 paper does
    not tie input/output embeddings.
@@ -156,6 +168,11 @@ number in the portfolio.
 - Full 8.25B-token run not yet started.
 - The 78% memory reduction headline is the most-tested number in the
   portfolio; do not regress it.
+- The three `kernels/` pure-PyTorch references have no CPU unit tests of
+  their own (hard rule 8 predates them); coverage today is
+  `tests/e2e_gpu_smoke.py` on GPU plus the equivalent math paths in
+  `tests/test_model.py`. Add `tests/test_<name>_triton.py` CPU tests when
+  touching a kernel.
 
 <!-- OPENWIKI:START -->
 

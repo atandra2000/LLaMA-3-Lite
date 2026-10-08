@@ -115,7 +115,7 @@ The output layout is a set of flat uint32 buffers (`data/shards/shard_*.bin`, ~1
 - `data/prepare_data.py:_apply_llama3_defaults` then does
   `from shared_data.config import UNIVERSAL_TOTAL_TOKENS`. Because the workspace is first on the path, this resolves to `LLM/shared_data/config.py`. If the workspace package is not importable (say, the machine has no `LLM/` checkout), Python falls through to the **vendored** `data/shared_data/` package, which has no `config.py` — the import raises `ModuleNotFoundError`, and the shim catches it and exits with a message pointing at `LLM/shared_data/`. That failure mode is deliberate: the shim refuses to silently prepare a different corpus than every other project uses.
 - `data/prepare_data.py:main` parses the flags
-  (`--stage pretrain`, `--skip-download`, `--skip-clean`, `--skip-tokenize`, `--skip-pack`, `--mixture`, `--data-config`, `--data-root`, `--source`) and forwards them to `shared_data.prepare_data.run_pipeline`. Nothing in the project's own `config.py` is passed — the mixture and pipeline knobs come exclusively from the workspace YAMLs. This is why the `data_sources` dict in `config.py:get_config` is vestigial (see Pitfalls).
+  (`--stage pretrain`, `--skip-download`, `--skip-clean`, `--skip-tokenize`, `--skip-pack`, `--mixture`, `--data-config`, `--data-root`, `--source`) and forwards them to `shared_data.prepare_data.run_pipeline`. Nothing in the project's own `config.py` is passed — the mixture and pipeline knobs come exclusively from the workspace YAMLs. This is why the `data_sources` dict in `config.py:get_config` is a documentation mirror (see Pitfalls).
 
 The workspace pipeline resolves its data root as `$LLM_DATA_ROOT` if set, else `$PWD/data` (`shared_data.common._resolve_data_root`). Run `python data/prepare_data.py` from this repo's root, and the raw/clean/ tokens/shards trees and `manifest.json` land under `LLaMA-3-Lite/data/`.
 
@@ -169,8 +169,14 @@ Two honest caveats about this table, both verified:
   The YAML is authoritative; the portfolio README is stale doc-rot —
   exactly the disease this doc set is being purged of. `[INFERENCE]` the
   README predates the current mixture.
-- This project's `config.py:get_config` carries its own `data_sources` dict
-  (six entries: fineweb_edu 0.5, fineweb_code 0.1, the_stack_python 0.2, the_stack_multilang 0.05, wikipedia 0.05, stackoverflow_qa 0.05 — summing to 0.95). **Nothing reads it**: the vendored loader consults only the cache-path and loader keys, and `data/prepare_data.py:main` never passes the project config to the workspace. It survives because `tests/test_config.py:REQUIRED_KEYS` pins the config surface and the weight-positivity test keeps it sane. Treat it as a legacy documentation surface, not the mixture.
+- This project's `config.py:get_config` carries its own `data_sources` dict.
+  It now **mirrors the canonical recipe** — same seven ids, same weights
+  (0.40/0.15/0.15/0.05/0.10/0.10/0.05, summing to 1.0) — kept in sync by
+  `tests/test_config.py::TestGetConfig.test_data_sources_match_canonical_recipe`.
+  Still **nothing reads it**: the vendored loader consults only the cache-path
+  and loader keys, and `data/prepare_data.py:main` never passes the project
+  config to the workspace. It exists so `config.py` documents the corpus in
+  one place; the YAML remains the file to edit (then sync the mirror).
 
 #### The Chinchilla budget: why 8.0B tokens
 
@@ -817,11 +823,12 @@ One alignment note, verified against the working tree: AGENTS.md's "Sanctioned T
    [training.md](../training.md) (merged from the retired
    `data/DATA_PIPELINE.md`) would replace the vendored file and *change the input contract* from `tokens.bin` to the shards — a real behavioral change, not a cosmetic update.
 3. **Doc rot in the mixture docs.** The root `CoreProjects/README.md` §4
-   LLaMA-3-Lite entry and this project's `data_sources` config both
-   describe mixtures that differ from the canonical `mixture.yaml`. When
+   LLaMA-3-Lite entry still describes a mixture that differs from the
+   canonical `mixture.yaml`. When
    reading any data doc, the YAML wins. (Extending the mixture means
-   editing the **canonical mixture**, not `config.py` — nothing consumes
-   the project's `data_sources` dict.)
+   editing the **canonical mixture** first, then syncing the `config.py`
+   mirror — nothing consumes the project's `data_sources` dict, but the
+   test pins it to the canonical ids and weights.)
 4. **Resume does not restore the epoch counter.** `save_checkpoint` stores
    model/optimizer/scheduler/EMA/RNG states but **not** the sampler offset or epoch count; `epoch_state` restarts at `{'epoch': 0}` on every run. A run resumed at step 20k does not see the same window order as a never-stopped run at step 20k (the first StopIteration after resume bumps to epoch 1, replaying epoch-1 order from its start). The RNG state *is* restored, so the *sampler's* epoch-1 permutation is bit-identical to the original run's — the divergence is in *where* in the permutation the resumed iterator starts. See [training-and-memory.md](training-and-memory.md) for the full analysis.
 5. **EOS 128,009 vs vocab 128,000.** The corpus contains token 128,009, but

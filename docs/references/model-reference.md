@@ -1041,7 +1041,7 @@ Two distinct consumers exist. **This repo's loader** reads a small subset to bui
 
 | Key | Default | Controls | Why | Consumed by |
 |---|---|---|---|---|
-| `data_sources` | 6 sources (below) | Corpus mixture | Weighted mixture of FineWeb-Edu, The Stack, Wikipedia, StackOverflow-QA. **No consumer in this repo** — it documents the workspace pipeline's mixture; locally it is only validated by `tests/test_config.py::TestGetConfig.test_data_source_weights_positive` | workspace pipeline (out of repo); test-only locally |
+| `data_sources` | 7 sources (below) | Corpus mixture | Mirror of the canonical `LLM/shared_data/config/mixture.yaml` recipe (seven sources, weights sum to 1.0). **No consumer in this repo** — it documents the workspace pipeline's mixture; locally it is validated by `tests/test_config.py::TestGetConfig.test_data_source_weights_positive` and pinned to the canonical recipe by `tests/test_config.py::TestGetConfig.test_data_sources_match_canonical_recipe` | workspace pipeline (out of repo); test-only locally |
 | `num_workers` | `6` | DataLoader worker count | 6 workers × `prefetch_factor 16` keeps the GPU fed at ~200K tokens/step; `persistent_workers=True` | `data/shared_data/loader.py:build_training_data`, `build_synthetic_data` |
 | `prefetch_factor` | `16` | Batches buffered per worker | Async CPU→GPU prefetch; passed as `None` when `num_workers == 0` | same |
 | `pin_memory` | `True` | Pinned host memory | Enables `non_blocking=True` H2D copies — the only async transfer compatible with CUDA-graph stream ownership | same, plus `train.py:train_model` |
@@ -1059,18 +1059,19 @@ Two distinct consumers exist. **This repo's loader** reads a small subset to bui
 | `tokenizer_cache_dir` | `None` | HF cache location | `None` = default HF cache; set to pin the tokenizer download | same |
 | `val_split` | `0.05` | Validation holdout | Last 5% of the token stream, aligned to `seq_len + 1` chunks (`split // chunk * chunk`), held out in both real and synthetic paths | `data/shared_data/loader.py:build_training_data`, `build_synthetic_data` |
 
-The mixture (`data_sources`) with weights summing to 0.95:
+The mixture (`data_sources`) — a mirror of the canonical `LLM/shared_data/config/mixture.yaml`, weights summing to 1.0:
 
 | Source key | weight | HF dataset | Notes |
 |---|---|---|---|
-| `fineweb_edu` | 0.5 | `HuggingFaceFW/fineweb-edu` | Educational web text, majority share |
-| `fineweb_code` | 0.1 | `HuggingFaceFW/fineweb-edu` (same repo!) | Word-filtered `'code'` subset via `filter_mode: 'word'` |
-| `the_stack_python` | 0.2 | `bigcode/the-stack` | Python only |
-| `the_stack_multilang` | 0.05 | `bigcode/the-stack` | 9 languages (JS, TS, Rust, Go, C, C++, Java, SQL, Shell) |
-| `wikipedia` | 0.05 | `wikimedia/wikipedia` | `20231101.en` snapshot |
-| `stackoverflow_qa` | 0.05 | `open-phi/StackOverflow-QA` | Q/A pairs |
+| `fineweb-edu` | 0.40 | `HuggingFaceFW/fineweb-edu` (sample-10BT) | Quality-gated web backbone |
+| `dclm-baseline` | 0.15 | `mlfoundations/dclm-baseline-1.0` | DCLM-curated web |
+| `the-stack-v2-python` | 0.15 | `bigcode/the-stack-v2` (Python) | Code reasoning |
+| `the-stack-v2-jupyter` | 0.05 | `bigcode/the-stack-v2` (JupyterNotebook) | Notebook code+prose |
+| `openmath` | 0.10 | `nvidia/OpenMathInstruct-2` | Problem + generated solution |
+| `arxiv` | 0.10 | `cdv/arxiv-classification` | Long-form scientific prose |
+| `cosmopedia` | 0.05 | `HuggingFaceTB/cosmopedia` | Synthetic educational prose |
 
-Note `fineweb_code` points at the same HuggingFace repo as `fineweb_edu` and relies on the pipeline's word filter — the two entries are distinct *mixture components*, not distinct downloads. The sum 0.95 (not 1.0) is intentional slack; the test only requires `0.5 < sum ≤ 1.0`.
+The keys and weights match `mixture.yaml` exactly; `tests/test_config.py::TestGetConfig.test_data_sources_match_canonical_recipe` fails if either side drifts, and `test_data_source_weights_positive` requires the same sum-to-1.0 invariant the workspace pipeline enforces at load time. The YAML remains the file to edit — this dict is documentation, then a test-enforced mirror.
 
 ### Checkpointing, evaluation & logging group
 
@@ -1141,7 +1142,7 @@ The three most dangerous to change casually: `ce_chunk_size` (raise it and the l
 - **Plain dict, not a dataclass.** `config.py:get_config` returns a fresh
   dict; consumers use `config.get(key, default)`, so a partial config (the test `tiny_config` in `tests/conftest.py`, or the `e2e_gpu_smoke.py` override dict) behaves sensibly without re-specifying every key.
 - **The test suite is the schema.** `tests/test_config.py::TestGetConfig.test_has_all_required_keys`
-  guards against deletions, `test_no_extra_unknown_keys` against undocumented additions (its failure message says exactly that: "add tests or extend REQUIRED_KEYS"), `test_known_values` pins the nine core architecture/loss values, `test_gqa_heads_divide_evenly` enforces `n_heads % n_kv_heads == 0`, and `test_data_source_weights_positive` keeps the mixture sane. See
+  guards against deletions, `test_no_extra_unknown_keys` against undocumented additions (its failure message says exactly that: "add tests or extend REQUIRED_KEYS"), `test_known_values` pins the nine core architecture/loss values, `test_gqa_heads_divide_evenly` enforces `n_heads % n_kv_heads == 0`, and `test_data_source_weights_positive` plus `test_data_sources_match_canonical_recipe` keep the mixture mirror equal to the canonical recipe. See
   [training-reference.md](training-reference.md) for the fixture story.
 - **Defaults favor the reference run.** 515M params, 8B tokens, 1× A100
   80GB, 42K steps: per [training-and-memory.md](../concepts/training-and-memory.md) this sits near the Chinchilla-optimal token/param ratio for this budget, and every memory lever is pre-armed so the run fits out of the box.

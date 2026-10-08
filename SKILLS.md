@@ -45,7 +45,7 @@ The cache is mmap-backed uint32. Build it by running the workspace pipeline:
 python data/prepare_data.py
 ```
 
-Note the shim produces `data/shards/shard_*.bin` + `manifest.json` (concatenating the shards in manifest order yields exactly the flat stream the loader wants); the workspace pipeline does not itself write `data_cache/tokens.bin` today — place or link the concatenated shard stream there (or add a stage) before the real-data path can run. See the "missing cache" pitfall in
+Note the workspace pipeline emits `data/shards/shard_*.bin` + `manifest.json`; the shim's final stage (`data/prepare_data.py:concat_shards_to_cache`) then concatenates the shards in manifest order into `data_cache/tokens.bin` — exactly the flat stream the loader wants. The workspace pipeline does not itself write `tokens.bin`. See the "missing cache" pitfall in
 `docs/references/data-reference.md`.
 
 The loader (`data/shared_data/loader.py::build_training_data`) mmaps it on
@@ -55,9 +55,11 @@ mixture or tokenizer.
 
 ## Skill 3: Add a new data source
 
-Edit the **canonical mixture**, not `config.py` — the `data_sources` dict in
-`config.py:get_config` is vestigial (nothing consumes it; only
-`tests/test_config.py` validates it). The real recipe lives in the workspace:
+Edit the **canonical mixture** first — the `data_sources` dict in
+`config.py:get_config` is a test-pinned mirror (nothing consumes it;
+`tests/test_config.py::TestGetConfig.test_data_sources_match_canonical_recipe`
+requires it to match the YAML), so after editing the YAML, sync the mirror
+in `config.py`. The real recipe lives in the workspace:
 `LLM/shared_data/config/mixture.yaml` (shared by all five LLM projects):
 
 ```yaml

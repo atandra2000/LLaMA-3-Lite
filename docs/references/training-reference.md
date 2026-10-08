@@ -6,7 +6,7 @@ This document is the consolidated test-suite reference for LLaMA-3-Lite. It cove
 
 ## Overview
 
-LLaMA-3-Lite keeps its correctness story in **59 test functions** across four files (`tests/test_config.py`, `tests/test_model.py`, `tests/test_smoke.py`, `tests/test_train.py`), a shared fixture/helper module (`tests/conftest.py`), and one standalone GPU pipeline script (`tests/e2e_gpu_smoke.py`) that is not collected by pytest. (63 functions including `tests/test_doc_refs.py`'s four; 71 collected items once parametrization is expanded.) Everything runs on a tiny, CPU-friendly model configuration — the production 16-layer / 1024-wide model is never trained in tests. The suite is the executable half of the documentation contract enforced by `tests/test_doc_refs.py`; the other half is this docs tree, which cites the same symbols.
+LLaMA-3-Lite keeps its correctness story in **60 test functions** across four core files (`tests/test_config.py`, `tests/test_model.py`, `tests/test_smoke.py`, `tests/test_train.py`), **14 more** in two integration files (`tests/test_data_pipeline.py`, `tests/test_build_docs_html.py`), a shared fixture/helper module (`tests/conftest.py`), and one standalone GPU pipeline script (`tests/e2e_gpu_smoke.py`) that is not collected by pytest. (78 functions including `tests/test_doc_refs.py`'s four; 86 collected items once parametrization is expanded.) Everything runs on a tiny, CPU-friendly model configuration — the production 16-layer / 1024-wide model is never trained in tests. The suite is the executable half of the documentation contract enforced by `tests/test_doc_refs.py`; the other half is this docs tree, which cites the same symbols.
 
 The suite is designed to answer three questions, in order of increasing cost:
 
@@ -88,7 +88,7 @@ The `smoke` marker is **not registered** (despite the e2e smoke module's name): 
 
 ## Per-File Walkthroughs
 
-### `tests/test_config.py` — the config contract (7 tests)
+### `tests/test_config.py` — the config contract (8 tests)
 
 `tests/test_config.py:REQUIRED_KEYS` is the authoritative list of every key `config.get_config()` must (and must not) expose. `TestGetConfig` enforces a **bijection**: `test_has_all_required_keys` fails if any required key is missing; `test_no_extra_unknown_keys` fails if the config grows a key the test suite does not know about — so adding a config knob forces updating the contract in the same commit.
 
@@ -98,7 +98,11 @@ The `smoke` marker is **not registered** (despite the e2e smoke module's name): 
   ratio ≥ 1), a precondition of the KV-expansion logic in
   [model-reference.md](model-reference.md).
 - `test_data_source_weights_positive` — mixture weights are positive and sum
-  in `(0.5, 1.0]`, the invariant the workspace data pipeline relies on ([data-reference.md](data-reference.md), [data-and-kernels.md](../concepts/data-and-kernels.md)).
+  to exactly 1.0, the invariant the workspace data pipeline enforces at load
+  time ([data-reference.md](data-reference.md), [data-and-kernels.md](../concepts/data-and-kernels.md)).
+- `test_data_sources_match_canonical_recipe` — the `data_sources` mirror in
+  `config.py` carries exactly the canonical `mixture.yaml` ids and weights;
+  drift on either side fails the test.
 - `test_learning_rate_schedule_invariants` — `0 < min_lr < learning_rate`,
   `0 < warmup_steps < max_steps`, `weight_decay >= 0`, `max_grad_norm > 0`; the preconditions of the SequentialLR chain ([training-and-memory.md](../concepts/training-and-memory.md)).
 
@@ -230,10 +234,13 @@ CI intentionally does not run the `gpu` tests (no CUDA runner) and does not run 
 
 | File | What it defends | How to run |
 |---|---|---|
-| `tests/test_config.py` | Config contract: `REQUIRED_KEYS` bijection, production values (1024/16/8/4/128/4096/128k/2048/256), GQA divisibility, mixture-weight and LR-schedule invariants | `pytest tests/test_config.py` |
+| `tests/test_config.py` | Config contract: `REQUIRED_KEYS` bijection, production values (1024/16/8/4/128/4096/128k/2048/256), GQA divisibility, mixture mirror (= `mixture.yaml`) and LR-schedule invariants | `pytest tests/test_config.py` |
 | `tests/test_model.py` | Model math: RMSNorm, RoPE, GQA causality, SwiGLU fused≡unfused, param counts (514.9M / 251.7M), forward/backward, grad-ckpt equivalence, chunked CE ≡ dense CE, chunked head ≡ dense CE+z, QK-norm identity/RMSNorm behavior | `pytest tests/test_model.py` |
 | `tests/test_smoke.py` | End-to-end training on synthetic data: one optimizer step, loss descent, chunked-CE-in-training, `validate` + wandb stub | `pytest tests/test_smoke.py` |
 | `tests/test_train.py` | Generation sampling (top-k/top-p/temperature/-inf), checkpoint round-trip incl. exact RNG restore and cross-device regression, async save, GPU-optimization idempotence | `pytest tests/test_train.py` |
+| `tests/test_data_pipeline.py` | Data-pipeline wiring regressions (audit C1/C2): `concat_shards_to_cache` order/atomicity/mmap, `benchmark_data.py` end-to-end | `pytest tests/test_data_pipeline.py` |
+| `tests/test_build_docs_html.py` | Docs-portal build contract: asset copying, boot wiring, rel-prefix, fonts, widgets, dark theme | `pytest tests/test_build_docs_html.py` |
+| `tests/test_doc_refs.py` | Doc↔code citation gate: anchors resolve, no line numbers, links valid, snippets marked | `pytest tests/test_doc_refs.py` |
 | `tests/e2e_gpu_smoke.py` | Full pipeline on real hardware: env, data, training with autocast, chunked CE, validate, checkpoint, Triton kernels | `python tests/e2e_gpu_smoke.py [--steps N]` |
 
 ## Design Decisions

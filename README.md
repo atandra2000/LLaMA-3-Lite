@@ -332,7 +332,7 @@ All settings are defined in [`config.py`](config.py). Key configuration groups:
 
 ### Data Sources
 
-The canonical mixture (`LLM/shared_data/config/mixture.yaml`, shared by all five LLM projects — the `data_sources` dict in `config.py` is vestigial and consumed by nothing):
+The canonical mixture (`LLM/shared_data/config/mixture.yaml`, shared by all five LLM projects — mirrored as documentation by the `data_sources` dict in `config.py`, which is consumed by nothing and test-pinned to this table):
 
 | Source | Weight | Description |
 |--------|--------|-------------|
