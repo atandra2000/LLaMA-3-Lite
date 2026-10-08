@@ -104,6 +104,51 @@ is used as-is and the rebuild is skipped. A leftover file from a smoke
 test would have been trained on for days. `doctor.py` now compares the
 cache token count against the corpus manifest and fails on any mismatch.
 
+### 3.5 `compile_mode='reduce-overhead'` crashed on step 0
+
+`reduce-overhead` captures CUDA graphs. Gradient checkpointing recomputes
+the forward pass during backward, which overwrites the graph's output
+buffer:
+
+```
+RuntimeError: accessing tensor output of CUDAGraphs that has been
+overwritten by a subsequent run ... model.py:Transformer.forward
+    x = self.input_embedding(x)
+```
+
+Fixed 2026-10-07: `compile_mode` is now `'default'`. Keep the fusion wins,
+drop the graphs. This is a correctness bug, not just the memory
+reservation that §2 warned about.
+
+### 3.6 micro-batch 48 OOMed at 23.4 GB
+
+The derived peak of ~17.2 GB is not what the card actually used. Real
+peak at micro-batch 48 was **23.39 GB**, 192 MiB short of a 23.52 GiB
+card. `torch.compile` activations sit on top of the paper estimate, and
+autocast keeps the residual stream in FP32 as §2 predicted.
+
+Fixed 2026-10-07: `batch_size` 48 → 32, `gradient_accumulation` 2 → 3.
+Tokens per optimizer step stay 196,608, effective batch stays 96,
+`max_steps` does not change. Real peak is **21,204 MB** — fits with
+~3 GB of margin.
+
+Also launch with `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` in the
+environment. `train.py` sets it from config, but that runs after
+`import torch`; exporting it before the process starts is the reliable
+way.
+
+### 3.7 `torch.cuda.utilization()` killed the run at step 50
+
+`log_interval` is 50, so the first metric flush calls
+`torch.cuda.utilization()`, which needs `pynvml`. That package is not in
+the image or in the runbook's pip line, so the run died at the first log
+with `ModuleNotFoundError: pynvml does not seem to be installed`. No
+checkpoint had been written yet.
+
+Fixed 2026-10-07 two ways: `pip install nvidia-ml-py`, and the call is
+now wrapped in `try/except` in `train.py` so telemetry can never kill a
+multi-day run again.
+
 ## 4. Never train on synthetic data by accident
 
 `train.py` used to catch `FileNotFoundError` from the data loader and
@@ -124,9 +169,19 @@ Run these in order. Do not skip the pilot.
 | GPU | 1x RTX 4090 24 GB, dedicated (not community / not shared) |
 | Disk | 200 GB |
 | System RAM | 16 GB minimum, 32 GB comfortable |
-| Template | PyTorch 2.x + CUDA 12.x |
+| Template | `runpod-torch-v280` — `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` |
 | Persistence | Network volume or attached disk for `weights/` and `data_cache/` |
 | Access | SSH key only. No public ports. |
+| Data center | **`EU-RO-1`** — the only DC that has RTX 4090 stock *and* STANDARD network volumes |
+
+Verified against the live catalog 2026-10-07. The RTX 4090 fleet reports
+CUDA **12.8 / 13.0 / 13.2 / 13.3** only — not 12.4. `runpod-torch-v280` is
+the official template whose `allowedCudaVersions` covers 12.8, and it
+already ships `torch 2.8.0+cu128`. A live 4090 in the golden-path run
+reported `2.8.0+cu128 True`, so do not `pip install torch` on top of it.
+
+Stock is **LOW** on all six 4090 data centers (EU-CZ-1, EU-RO-1, EUR-IS-1,
+EUR-IS-2, US-CA-2, US-IL-1). Provisioning may need a retry or a short wait.
 
 ### 5.2 Pull the code and the corpus
 
@@ -145,10 +200,22 @@ reads `$LLM_DATA_ROOT/shards/manifest.json`.
 ### 5.3 Environment
 
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu124
-pip install transformers datasets numpy wandb
-wandb login
+# torch 2.8.0+cu128 is already in the image. Install the rest only.
+pip install transformers datasets numpy wandb nvidia-ml-py
 ```
+
+W&B is wired by env var, not by a login prompt. Pass the key at pod create
+time so nothing needs a human at the keyboard:
+
+```bash
+runpodctl pod create ... --env '{"WANDB_API_KEY":"<key>"}'
+```
+
+`wandb` reads `WANDB_API_KEY` on its own, so skip `wandb login` entirely.
+Locally the key already lives in `~/.zshrc` and `~/.wandb/settings`; entity
+resolves to `atandrabharati-self`. `config.py` sets the project to
+`langgpt-llama3-pretrain` and leaves `wandb_entity` as `None`, which is
+correct — `None` means "use the default entity".
 
 ### 5.4 Build the training cache
 
@@ -157,12 +224,14 @@ wandb login
 
 ```bash
 export LLM_DATA_ROOT=/workspace/llm_corpus
-python data/prepare_data.py --skip-download --skip-clean --skip-tokenize --skip-pack
+python data/prepare_data.py --concat-only
 ```
 
-The flags are correct even though nothing was downloaded: the shards are
-already packed on disk, and this step only runs the final shard → flat
-cache concatenation. It streams shard by shard, so RAM stays flat.
+Use `--concat-only`, not the four `--skip-*` flags. The skip form imports the
+universal pipeline at `LLM/shared_data/`, which the pod does not have — the
+repo vendors only the loader. `prepare_data.py` says so itself in its own
+error text and names `--concat-only` as the fix for exactly this corpus.
+It streams shard by shard, so RAM stays flat.
 
 Output: `data_cache/tokens.bin`, 7,824,922,237 tokens, **31.3 GB**.
 
@@ -252,15 +321,23 @@ in system RAM. 32 GB is comfortable; 16 GB is the floor.
 Training FLOPs are about `6 x 513.8e6 x 8.26e9 = 2.55e19`.
 
 RTX 4090 BF16 dense peak is roughly 165 TFLOPS. That is a ceiling, not a
-forecast. Net of gradient-checkpointing recompute and non-GEMM work:
+forecast.
 
-| Assumed MFU | Wall clock | Cost at $0.38/h |
-|---|---|---|
-| 25% | ~7.2 days | ~$65 |
-| 30% | ~6.0 days | ~$54 |
-| 40% | ~4.5 days | ~$41 |
+**Measured 2026-10-07 on the real 4090** (run `5gq8nhw1`, W&B project
+`langgpt-llama3-pretrain`), replacing the estimate table that was here:
 
-Treat these as a range to budget against, not a plan to schedule by.
+| Metric | Measured |
+|---|---|
+| `train/step_time_ms` | 12,150 – 12,200 ms |
+| `train/tokens_per_sec` | **16,140** |
+| `gpu/memory_peak_mb` | **21,204** of 24,564 |
+| `gpu/utilization_pct` | 93 – 100 |
+| `train/data_wait_ms` | 56 (vs 12,200 ms step — dataloader is not the limit) |
+| Full run (42,000 steps) | **5.92 days** |
+| Cost at $0.761/h | **$108** |
+
+So the old 30% MFU guess (~6.0 days, ~$107) was almost exactly right. Budget
+against **$108** for a full run.
 Replace the whole table with one line once §5.6 reports a measured
 `train/tokens_per_sec`.
 
@@ -273,6 +350,12 @@ Replace the whole table with one line once §5.6 reports a measured
 | Final checkpoint | ~8 GB | `weights/llama3-515M_final.pt` |
 
 `keep_last_n_checkpoints: 3` prunes older step checkpoints.
+
+`checkpoint_interval` is **500**, not 5000. At ~12 s/step that is roughly
+1.7 hours of work at risk, not 17. `train.py` only writes a `*_final.pt`
+after all 42,000 steps, and it has no signal handler — so anything that
+stops the process early keeps whatever the last step checkpoint holds.
+A 5000-step interval meant an interrupted run saved nothing at all.
 
 A checkpoint is only useful if it survives the pod. Every N hours:
 
@@ -288,6 +371,83 @@ EMA, then continues from the stored optimizer step.
 
 To resume after a crash, leave `preload` set and rerun `python train.py`.
 It picks the highest `*_step_*.pt` in `weights/`.
+
+### Budget-limited stop, ship, resume
+
+When the account balance is the limit rather than `max_steps`, stop before
+the money runs out and ship the checkpoint off the pod. A pod that dies at
+zero balance is killed mid-write.
+
+```bash
+# 1. stop training. the newest *_step_*.pt is what we keep.
+pkill -f 'python train.py' ; sleep 20   # 20 s covers a mid-save async thread
+
+# 2. ship ONLY the newest checkpoint. weights/ holds ~25 GB across 3 pruned
+#    step ckpts + best; uploading all of it is billed pod time for nothing.
+LATEST=$(ls -t weights/*_step_*.pt | head -1)
+rclone copy "$LATEST" gdrive:llm-corpus/weights_llama3 --transfers 2
+rclone copy weights/llama3-515M_best.pt gdrive:llm-corpus/weights_llama3 --transfers 2
+
+# 3. record where to resume
+ls -la weights/ | rclone rcat gdrive:llm-corpus/weights_llama3/RESUME.txt
+```
+
+On resume, put the newest `*_step_*.pt` back in `weights/`, leave `preload`
+set, and rerun `python train.py`. It continues from the stored optimizer
+step with model, AdamW, scheduler, RNG and EMA restored.
+
+### A100 resume — planned 2026-10-07, not yet run
+
+Decision: stop the 515M run at step 2000 and finish it on 1x A100 80GB.
+
+Measured on the 4090: 16,140 tok/s at $0.761/h, which is $13.1 per 1B
+tokens. An A100 80GB is $1.59/h on Runpod. The remaining 7.86B tokens cost
+about $102 and take 134 h on the 4090. On an A100 with the settings below
+they cost about $87 and take 55 h.
+
+**Keep 196,608 tokens per optimizer step.** Batch 96 x 2048 x accum 1 is
+the same count as 32 x 2048 x 3. The checkpointed scheduler and the loss
+curve then continue without a kink. Micro-batching can change freely. Do
+not change `max_steps` or `learning_rate`; the cosine schedule is bound to
+`max_steps` and a mid-run change moves the target.
+
+| key | 4090 | A100 | why |
+| --- | --- | --- | --- |
+| `batch_size` | 32 | 96 | fills 80 GB |
+| `gradient_accumulation` | 3 | 1 | holds tokens/step at 196,608 |
+| `gradient_checkpointing` | True | False | drops the recompute forward pass, 25-33% |
+| `compile_mode` | `default` | `reduce-overhead` | CUDA graphs conflicted with gradient checkpointing; with GC off they are legal |
+| `ce_chunk_size` | 256 | 1024 | fewer kernel launches at large batch |
+| `max_steps` | 42000 | 42000 | do not touch |
+| `learning_rate` | 3e-4 | 3e-4 | do not touch |
+
+`train.py:load_checkpoint` restores model, AdamW, scheduler, RNG and EMA,
+so the card and the micro-batching are the only things that change.
+
+**The token cache dies with the pod.** `data_cache/tokens.bin` is 31.3 GB
+on pod-local overlay storage, not on a network volume. It is preserved at
+`gdrive:llm-corpus/tok_llama3_cache/tokens.bin`, verified at 31,299,688,948
+bytes on 2026-10-07. Download it instead of rebuilding: 28 MiB/s up from the
+pod measured 29.3 MiB/s, so the round trip is about 20 min, against 1-2 h to
+re-pull the corpus and run `python data/prepare_data.py --concat-only` again.
+
+Steps on the new pod:
+
+```bash
+# 1. provision 1x A100 80GB, 200 GB disk, Secure Cloud
+# 2. ship the local tree with tar, do not clone origin/main
+# 3. venv that inherits the image torch
+python3 -m venv --system-site-packages /workspace/venv
+/workspace/venv/bin/pip install transformers datasets numpy wandb nvidia-ml-py
+# 4. the token cache, straight off Drive. do not rebuild it.
+mkdir -p data_cache
+rclone copy gdrive:llm-corpus/tok_llama3_cache data_cache \
+  --transfers 2 --log-file /workspace/cache_download.log --log-level INFO
+python3 -c "import os; assert os.path.getsize('data_cache/tokens.bin')==31299688948"
+# 5. edit config.py with the table above
+# 6. put llama3-515M_step_2000.pt in weights/, leave preload set
+python train.py
+```
 
 ## 9. Monitoring
 
@@ -331,6 +491,8 @@ tail -f train.log
 | 2026-10-07 | doctor checks `tokens.bin` token count | `reuse_data_cache: True` would train on a stale cache silently |
 | 2026-10-07 | W&B project `langgpt-llama3-pretrain`, tags `rtx4090`/`runpod` | reflect the real hardware |
 | 2026-10-07 | pod not deployed | user asked for repo prep and plan first |
+| 2026-10-07 | template `runpod-torch-v280` (torch 2.8.0+cu128) | 4090 hosts expose CUDA 12.8+ only, not 12.4; image already has torch |
+| 2026-10-07 | budget at Secure $0.74/h | live catalog price; the $0.38/h estimate was never real |
 
 ## 11. Known issues not fixed here
 
