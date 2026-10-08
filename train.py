@@ -23,6 +23,21 @@ from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 from dataset import build_training_data, build_synthetic_data
 from model import build_transformer, chunked_head_cross_entropy_with_z
 from config import get_config
+# --- bakeoff exposure accounting (tools/bakeoff) ---
+import sys as _sys
+from pathlib import Path as _Path
+_BAKEOFF = _Path(__file__).resolve().parents[1] / "tools" / "bakeoff"
+if _BAKEOFF.is_dir() and str(_BAKEOFF) not in _sys.path:
+    _sys.path.insert(0, str(_BAKEOFF))
+try:
+    from exposure_hook import load_exposure as _load_exposure
+    from exposure_hook import bind as _bind_exp, tick as _tick_exp
+except Exception:
+    _load_exposure = None
+    _bind_exp = None
+    def _tick_exp(*a, **k):
+        pass
+# --- end bakeoff import ---
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -165,6 +180,20 @@ def validate(model, val_dataloader, ignore_index, device, step, config):
     return avg_loss
 
 
+def _atomic_torch_save(obj, path) -> None:
+    """Write a checkpoint so an interrupted save cannot leave a truncated file.
+
+    torch.save writes straight to its target, so a process killed mid-save
+    leaves a corrupt .pt that sorts as the newest checkpoint. Write to a
+    sibling temp file and rename; os.replace is atomic on POSIX, so readers
+    see either the old file or the new one.
+    """
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
 def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=None,
                     is_final=False, async_save=True, ema=None):
     """Save a full checkpoint and optionally return its background save thread."""
@@ -189,22 +218,23 @@ def save_checkpoint(model, optimizer, scheduler, step, config, best_val_loss=Non
 
     if is_final:
         final_path = model_folder / f"{config['model_filename']}_final_model_full.pt"
-        torch.save(checkpoint, final_path)
+        _atomic_torch_save(checkpoint, final_path)
         model_only_path = model_folder / f"{config['model_filename']}_final_model_weights.pt"
-        torch.save(model.state_dict(), model_only_path)
+        _atomic_torch_save(model.state_dict(), model_only_path)
         print(f"Final model saved: {final_path}")
         print(f"Model weights only: {model_only_path}")
         return None
 
     path = model_folder / f"{config['model_filename']}_step_{step}.pt"
+
     if async_save:
         # Join before process exit so the checkpoint is not abandoned.
-        t = threading.Thread(target=torch.save, args=(checkpoint, path),
+        t = threading.Thread(target=_atomic_torch_save, args=(checkpoint, path),
                               daemon=True, name=f"ckpt-save-{step}")
         t.start()
         print(f"Checkpoint queued (async): {path}")
         return t
-    torch.save(checkpoint, path)
+    _atomic_torch_save(checkpoint, path)
     print(f"Checkpoint saved: {path}")
     return None
 
@@ -264,7 +294,25 @@ def _next_batch(step_iterator, train_dataloader, epoch_state):
             f"restarting the sampler with a fresh permutation. The 42k-step "
             f"plan (~8.26B tokens) exceeds the prepared corpus."
         )
-        return next(iter(train_dataloader))
+        try:
+            return next(iter(train_dataloader))
+        except StopIteration as exc:
+            raise RuntimeError(
+                "train dataloader yields zero batches, so there is nothing to "
+                "wrap around to. The token cache is too small — build it with "
+                "`LLM_DATA_ROOT=<dir holding shards/> python3 data/prepare_data.py "
+                "--pack-only`."
+            ) from exc
+
+
+def build_schedulers(optimizer, config):
+    """Warmup-then-cosine LR pair, stepped once per optimizer step."""
+    warmup_steps = config['warmup_steps']
+    max_steps = config['max_steps']
+    start_factor = max(config['min_lr'] / config['learning_rate'], 1e-4) if config['learning_rate'] > 0 else 1e-4
+    warmup_scheduler = LinearLR(optimizer, start_factor=start_factor, total_iters=warmup_steps)
+    cosine_scheduler = CosineAnnealingLR(optimizer, T_max=max_steps - warmup_steps, eta_min=config['min_lr'])
+    return SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_steps])
 
 
 def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=None):
@@ -407,10 +455,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
     warmup_steps = config['warmup_steps']
     max_steps = config['max_steps']
-    start_factor = max(config['min_lr'] / config['learning_rate'], 1e-4) if config['learning_rate'] > 0 else 1e-4
-    warmup_scheduler = LinearLR(optimizer, start_factor=start_factor, total_iters=warmup_steps)
-    cosine_scheduler = CosineAnnealingLR(optimizer, T_max=max_steps - warmup_steps, eta_min=config['min_lr'])
-    scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_steps])
+    scheduler = build_schedulers(optimizer, config)
 
     ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(config.get('ema_decay', 0.999))) if use_ema else None
 
@@ -463,6 +508,15 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
     # Tokens per *optimizer* step. `step` counts optimizer steps, so every
     # interval (val, ckpt, gen) below stays in optimizer-step units.
     tokens_per_step = config['batch_size'] * config['seq_len'] * grad_accum_steps
+    # bakeoff exposure. Seeded from the resumed step so the token counter
+    # does not restart at zero after a checkpoint load.
+    if _load_exposure is not None:
+        _bind_exp(_load_exposure(__file__, tokens_per_step=tokens_per_step,
+            micro_batch=config['batch_size'], seq_len=config['seq_len'],
+            grad_accum=grad_accum_steps, tokenizer="llama3",
+            run_dir=str(Path(config.get('model_folder', 'weights'))) + "/exposure",
+            start_opt_steps=initial_step,
+            start_tokens_seen=initial_step * tokens_per_step))
     if ema is not None and not config.get('preload'):
         print(f"EMA: enabled (decay={config.get('ema_decay', 0.999)})")
 
@@ -520,6 +574,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 
         grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=config['max_grad_norm'])
         optimizer.step()
+        _tick_exp()   # bakeoff exposure: one complete optimizer step
         if ema is not None:
             ema.update_parameters(model)
         optimizer.zero_grad(set_to_none=True)
@@ -539,7 +594,13 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
             tokens_seen = step * tokens_per_step
             tokens_per_sec = tokens_per_step / step_time if step_time > 0 else 0
             effective_batch = config['batch_size'] * grad_accum_steps
-            gpu_util = torch.cuda.utilization() if device.type == 'cuda' else None
+            # Telemetry only. torch.cuda.utilization() needs pynvml/NVML; a
+            # missing driver binding must not kill a multi-day run at the
+            # first log interval.
+            try:
+                gpu_util = torch.cuda.utilization() if device.type == 'cuda' else None
+            except Exception:
+                gpu_util = None
 
             log_dict = {
                 'train/loss': loss.item() * grad_accum_steps,
@@ -582,7 +643,7 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
                 global_state['best_val_loss'] = best_val_loss
                 best_model_path = Path(config['model_folder']) / f"{config['model_filename']}_best.pt"
                 Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
-                torch.save(model.state_dict(), best_model_path)
+                _atomic_torch_save(model.state_dict(), best_model_path)
                 print(f"New best model saved (val_loss: {val_loss:.4f})")
             model.train()
 
@@ -624,4 +685,11 @@ def train_model(config, train_dataloader=None, val_dataloader=None, tokenizer=No
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     config = get_config()
+    # Optional YAML overrides, matching the `--config` surface of the other
+    # bakeoff trainers. Used to set max_steps / warmup_steps / min_lr without
+    # editing config.py.
+    if len(_sys.argv) > 1:
+        import yaml
+        overrides = yaml.safe_load(Path(_sys.argv[1]).read_text()) or {}
+        config.update(overrides)
     train_model(config)
