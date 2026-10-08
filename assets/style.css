@@ -2535,7 +2535,114 @@ blockquote p:last-child { margin-bottom: 0; }
 
 
 /* =====================================================================
-   11. RESPONSIVE
+   11. MARKDOWN PASS-THROUGH — images, disclosures, centered blocks
+   ===================================================================== */
+
+/* Figure and badge images from raw markdown HTML / ![alt](src).
+   `align="center"` is a presentational HTML attribute, so it needs a
+   matching rule here; without one the figure inherits left alignment
+   inside an otherwise centered block. */
+.markdown-body img,
+.markdown-body .md-img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+}
+
+.markdown-body p > img.md-img:only-child,
+.markdown-body [align="center"] > img,
+.markdown-body [align="center"] > a > img {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Badges arrive one per markdown line, so each lands in its own paragraph.
+   Collapse badge paragraphs into a single inline row — four stacked badges
+   read as a list, one row reads as a badge bar. Scoped by the shields.io
+   host so ordinary figure paragraphs keep their block layout. */
+.markdown-body p:has(> a > img[src*="shields.io"]),
+.markdown-body p:has(> img[src*="shields.io"]) {
+    display: inline-block;
+    margin: 0.1rem 0.15rem;
+}
+
+/* The centered header block that holds the badge row. */
+.markdown-body [align="center"] { text-align: center; }
+
+.markdown-body .md-img[src*="shields.io"] {
+    display: inline-block;
+    margin: 0.2rem 0.25rem;
+    vertical-align: middle;
+}
+
+/* A figure image is the page's one large visual: give it the paper-inset
+   plane and a hairline so it reads as a plate, not floating chrome. */
+.markdown-body [align="center"] > a > img,
+.markdown-body figure img {
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--paper-inset);
+    margin-top: 0.6rem;
+}
+
+.markdown-body [align="center"] > p,
+.markdown-body figcaption {
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    margin: 0.7rem auto 1.5rem;
+    max-width: 62ch;
+}
+
+/* <details> disclosure — the same recessed plane as code blocks, with a
+   terracotta marker so it reads as interactive. */
+.markdown-body details {
+    margin: 1.5rem 0;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--terracotta);
+}
+
+.markdown-body summary {
+    cursor: pointer;
+    padding: 0.7rem 1rem;
+    color: var(--ink);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+
+.markdown-body summary::-webkit-details-marker { display: none; }
+
+.markdown-body summary::before {
+    /* the disclosure triangle, drawn so it can rotate on [open] */
+    content: "▸";
+    color: var(--terracotta);
+    font-size: 0.9em;
+    transition: transform var(--t-base) var(--ease);
+    display: inline-block;
+}
+
+.markdown-body details[open] > summary::before { transform: rotate(90deg); }
+.markdown-body summary:hover { background: var(--tint-warm-04); color: var(--terracotta); }
+.markdown-body summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.markdown-body details > *:not(summary) {
+    padding: 0 1rem;
+}
+
+.markdown-body details > *:not(summary):last-child { padding-bottom: 0.9rem; }
+.markdown-body details > p:first-of-type { padding-top: 0.2rem; }
+.markdown-body details ol, .markdown-body details ul { padding-left: 1.9rem; }
+
+
+
+/* =====================================================================
+   12. RESPONSIVE
    ===================================================================== */
 
 @media (max-width: 1180px) {
@@ -2599,6 +2706,17 @@ blockquote p:last-child { margin-bottom: 0; }
     .portal-card:hover .card-heading { color: var(--ink); }
 }
 @media (max-width: 560px) {
+    /* The brand + right-hand links together exceed a 390px viewport and push
+       the document into horizontal scroll. Let the header wrap and drop the
+       badge rather than letting either clip. */
+    .site-header {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+        padding: 0.6rem 1rem;
+    }
+    .header-left { gap: 0.7rem; min-width: 0; }
+    .header-right { gap: 0.8rem; }
+    .brand-badge { display: none; }
     .hero-figure-header {
         flex-direction: column;
         align-items: stretch;
