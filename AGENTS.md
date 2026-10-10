@@ -168,11 +168,10 @@ number in the portfolio.
 - Full 8.25B-token run not yet started.
 - The 78% memory reduction headline is the most-tested number in the
   portfolio; do not regress it.
-- The three `kernels/` pure-PyTorch references have no CPU unit tests of
-  their own (hard rule 8 predates them); coverage today is
-  `tests/e2e_gpu_smoke.py` on GPU plus the equivalent math paths in
-  `tests/test_model.py`. Add `tests/test_<name>_triton.py` CPU tests when
-  touching a kernel.
+- Each `kernels/` pure-Torch reference has a CPU unit test
+  (`tests/test_rmsnorm_triton.py`, `tests/test_swiglu_triton.py`,
+  `tests/test_cross_entropy_triton.py`); GPU equivalence stays in
+  `tests/e2e_gpu_smoke.py`.
 
 <!-- OPENWIKI:START -->
 
