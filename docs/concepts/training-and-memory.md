@@ -215,7 +215,7 @@ The two param groups differ *only* in `weight_decay` ($0.1$ vs. $0.0$); both sha
 The scheduler construction:
 
 ```python
-# illustrative — trimmed from train.py:train_model; verbatim
+# verified — verbatim from train.py:build_schedulers
 warmup_steps = config['warmup_steps']
 max_steps = config['max_steps']
 start_factor = max(config['min_lr'] / config['learning_rate'], 1e-4) if config['learning_rate'] > 0 else 1e-4

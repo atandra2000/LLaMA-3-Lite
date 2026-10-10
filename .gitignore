@@ -34,7 +34,7 @@ env/
 # HTML docs build output (CI rebuilds it from source for GitHub Pages)
 docs_html/
 
-# Local QA screenshot artifacts
+# Measured-evidence dir (kernel speedups, training peaks). Empty until a run.
 .benchmarks/
 
 # Brainstorming visual companion session artifacts
