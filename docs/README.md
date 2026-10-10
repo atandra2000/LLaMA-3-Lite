@@ -1,99 +1,55 @@
-# LLaMA-3-Lite — Documentation Index
+# How to read this book
 
-The documentation is organized in four parts plus this index: **concepts** (`docs/concepts/`, theory and architecture built from first principles), **references** (`docs/references/`, code-keyed walkthroughs), **guides** (`docs/guides/`, how-to and operations), and a top-level
-[training.md](training.md) covering the applied training pipeline, memory
-stack, and data pipeline. Every citation to code uses symbol anchors (`<module>.py:<symbol>`), verified by `tests/test_doc_refs.py` — stale references fail CI. This page is the nav map: it also folds in the file→doc map that used to live in `CODE_MAP.md`.
+This portal is a book about building a LLaMA-3-style decoder from scratch in raw
+PyTorch. It has eleven chapters in four parts. Read it
+in order, or jump to the part you need.
 
-## Corpus size
+Every citation names a symbol (`model.py:RoPE`), never a line number, so the
+references survive edits. `tests/test_doc_refs.py` resolves each one and fails CI
+when a citation goes stale.
 
-Measured 2026-08-05 (`wc -w` over the working tree; refreshed after the audit follow-up: new `workspace-data.md` reference, the benchmark reference section, and the EMA-internals canonical section).
+## The parts
 
-| Track | Files | Words |
-|-------|------:|------:|
-| `docs/concepts/` | 4 | 70,397 |
-| `docs/references/` | 4 | 28,880 |
-| `docs/guides/` | 4 | 8,767 |
-| `docs/training.md` | 1 | 7,850 |
-| `docs/README.md` | 1 | 658 |
-| **`docs/` total** | **14** | **116,552** |
-| Top-level (`README.md`, `AGENTS.md`, `SKILLS.md`) | 3 | 5,259 |
-| **Repo-wide total** | **17** | **121,811** |
+| Part | What it covers |
+|------|----------------|
+| **Part I: Foundations** | What the model is, and the three components that do the arithmetic: normalization, the feed-forward block, and the loss. |
+| **Part II: The data** | How 8.25B tokens become a memory-mapped array of ids, and the kernels that keep one step fast. |
+| **Part III: The training run** | The optimizer, the precision policy, the memory stack, and the loop that ties them together. |
+| **Part IV: Reference** | Code-keyed walkthroughs. Open these when you need a signature or a config key, not a narrative. |
 
-## Learning paths
+## Where to start
 
-- **Visual tour:** [Illustrated systems guide](diagrams/atlas/index.html) — five
-  standalone, interactive Archify maps covering system ownership, the decoder,
-  data preparation and consumption, the training loop, and all eight optimization
-  techniques. Includes tensor shapes, memory arithmetic, source links, and
-  [artifact/browser evidence](diagrams/atlas/RECEIPTS.md).
-- **Beginner** (what is this model, how does it work):
-  [guides/quickstart.md](guides/quickstart.md) →
-  [concepts/attention-and-positional.md](concepts/attention-and-positional.md)
-  (the decoder, attention, RoPE) →
-  [concepts/architecture-components.md](concepts/architecture-components.md)
-  (RMSNorm, SwiGLU, chunked CE, z-loss) →
-  [references/model-reference.md](references/model-reference.md)
-- **Intermediate** (train it, understand the numerics):
-  [concepts/training-and-memory.md](concepts/training-and-memory.md) →
-  [training.md](training.md) →
-  [references/model-reference.md](references/model-reference.md) (config
-  section) →
-  [concepts/data-and-kernels.md](concepts/data-and-kernels.md)
-- **Expert** (memory engineering, kernels, tests):
-  [training.md](training.md) (memory-stack section) →
-  [concepts/data-and-kernels.md](concepts/data-and-kernels.md) →
-  [references/data-reference.md](references/data-reference.md) →
-  [references/training-reference.md](references/training-reference.md) →
-  [guides/troubleshooting.md](guides/troubleshooting.md)
+- **New to the model.** Read Part I in order.
+  [Attention and positional encoding](concepts/attention-and-positional.md) is
+  the longest chapter, and it assumes no prior reading.
+- **You want to run it.** Start with the [Overview](../README.md) for hardware
+  and configuration, then read
+  [The training loop, end to end](training.md).
+- **You want the numerics.** Read
+  [Training, memory, and numerical stability](concepts/training-and-memory.md),
+  which derives the 92 GB to 20 GB memory stack term by term.
 
-## Concepts track (`docs/concepts/`) — from-scratch concept building
+## Visual tour
 
-| Doc | Audience | Core topics |
-|-----|----------|-------------|
-| [attention-and-positional.md](concepts/attention-and-positional.md) | beginner | LM task, decoder-only design, residual stream, pre-norm, data flow, 513.8M anatomy; scaled dot-product, √d_k, causal mask, MHA, GQA, Flash Attention 2; why positions, absolute/relative/RoPE families, θ=500K, NTK/YaRN |
-| [architecture-components.md](concepts/architecture-components.md) | intermediate | RMSNorm vs LayerNorm, pre-norm placement, QK-norm; FFN math, SwiGLU, fused gate+up; CE, chunked CE + equivalence proof, z-loss + gradient |
-| [training-and-memory.md](concepts/training-and-memory.md) | intermediate | AdamW math, decay partitioning, cosine + warmup; FP32/BF16/TF32, why no GradScaler; full 92→20 GB derivation, allocator, memmap; activation-memory math, recompute tradeoff; RNG state, checkpoint round-trip; token math, Chinchilla, W&B metrics |
-| [data-and-kernels.md](concepts/data-and-kernels.md) | intermediate→expert | mixture, packing, dedup, shuffling, memmap layout; Triton model, online softmax, atomic_add, autograd.Function, HAS_TRITON gating |
+The [Illustrated systems guide](diagrams/atlas/index.html) is five standalone
+interactive maps: system ownership, the decoder, data preparation and
+consumption, the training loop, and all eight optimization techniques. Each map
+carries tensor shapes, memory arithmetic, and source links. The
+[artifact and browser evidence](diagrams/atlas/RECEIPTS.md) records what was
+verified for each map.
 
-## References track (`docs/references/`) — code-keyed walkthroughs
+## Which source file is documented where
 
-| Doc | Walks through |
-|-----|---------------|
-| [model-reference.md](references/model-reference.md) | `model.py` — every block, tensor-shape trace, param budget; `model.py:RoPE` implementation deep dive; every key in `config.py:get_config` |
-| [training-reference.md](references/training-reference.md) | test strategy, fixtures (`tests/conftest.py`), markers, per-file walkthroughs, the e2e GPU script, running the suites |
-| [data-reference.md](references/data-reference.md) | `data/shared_data/loader.py` + `data/prepare_data.py` shim; `build_tokenizer`, stub, vocab/special-token contract; `kernels/*.py` — signatures, launch configs, fallbacks |
-| [workspace-data.md](references/workspace-data.md) | the universal `LLM/shared_data` pipeline (stages, mixture, shard format, manifest schema, data-root rules) that produces the corpus |
+| Module | Chapter | Key symbols |
+|--------|---------|-------------|
+| `model.py` | [Model, RoPE, and config](references/model-reference.md) (full walkthrough), [Attention and positional encoding](concepts/attention-and-positional.md) (attention and RoPE theory), [Architecture components](concepts/architecture-components.md) (norms, FFN, loss) | `model.py:RoPE`, `model.py:chunked_head_cross_entropy_with_z` |
+| `config.py` | [Model, RoPE, and config](references/model-reference.md) (every key) | `config.py:get_config` |
+| `train.py` | [The training loop, end to end](training.md) (full walkthrough), [Training, memory, and numerical stability](concepts/training-and-memory.md) (optimizer and memory stack) | `train.py:train_model`, `train.py:load_checkpoint` |
+| `data/prepare_data.py`, `data/shared_data/loader.py` | [Data, tokenizer, and kernels](references/data-reference.md) (code tour), [The training loop, end to end](training.md) (data path), [The data pipeline](concepts/data-and-kernels.md) (theory) | `data/prepare_data.py:main`, `data/shared_data/loader.py:build_tokenizer` |
+| `LLM/shared_data` (workspace pipeline) | [The shared data pipeline](references/workspace-data.md) (stages, manifest, shards), [Data, tokenizer, and kernels](references/data-reference.md) (the shim and the bridge stage) | `data/prepare_data.py:concat_shards_to_cache` |
+| `dataset.py` | [Data, tokenizer, and kernels](references/data-reference.md) (re-export shim) | — |
+| `kernels/*.py` | [Data, tokenizer, and kernels](references/data-reference.md) (kernel reference), [The data pipeline](concepts/data-and-kernels.md) (kernel programming theory) | `kernels/rmsnorm_triton.py:triton_rmsnorm` |
+| `tests/*` | [The test suite](references/training-reference.md) (strategy, fixtures, markers) | `tests/conftest.py` |
+| `benchmark_data.py` | [Data, tokenizer, and kernels](references/data-reference.md) (the benchmark harness) | — |
 
-## Guides (`docs/guides/`)
-
-- [learning-paths.md](guides/learning-paths.md) — audience-specific reading orders
-- [quickstart.md](guides/quickstart.md) — first run, synthetic fallback, real data, resume
-- [troubleshooting.md](guides/troubleshooting.md) — OOM, compile, triton, data-cache, checkpoint issues
-- [glossary.md](guides/glossary.md) — notation and acronyms
-
-## Top-level training doc
-
-- [training.md](training.md) — the applied training pipeline: `train.py`
-  walkthrough (loop, sampling, validation, checkpointing, EMA), the eight-technique memory stack (92 GB → 20 GB derivation), and the data pipeline (vendored loader + workspace `LLM/shared_data` preparation).
-
-## File→doc map (formerly `docs/CODE_MAP.md`)
-
-The old `CODE_MAP.md` was replaced by this hand-maintained map (the generator script was removed in the 2026-08-04 doc cleanup). `tests/test_doc_refs.py` (CI) verifies every citation resolves.
-
-| Module | Where documented |
-|--------|------------------|
-| `model.py` | [model-reference.md](references/model-reference.md) (full walkthrough), [attention-and-positional.md](concepts/attention-and-positional.md) (attention/RoPE theory), [architecture-components.md](concepts/architecture-components.md) (norms, FFN, loss) |
-| `config.py` | [model-reference.md](references/model-reference.md) (config section), [glossary.md](guides/glossary.md) (config-key glossary) |
-| `train.py` | [training.md](training.md) (full walkthrough), [quickstart.md](guides/quickstart.md), [troubleshooting.md](guides/troubleshooting.md) |
-| `data/prepare_data.py`, `data/shared_data/loader.py` | [data-reference.md](references/data-reference.md) (code tour), [training.md](training.md) (data-pipeline section), [data-and-kernels.md](concepts/data-and-kernels.md) (theory) |
-| `LLM/shared_data` (workspace pipeline) | [workspace-data.md](references/workspace-data.md) (stages, manifest, shards), [data-reference.md](references/data-reference.md) (the shim + bridge stage) |
-| `dataset.py` | [data-reference.md](references/data-reference.md) (re-export shim note) |
-| `kernels/*.py` | [data-reference.md](references/data-reference.md) (kernel reference), [data-and-kernels.md](concepts/data-and-kernels.md) (kernel programming theory) |
-| `tests/*` | [training-reference.md](references/training-reference.md) (strategy, fixtures, markers), plus per-doc test citations |
-| `benchmark_data.py` | [quickstart.md](guides/quickstart.md) |
-
-## Top-level docs (not in this folder)
-
-- [`../README.md`](../README.md) — public overview: features, quick start, configuration, hardware.
-- [`../AGENTS.md`](../AGENTS.md) — project subagent, hard rules, memory-stack table.
-- [`../SKILLS.md`](../SKILLS.md) — project-scoped operational skills.
+The repository README is Chapter 1 of this book, not a separate page.

@@ -1423,11 +1423,7 @@ The one failure mode worth internalizing: **the 500K base buys extrapolation hea
   the test suite, including the GQA/causality/RoPE tests referenced throughout this doc.
 - [references/data-reference.md](../references/data-reference.md) — the
   tokenizer contract (128K vocab, EOS/PAD ids) behind the token stream.
-- [guides/learning-paths.md](../guides/learning-paths.md) — where this doc
-  sits in the reading order.
-- [guides/glossary.md](../guides/glossary.md) — attention, head,
-  query/key/value, causal mask, KV cache, SDPA, RoPE, NTK, YaRN.
-- [docs/README.md](../README.md) — the full documentation index.
+- [README.md](../README.md) — how to read this book.
 - Key source files: `model.py` (`Transformer`, `Decoder`, `DecoderBlock`,
   `GroupedQueryAttention`, `RoPE`, `build_transformer`), `config.py` (`get_config`), `data/shared_data/loader.py` (`PackedDataset`), `train.py` (`generate_samples`, `top_k_top_p_sampling`).
 - References (papers): Su et al. (2021) *RoFormer: Enhanced Transformer with
