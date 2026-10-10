@@ -53,24 +53,24 @@
         var simTime = 0;
 
         var PALETTE = {
-            paperBg: '#0e0c0a',
-            paperCenter: '#17130f',
-            gridRule: 'rgba(58, 50, 38, 0.45)',
-            gridAxis: 'rgba(201, 163, 92, 0.35)',
-            unitCircle: 'rgba(201, 163, 92, 0.22)',
-            olive: '#9a9440',
-            oliveGlow: 'rgba(154, 148, 64, 0.65)',
-            oliveTint: 'rgba(154, 148, 64, 0.15)',
-            terracotta: '#e07a3f',
-            terracottaGlow: 'rgba(224, 122, 63, 0.65)',
-            terracottaTint: 'rgba(224, 122, 63, 0.15)',
-            gold: '#c9a35c',
-            goldGlow: 'rgba(201, 163, 92, 0.75)',
-            goldTint: 'rgba(201, 163, 92, 0.18)',
-            coreHot: '#fffaf0',
-            ink: '#d8ccb4',
-            inkSoft: '#b3a68c',
-            inkFaint: '#7a7160'
+            paperBg: '#FFFFFF',
+            paperCenter: '#F5F6F6',
+            gridRule: 'rgba(120, 129, 138, 0.45)',
+            gridAxis: 'rgba(31, 74, 115, 0.25)',
+            unitCircle: 'rgba(31, 74, 115, 0.18)',
+            olive: '#5C6B5F',
+            oliveGlow: 'rgba(92, 107, 95, 0.55)',
+            oliveTint: 'rgba(92, 107, 95, 0.12)',
+            terracotta: '#1F4A73',
+            terracottaGlow: 'rgba(31, 74, 115, 0.55)',
+            terracottaTint: 'rgba(31, 74, 115, 0.10)',
+            gold: '#8A6A2E',
+            goldGlow: 'rgba(138, 106, 46, 0.6)',
+            goldTint: 'rgba(138, 106, 46, 0.12)',
+            coreHot: '#16191D',
+            ink: '#16191D',
+            inkSoft: '#4B5359',
+            inkFaint: '#78818A'
         };
 
         var Q_HEADS = 8;
@@ -209,7 +209,7 @@
 
             var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 1.3);
             grad.addColorStop(0, PALETTE.paperCenter);
-            grad.addColorStop(0.7, '#100e0b');
+            grad.addColorStop(0.7, '#F7F8F8');
             grad.addColorStop(1, PALETTE.paperBg);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, width, height);
@@ -261,8 +261,8 @@
                 var kvy = cy + Math.sin(kvNode.angle) * innerR;
 
                 var flow = 0.5 + 0.5 * Math.sin(t * 2.5 + q * 0.8);
-                ctx.strokeStyle = (q % 2 === 0) ? 'rgba(224, 122, 63, ' + (0.2 + flow * 0.45) + ')' :
-                                                  'rgba(154, 148, 64, ' + (0.2 + flow * 0.45) + ')';
+                ctx.strokeStyle = (q % 2 === 0) ? 'rgba(31, 74, 115,' + (0.2 + flow * 0.45) + ')' :
+                                                  'rgba(92, 107, 95,' + (0.2 + flow * 0.45) + ')';
                 ctx.lineWidth = 1.5 + flow * 1.5;
 
                 ctx.beginPath();
@@ -427,7 +427,7 @@
             var bx = cx - boxW / 2;
             var by = cy - boxH / 2;
 
-            ctx.fillStyle = 'rgba(22, 19, 16, 0.85)';
+            ctx.fillStyle = 'rgba(244, 246, 246,0.85)';
             ctx.fillRect(bx, by, boxW, boxH);
             ctx.strokeStyle = PALETTE.gridRule;
             ctx.lineWidth = 1;
@@ -446,7 +446,7 @@
                 var sx = bx + s * sliceW;
                 var isCurrent = (s === activeSlice);
 
-                ctx.fillStyle = isCurrent ? 'rgba(224, 122, 63, 0.45)' : 'rgba(154, 148, 64, 0.12)';
+                ctx.fillStyle = isCurrent ? 'rgba(31, 74, 115,0.45)' : 'rgba(92, 107, 95,0.12)';
                 ctx.fillRect(sx, by, sliceW - 2, boxH);
 
                 ctx.strokeStyle = isCurrent ? PALETTE.terracotta : PALETTE.gridRule;
@@ -486,9 +486,9 @@
             ctx.textAlign = 'left';
             ctx.fillText('UNOPTIMIZED DENSE BASELINE: 92.4 GB VRAM (OOM ON 1× A100-80GB)', startX, startY - 8);
 
-            ctx.fillStyle = 'rgba(232, 96, 110, 0.4)';
+            ctx.fillStyle = 'rgba(150, 52, 52, 0.35)';
             ctx.fillRect(startX, startY, barW, barH);
-            ctx.strokeStyle = '#e8606e';
+            ctx.strokeStyle = '#963434';
             ctx.lineWidth = 1.5;
             ctx.strokeRect(startX, startY, barW, barH);
 
@@ -521,7 +521,7 @@
                 w.r += 3.5 * simSpeed;
                 w.alpha *= 0.96;
 
-                ctx.strokeStyle = 'rgba(224, 122, 63, ' + w.alpha + ')';
+                ctx.strokeStyle = 'rgba(31, 74, 115,' + w.alpha + ')';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(w.x, w.y, w.r, 0, Math.PI * 2);
@@ -588,20 +588,20 @@
         var simTime = 0;
 
         var PALETTE = {
-            paperBg: '#0e0c0a',
-            paperStation: '#161310',
-            paperStationHover: '#1c1813',
-            rule: '#2c261c',
-            ruleStrong: '#3a3226',
-            terracotta: '#e07a3f',
-            terracottaGlow: 'rgba(224, 122, 63, 0.75)',
-            olive: '#9a9440',
-            oliveGlow: 'rgba(154, 148, 64, 0.75)',
-            gold: '#c9a35c',
-            goldGlow: 'rgba(201, 163, 92, 0.8)',
-            ink: '#d8ccb4',
-            inkSoft: '#b3a68c',
-            inkFaint: '#7a7160'
+            paperBg: '#FFFFFF',
+            paperStation: '#F4F5F5',
+            paperStationHover: '#EDEFEF',
+            rule: '#E1E5E6',
+            ruleStrong: '#D2D7D9',
+            terracotta: '#1F4A73',
+            terracottaGlow: 'rgba(31, 74, 115, 0.4)',
+            olive: '#5C6B5F',
+            oliveGlow: 'rgba(92, 107, 95, 0.4)',
+            gold: '#8A6A2E',
+            goldGlow: 'rgba(138, 106, 46, 0.45)',
+            ink: '#16191D',
+            inkSoft: '#4B5359',
+            inkFaint: '#78818A'
         };
 
         var STAGES = [
@@ -828,7 +828,7 @@
             ctx.fillRect(0, 0, width, height);
 
             ctx.save();
-            ctx.strokeStyle = 'rgba(58, 50, 38, 0.22)';
+            ctx.strokeStyle = 'rgba(120, 129, 138,0.22)';
             ctx.lineWidth = 1;
             ctx.setLineDash([2, 8]);
             for (var x = 20; x < width; x += 40) {
@@ -843,7 +843,7 @@
             ctx.beginPath();
             ctx.moveTo(14, fwdY);
             ctx.lineTo(width - 14, fwdY);
-            ctx.strokeStyle = 'rgba(224, 122, 63, 0.28)';
+            ctx.strokeStyle = 'rgba(31, 74, 115,0.28)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([4, 6]);
             ctx.stroke();
@@ -852,7 +852,7 @@
             ctx.beginPath();
             ctx.moveTo(14, bwdY);
             ctx.lineTo(width - 14, bwdY);
-            ctx.strokeStyle = 'rgba(154, 148, 64, 0.28)';
+            ctx.strokeStyle = 'rgba(92, 107, 95,0.28)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([4, 6]);
             ctx.stroke();
@@ -891,7 +891,7 @@
                     ctx.beginPath();
                     ctx.moveTo(px, py);
                     ctx.lineTo(px - 14 * p.speed, py);
-                    ctx.strokeStyle = 'rgba(224, 122, 63, 0.35)';
+                    ctx.strokeStyle = 'rgba(31, 74, 115,0.35)';
                     ctx.lineWidth = p.size * 0.7;
                     ctx.stroke();
                 });
@@ -913,7 +913,7 @@
                     ctx.beginPath();
                     ctx.moveTo(px, py);
                     ctx.lineTo(px + 14 * p.speed, py);
-                    ctx.strokeStyle = 'rgba(154, 148, 64, 0.35)';
+                    ctx.strokeStyle = 'rgba(92, 107, 95,0.35)';
                     ctx.lineWidth = p.size * 0.7;
                     ctx.stroke();
                 });
@@ -932,7 +932,7 @@
 
                 ctx.beginPath();
                 ctx.arc(ap.x, ap.y, 2.0 * ap.life, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(201, 163, 92, ' + ap.life.toFixed(2) + ')';
+                ctx.fillStyle = 'rgba(138, 106, 46,' + ap.life.toFixed(2) + ')';
                 ctx.fill();
             }
 
@@ -972,20 +972,20 @@
                 var isHover = isHovered && (mouseX >= st.x && mouseX <= st.x + st.w && mouseY >= st.y && mouseY <= st.y + st.h);
                 if (isHover) closest = st;
 
-                var cardBg = isHover ? 'rgba(36, 30, 22, 0.98)' : PALETTE.paperStation;
+                var cardBg = isHover ? 'rgba(237, 239, 239,0.98)' : PALETTE.paperStation;
                 var borderColor = PALETTE.ruleStrong;
 
                 if (isHover) {
                     borderColor = PALETTE.gold;
                 } else if (st.glowAdam > 0.1) {
                     borderColor = PALETTE.gold;
-                    cardBg = 'rgba(201, 163, 92, ' + (0.15 * st.glowAdam).toFixed(2) + ')';
+                    cardBg = 'rgba(138, 106, 46,' + (0.15 * st.glowAdam).toFixed(2) + ')';
                 } else if (st.glowForward > 0.1) {
                     borderColor = PALETTE.terracotta;
-                    cardBg = 'rgba(224, 122, 63, ' + (0.14 * st.glowForward).toFixed(2) + ')';
+                    cardBg = 'rgba(31, 74, 115,' + (0.14 * st.glowForward).toFixed(2) + ')';
                 } else if (st.glowBackward > 0.1) {
                     borderColor = PALETTE.olive;
-                    cardBg = 'rgba(154, 148, 64, ' + (0.14 * st.glowBackward).toFixed(2) + ')';
+                    cardBg = 'rgba(92, 107, 95,' + (0.14 * st.glowBackward).toFixed(2) + ')';
                 }
 
                 ctx.fillStyle = cardBg;
@@ -1042,20 +1042,20 @@
                 ctx.fillText(displayBadge, st.x + (isCompact ? 13 : 14), st.y + 13);
 
                 // Stage Title
-                drawFitText(displayTitle, isHover ? 10.5 : (isCompact ? 9 : 10), true, isHover ? '#ffffff' : PALETTE.ink, st.y + st.h * 0.40);
+                drawFitText(displayTitle, isHover ? 10.5 : (isCompact ? 9 : 10), true, isHover ? PALETTE.terracotta : PALETTE.ink, st.y + st.h * 0.40);
 
                 // Subtitle
                 if (st.h > 80) {
-                    drawFitText(st.stage.sub, isHover ? 9 : (isCompact ? 7.5 : 8.5), isHover, isHover ? '#ffd780' : PALETTE.gold, st.y + st.h * 0.60);
+                    drawFitText(st.stage.sub, isHover ? 9 : (isCompact ? 7.5 : 8.5), isHover, isHover ? '#8A6A2E' : PALETTE.gold, st.y + st.h * 0.60);
                 }
 
                 // Chip Tag
                 if (st.h > 100 && !isCompact) {
-                    drawFitText(st.stage.chip, isHover ? 8.5 : 8, isHover, isHover ? '#fffaf0' : PALETTE.inkSoft, st.y + st.h * 0.78);
+                    drawFitText(st.stage.chip, isHover ? 8.5 : 8, isHover, isHover ? '#16191D' : PALETTE.inkSoft, st.y + st.h * 0.78);
                 }
 
                 if ((isHover || st.glowBackward > 0.3) && (idx >= 1 && idx <= 4)) {
-                    drawFitText('RE-COMPUTE', 8, true, isHover ? '#ffd780' : PALETTE.olive, st.y + st.h - 6);
+                    drawFitText('RE-COMPUTE', 8, true, isHover ? '#8A6A2E' : PALETTE.olive, st.y + st.h - 6);
                 } else if (st.glowAdam > 0.3) {
                     drawFitText('θ UPDATE', 8, true, PALETTE.gold, st.y + st.h - 6);
                 }
@@ -1169,11 +1169,11 @@
             ctx.scale(dpr, dpr);
 
             var w = rect.width, h = rect.height;
-            ctx.fillStyle = '#0e0c0a';
+            ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, w, h);
 
             // Grid decoration
-            ctx.strokeStyle = 'rgba(58, 50, 38, 0.3)';
+            ctx.strokeStyle = 'rgba(120, 129, 138,0.3)';
             ctx.lineWidth = 0.5;
             ctx.setLineDash([2, 4]);
             ctx.beginPath();
@@ -1188,14 +1188,14 @@
                 var qy = 12 + q * 12.5;
                 var isSel = (q === activeQ);
 
-                ctx.fillStyle = isSel ? '#e07a3f' : 'rgba(122, 113, 96, 0.35)';
+                ctx.fillStyle = isSel ? '#1F4A73' : 'rgba(122, 113, 96, 0.35)';
                 ctx.fillRect(16, qy, 28, 9);
 
-                ctx.strokeStyle = isSel ? '#fffaf0' : 'rgba(44, 38, 28, 0.8)';
+                ctx.strokeStyle = isSel ? '#16191D' : 'rgba(244, 246, 246,0.8)';
                 ctx.lineWidth = isSel ? 1.5 : 1;
                 ctx.strokeRect(16, qy, 28, 9);
 
-                ctx.fillStyle = isSel ? '#fffaf0' : '#b3a68c';
+                ctx.fillStyle = isSel ? '#16191D' : '#4B5359';
                 ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('Q' + q, 30, qy + 7);
@@ -1206,14 +1206,14 @@
                 var ky = 18 + k * 25;
                 var isTarget = (k === kvTarget);
 
-                ctx.fillStyle = isTarget ? 'rgba(154, 148, 64, 0.45)' : 'rgba(22, 19, 16, 0.9)';
+                ctx.fillStyle = isTarget ? 'rgba(92, 107, 95,0.45)' : 'rgba(244, 246, 246,0.9)';
                 ctx.fillRect(w - 52, ky, 36, 16);
 
-                ctx.strokeStyle = isTarget ? '#9a9440' : '#2c261c';
+                ctx.strokeStyle = isTarget ? '#5C6B5F' : '#E1E5E6';
                 ctx.lineWidth = isTarget ? 1.5 : 1;
                 ctx.strokeRect(w - 52, ky, 36, 16);
 
-                ctx.fillStyle = isTarget ? '#fffaf0' : '#7a7160';
+                ctx.fillStyle = isTarget ? '#16191D' : '#78818A';
                 ctx.font = 'bold 8px "JetBrains Mono", monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('KV' + k, w - 34, ky + 11);
@@ -1223,7 +1223,7 @@
             var qY = 12 + activeQ * 12.5 + 4.5;
             var kvY = 18 + kvTarget * 25 + 8;
 
-            ctx.strokeStyle = '#e07a3f';
+            ctx.strokeStyle = '#1F4A73';
             ctx.lineWidth = 1.8;
             ctx.beginPath();
             ctx.moveTo(44, qY);
@@ -1236,7 +1236,7 @@
             var pX = invT * invT * 44 + 2 * invT * animT * (w * 0.45) + animT * animT * (w - 52);
             var pY = invT * invT * qY + 2 * invT * animT * ((qY + kvY) / 2) + animT * animT * kvY;
 
-            ctx.fillStyle = '#fffaf0';
+            ctx.fillStyle = '#16191D';
             ctx.beginPath();
             ctx.arc(pX, pY, 2.5, 0, Math.PI * 2);
             ctx.fill();
@@ -1330,7 +1330,7 @@
             ctx.scale(dpr, dpr);
 
             var w = rect.width, h = rect.height;
-            ctx.fillStyle = '#0e0c0a';
+            ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, w, h);
 
             var pos = slider ? parseInt(slider.value, 10) : 2048;
@@ -1338,14 +1338,14 @@
 
             if (statusEl) {
                 if (pos > 2048) {
-                    statusEl.innerHTML = '<span style="color:#e07a3f">θ=500K MONOTONIC (θ=10K ALIASED)</span>';
+                    statusEl.innerHTML = '<span style="color:#1F4A73">θ=500K MONOTONIC (θ=10K ALIASED)</span>';
                 } else {
                     statusEl.textContent = 'STABLE (No aliasing)';
                 }
             }
 
             var midY = h / 2;
-            ctx.strokeStyle = '#2c261c';
+            ctx.strokeStyle = '#E1E5E6';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(0, midY);
@@ -1355,7 +1355,7 @@
             animOffset = (animOffset + 0.02) % (Math.PI * 2);
 
             // Wave for theta=500,000 (LLaMA-3)
-            ctx.strokeStyle = '#e07a3f';
+            ctx.strokeStyle = '#1F4A73';
             ctx.lineWidth = 2.0;
             ctx.beginPath();
             for (var x = 0; x < w; x++) {
@@ -1368,7 +1368,7 @@
             ctx.stroke();
 
             // Wave for theta=10,000 (Standard baseline)
-            ctx.strokeStyle = '#7a7160';
+            ctx.strokeStyle = '#78818A';
             ctx.lineWidth = 1.0;
             ctx.setLineDash([3, 3]);
             ctx.beginPath();
@@ -1383,12 +1383,12 @@
             ctx.setLineDash([]);
 
             // Labels
-            ctx.fillStyle = '#e07a3f';
+            ctx.fillStyle = '#1F4A73';
             ctx.font = 'bold 8px "JetBrains Mono", monospace';
             ctx.textAlign = 'left';
             ctx.fillText('θ = 500,000 (LLaMA-3 Monotonic)', 10, 14);
 
-            ctx.fillStyle = '#7a7160';
+            ctx.fillStyle = '#78818A';
             ctx.fillText('θ = 10,000 (Standard Aliased)', 10, 26);
 
             requestAnimationFrame(drawWaveforms);

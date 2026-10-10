@@ -216,20 +216,6 @@ check_environment → check_data_pipeline → build_model → train_steps
 
 The CPU suite needs no data, no tokenizer download, and no wandb: the `tiny_config`/`tiny_model` fixtures and the conftest wandb stub make it hermetic. On a Mac M1 the full suite runs in roughly 20 seconds (verified 2026-08-05: 70 passed / 1 skipped, the skip being the `gpu`-marked test).
 
-### CI workflow (`.github/workflows/ci.yml`)
-
-On every push/PR to `main`, the `smoke` job runs on `ubuntu-latest` with Python 3.11 and the CPU-only torch wheel (`pip install torch --index-url https://download.pytorch.org/whl/cpu`), then three steps:
-
-1. **Import checks** — `python -c "import model; import dataset; import train"`,
-   the cheapest smoke: the three entry modules must import cleanly.
-2. **CPU test suite** — `python -m pytest tests/ --no-header -q` (the full
-   CPU suite; there is no `-m smoke` selection — the `smoke` marker is not
-   registered).
-3. **Doc reference checker** — `python -m pytest tests/test_doc_refs.py
-   --no-header -q`, enforcing that every symbol citation in these docs resolves to a real module attribute and that no line-number anchors exist.
-
-CI intentionally does not run the `gpu` tests (no CUDA runner) and does not run the e2e script; both are local/GPU-farm activities.
-
 ## Test Matrix
 
 | File | What it defends | How to run |
@@ -238,8 +224,8 @@ CI intentionally does not run the `gpu` tests (no CUDA runner) and does not run 
 | `tests/test_model.py` | Model math: RMSNorm, RoPE, GQA causality, SwiGLU fused≡unfused, param counts (514.9M / 251.7M), forward/backward, grad-ckpt equivalence, chunked CE ≡ dense CE, chunked head ≡ dense CE+z, QK-norm identity/RMSNorm behavior | `pytest tests/test_model.py` |
 | `tests/test_smoke.py` | End-to-end training on synthetic data: one optimizer step, loss descent, chunked-CE-in-training, `validate` + wandb stub | `pytest tests/test_smoke.py` |
 | `tests/test_train.py` | Generation sampling (top-k/top-p/temperature/-inf), checkpoint round-trip incl. exact RNG restore and cross-device regression, async save, GPU-optimization idempotence | `pytest tests/test_train.py` |
-| `tests/test_data_pipeline.py` | Data-pipeline wiring regressions (audit C1/C2): `concat_shards_to_cache` order/atomicity/mmap, `benchmark_data.py` end-to-end | `pytest tests/test_data_pipeline.py` |
-| `tests/test_build_docs_html.py` | Docs-portal build contract: asset copying, boot wiring, rel-prefix, fonts, widgets, dark theme | `pytest tests/test_build_docs_html.py` |
+| `tests/test_data_pipeline.py` | Data-pipeline wiring regressions: `concat_shards_to_cache` order/atomicity/mmap, `benchmark_data.py` end-to-end | `pytest tests/test_data_pipeline.py` |
+| `tests/test_build_docs_html.py` | Docs-portal build contract: asset copying, boot wiring, rel-prefix, fonts, widgets, single theme | `pytest tests/test_build_docs_html.py` |
 | `tests/test_doc_refs.py` | Doc↔code citation gate: anchors resolve, no line numbers, links valid, snippets marked | `pytest tests/test_doc_refs.py` |
 | `tests/e2e_gpu_smoke.py` | Full pipeline on real hardware: env, data, training with autocast, chunked CE, validate, checkpoint, Triton kernels | `python tests/e2e_gpu_smoke.py [--steps N]` |
 
@@ -270,5 +256,4 @@ theory behind it in
 - [training-and-memory.md](../concepts/training-and-memory.md) — the RNG-restore theory
   behind `TestCheckpointRoundTrip` and the memory claims the chunked-head equivalence tests make safe.
 - [data-reference.md](data-reference.md) — the Triton kernels checked by the e2e script.
-- [learning-paths.md](../guides/learning-paths.md) — where this reference sits
-  in the reading order.
+- [README.md](../README.md) — where this reference sits in the reading order.

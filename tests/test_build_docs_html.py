@@ -1,9 +1,9 @@
 """Build-output contract tests for the docs_html portal in LLaMA-3-Lite.
 
-Runs the generator once (module scope) and asserts the premium-polish
-wiring: portal.js asset, boot overlay, hero canvas instrument, mono-only fonts,
-pass diagram, and interactive mechanism widgets. Markdown sources are never
-modified by the build.
+Runs the generator once (module scope) and asserts the wiring: portal.js
+asset, boot overlay, hero canvas instrument, the prose/mono font pair, the
+pass diagram, and the interactive mechanism widgets. Markdown sources are
+never modified by the build.
 """
 
 import re
@@ -46,11 +46,11 @@ def test_nested_page_rel_prefix(built):
     assert 'href="../../assets/style.css"' in html
 
 
-def test_font_link_mono_only(built):
+def test_font_link_prose_plus_mono(built):
+    """Prose reads in Literata; IBM Plex Mono is kept for code and data."""
     html = read("README.html")
+    assert "Literata" in html
     assert "IBM+Plex+Mono" in html
-    assert "JetBrains+Mono" in html
-    assert "Serif" not in html
 
 
 def test_index_hero_figure_stage(built):
@@ -58,7 +58,7 @@ def test_index_hero_figure_stage(built):
     assert 'id="hero-decode"' in html
     assert 'id="heroStateCanvas"' in html
     assert 'data-title="LLAMA-3-LITE"' in html
-    assert "hero-title sr-only" in html
+    assert '<span class="sr-only" data-title="LLAMA-3-LITE">' in html
     assert "llama-telemetry-ribbon" in html
 
 
@@ -77,7 +77,8 @@ def test_index_mechanism_cards(built):
     assert 'id="ropeExtrapCanvas"' in html
 
 
-def test_dark_theme_only(built):
+def test_single_theme_only(built):
+    """One theme, no switcher: the page is a fixed reading surface."""
     html = read("README.html")
     assert "toggleTheme" not in html
     assert "theme-toggle" not in html

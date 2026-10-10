@@ -1616,13 +1616,7 @@ Related docs (relative to this file):
 - [../references/model-reference.md](../references/model-reference.md) — full walkthrough of `model.py` (`model.py:Transformer.forward`, `model.py:chunked_head_cross_entropy_with_z`, `model.py:GroupedQueryAttention.forward`) and the config reference (`config.py:get_config` every key)
 - [../references/training-reference.md](../references/training-reference.md) — the test suite, including `tests/test_train.py::TestCheckpointRoundTrip` and `tests/test_model.py::TestTransformerForward`
 - [../references/data-reference.md](../references/data-reference.md) — `ShuffledRangeSampler`, `PackedDataset`, and `build_training_data` walkthrough
-- [../guides/quickstart.md](../guides/quickstart.md) — how to run a training step and watch the metrics
-- [../guides/troubleshooting.md](../guides/troubleshooting.md) — operational failure modes for the loop, memory, and resumption
-- [../guides/glossary.md](../guides/glossary.md) — the format, optimizer, and checkpoint vocabulary used here
-- [../guides/learning-paths.md](../guides/learning-paths.md) — where this doc sits in the reading order
-- [../README.md](../README.md) — the docs index and navigation map
-- [../../README.md](../../README.md) — repo root (status banner: the 8.25B-token run has not started)
-- [../../AGENTS.md](../../AGENTS.md), [../../SKILLS.md](../../SKILLS.md) — repo guidance, including the peak-memory verification pattern
+- [../README.md](../README.md) — how to read this book
 
 Key source files (citations, not links):
 

@@ -43,21 +43,6 @@ python train.py  # Start training with one command
 
 ---
 
-## Table of Contents
-
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Architecture Overview](#architecture-overview)
-- [Performance Optimizations](#performance-optimizations)
-- [Configuration](#configuration)
-- [Training Details](#training-details)
-- [Project Structure](#project-structure)
-- [Hardware Requirements](#hardware-requirements)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
 ## Features
 
 | Feature | Status | Impact |
@@ -417,7 +402,7 @@ LLaMA-3-Lite/
 ├── train.py            # Training loop (validation, generation, checkpointing)
 ├── kernels/            # Opt-in Triton kernels (rmsnorm, swiglu, chunked CE)
 ├── data/               # prepare_data.py shim + vendored loader (data/shared_data/)
-├── docs/               # concepts/ + references/ + guides/ + training.md (see docs/README.md)
+├── docs/               # concepts/ + references/ + training.md (see docs/README.md)
 ├── tests/              # pytest suite (smoke + numeric + GPU) + doc-ref checker
 ├── benchmark_data.py   # Data pipeline benchmark (GPU)
 ├── weights/            # Checkpoints (created at runtime)
@@ -461,63 +446,6 @@ Full code walkthroughs: `docs/references/model-reference.md` (model, RoPE, confi
 
 ---
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-### Reporting Issues
-
-- Use the [GitHub Issues](https://github.com/atandra2000/LLaMA-3-Lite/issues) tracker
-- Include: Python version, PyTorch version, GPU model, CUDA version
-- Provide minimal reproduction steps for bugs
-
-### Pull Requests
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Follow PEP 8 guidelines
-- Use type hints for function signatures
-- Add docstrings to public functions and classes
-- Include unit tests for new features
-
----
-
-## License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2026 LLaMA-3-Lite Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
 ## Acknowledgments
 
 - **LLaMA 3** architecture from Meta AI
@@ -525,14 +453,6 @@ SOFTWARE.
 - **Datasets**: FineWeb-Edu, DCLM-Baseline, The Stack v2, OpenMathInstruct-2, ArXiv, Cosmopedia (canonical mixture in `LLM/shared_data/config/mixture.yaml`)
 - **Flash Attention 2**: [tri Dao](https://github.com/Dao-AILab/flash-attention)
 - **Weights & Biases**: Experiment tracking and visualization
-
----
-
-## Support
-
-- **Documentation**: [GitHub Pages](https://atandra2000.github.io/LLaMA-3-Lite/) (interactive HTML portal), this README, and [`docs/README.md`](docs/README.md) (extracted rationale index)
-- **Issues**: [GitHub Issues](https://github.com/atandra2000/LLaMA-3-Lite/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/atandra2000/LLaMA-3-Lite/discussions)
 
 ---
 

@@ -5,9 +5,13 @@ Converts project markdown files into a responsive, beautifully-styled HTML docum
 with full LaTeX math (KaTeX) and syntax highlighting support.
 Output directory: docs_html/ (ignored by git).
 
-Design system: the "dark bench notebook" — espresso-graphite paper, warm-bone
-ink, terracotta + olive marks, one mono voice. Shares its lineage with the
-sibling DeepSeek-v3-Lite, Mamba-3-Lite, and GPT-OSS-Lite portals. See `assets/style.css`.
+Design system: the "printed reader" — cool white paper, blue-black ink, one
+ink-blue accent, Literata for prose and IBM Plex Mono for code and measured
+values. See `assets/style.css`.
+
+The portal is a book. `DOC_FILES` below is the single source of truth for its
+chapter list and reading order; the sidebar, the index page and the
+previous/next links are all derived from it.
 """
 
 import os
@@ -26,46 +30,80 @@ OUTPUT_DIR = WORKSPACE_DIR / "docs_html"
 # blob links must resolve against it even when built from a worktree.
 DEFAULT_PUBLISH_BRANCH = "main"
 
+# The book, in reading order. Each entry is one chapter:
+#   (relative_path, part, chapter_title, card_blurb)
+# Order matters: it is the reading order for the sidebar, the index page and
+# the previous/next links at the foot of every chapter.
 DOC_FILES = [
-    # (relative_path_from_root, category, display_title)
-    ("README.md", "Core", "Project Overview (README)"),
-    ("AGENTS.md", "Core", "AGENTS & System Architecture"),
-    ("SKILLS.md", "Core", "Skills Reference"),
-    ("docs/README.md", "Core", "Documentation Index"),
-    ("docs/training.md", "Core", "Training, Memory Stack & Data Pipeline"),
-    ("docs/AUDIT.md", "Core", "Docs & Codebase Audit"),
+    # Part I — Foundations
+    ("README.md", "Part I: Foundations", "Overview",
+     "The project in one page: a 513.8M-parameter LLaMA-3 reproduction, the "
+     "eight-technique memory stack, and how to run it."),
+    ("docs/README.md", "Part I: Foundations", "How to read this book",
+     "What each chapter covers, where to start, and the map from source file "
+     "to chapter."),
+    ("docs/concepts/architecture-components.md", "Part I: Foundations",
+     "Architecture components",
+     "RMSNorm pre-norm and QK-norm, the SwiGLU feed-forward, and the chunked "
+     "cross-entropy with z-loss."),
+    ("docs/concepts/attention-and-positional.md", "Part I: Foundations",
+     "Attention and positional encoding",
+     "Grouped-query attention (8Q/4KV) and RoPE at θ=500K, from the equations "
+     "down to the tensor shapes."),
 
-    # Concepts
-    ("docs/concepts/architecture-components.md", "Concepts", "Architecture Components — Norm, FFN, Loss"),
-    ("docs/concepts/attention-and-positional.md", "Concepts", "Attention & Positional Encoding (GQA, RoPE)"),
-    ("docs/concepts/data-and-kernels.md", "Concepts", "Data Pipeline & Triton Kernels"),
-    ("docs/concepts/training-and-memory.md", "Concepts", "Training, Memory & Numerical Stability"),
+    # Part II — The data
+    ("docs/concepts/data-and-kernels.md", "Part II: The data",
+     "The data pipeline",
+     "Mixture, packing, dedup, the memory-mapped token cache, and the Triton "
+     "kernel model."),
+    ("docs/references/workspace-data.md", "Part II: The data",
+     "The shared data pipeline",
+     "The upstream corpus: its five stages, the canonical mixture, and the "
+     "shard and manifest formats."),
 
-    # Guides
-    ("docs/guides/quickstart.md", "Guides", "Quickstart — From Zero to a Running Loop"),
-    ("docs/guides/learning-paths.md", "Guides", "Learning Paths — How to Read the Docs"),
-    ("docs/guides/troubleshooting.md", "Guides", "Troubleshooting — FAQ"),
-    ("docs/guides/glossary.md", "Guides", "Glossary — Notation, Acronyms, File Layout"),
+    # Part III — The training run
+    ("docs/concepts/training-and-memory.md", "Part III: The training run",
+     "Training, memory, and numerical stability",
+     "AdamW and the cosine schedule, BF16 and TF32, and the derived "
+     "92 GB → 20 GB memory stack."),
+    ("docs/training.md", "Part III: The training run",
+     "The training loop, end to end",
+     "A walkthrough of train.py: the loop, the memory stack, and the data "
+     "path."),
 
-    # References
-    ("docs/references/model-reference.md", "References", "Model, RoPE & Config Reference"),
-    ("docs/references/data-reference.md", "References", "Data, Tokenizer & Kernels Reference"),
-    ("docs/references/training-reference.md", "References", "Training & Test Reference"),
-    ("docs/references/workspace-data.md", "References", "Workspace Shared Data Pipeline"),
+    # Part IV — Reference
+    ("docs/references/model-reference.md", "Part IV: Reference",
+     "Model, RoPE, and config",
+     "Symbol-by-symbol reference for model.py, the RoPE deep dive, and every "
+     "config key."),
+    ("docs/references/data-reference.md", "Part IV: Reference",
+     "Data, tokenizer, and kernels",
+     "The loader, the tokenizer, and the three Triton kernels, with their "
+     "contracts and launch configurations."),
+    ("docs/references/training-reference.md", "Part IV: Reference",
+     "The test suite",
+     "Test strategy, fixtures, markers, the per-file walkthroughs, and the "
+     "GPU smoke script."),
 ]
 
-# Premium-polish assets: mono-only font link, boot overlay, and shared portal.js
+# Chapters published as portal pages. A markdown link that resolves to a file
+# outside this set is rewritten to its GitHub source URL instead of a page
+# that was never generated.
+PUBLISHED_MD = {rel for rel, *_ in DOC_FILES}
+
+# Reading face for prose, mono for code and measured values.
 FONT_LINK = ('<link href="https://fonts.googleapis.com/css2?'
-             'family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400'
-             '&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400'
+             'family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;'
+             '0,7..72,600;0,7..72,700;1,7..72,400'
+             '&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400'
              '&display=swap" rel="stylesheet">')
 
 BOOT_OVERLAY_HTML = (
     '<div id="boot-overlay" aria-hidden="true">'
     '<div class="boot-inner">'
-    '<div class="boot-wordmark">LLAMA-3-LITE</div>'
-    '<div class="boot-line">loading weights '
-    '<span class="boot-bar">[░░░░░░░░░░░░] 0%</span>'
+    '<div class="boot-wordmark">LLaMA-3-Lite</div>'
+    '<div class="boot-line">Loading the notes'
+    '<span class="boot-bar"></span>'
     '</div></div></div>'
 )
 
@@ -90,7 +128,7 @@ HEAD_TEMPLATE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    <!-- Fonts — secondary mono voice for headings/numerics, JetBrains for body. -->
+    <!-- Fonts — Literata for prose, IBM Plex Mono for code and data. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     {font_link}
@@ -102,7 +140,7 @@ HEAD_TEMPLATE = """<!DOCTYPE html>
 """
 
 DOC_EXTRA_HEAD = """    <!-- Highlight.js for Syntax Highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <!-- KaTeX for LaTeX Math -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -328,6 +366,13 @@ def fix_md_links(content: str, src_rel_path: str) -> str:
                     repo_rel = cand_root
                 else:
                     repo_rel = Path(src_rel_path).parent / path_part
+            repo_rel_posix = repo_rel.as_posix()
+            if repo_rel_posix not in PUBLISHED_MD:
+                # Not a chapter: point at the source file rather than at a
+                # page the build never generates.
+                if repo_base:
+                    return f"[{label}]({repo_base}/{repo_rel_posix})"
+                return f"[{label}]({url})"
             rel = os.path.relpath(WORKSPACE_DIR / repo_rel, src_dir).replace(os.sep, '/')
             target = rel[:-3] + ".html"
             if anchor:
@@ -706,25 +751,24 @@ def compute_rel_prefix(target_rel_path: str) -> str:
 
 def build_sidebar_html(current_rel_path: str, rel_prefix: str) -> str:
     """Build the navigation sidebar HTML matching sibling layout."""
-    sidebar_sections = {"Core": [], "Concepts": [], "Guides": [], "References": []}
+    sidebar_sections: dict[str, list[str]] = {}
 
-    for rel_path, category, display_title in DOC_FILES:
+    for rel_path, part, display_title, _blurb in DOC_FILES:
         target_html_rel = rel_path.replace(".md", ".html")
         href = rel_prefix + target_html_rel
         is_active = (rel_path == current_rel_path) or (rel_path.replace(".md", ".html") == current_rel_path)
         active_cls = "active" if is_active else ""
-        sidebar_sections[category].append(
+        sidebar_sections.setdefault(part, []).append(
             f'<li class="nav-item"><a href="{href}" class="nav-link {active_cls}" title="{display_title}"><span class="nav-link-text">{display_title}</span></a></li>'
         )
 
     html_out = ['<div class="sidebar-search"><input type="text" id="navSearch" placeholder="Search docs..." onkeyup="filterNav()"></div>']
 
-    for cat_name, items in sidebar_sections.items():
-        if items:
-            html_out.append('<div class="nav-group">')
-            html_out.append(f'<div class="nav-group-title">{cat_name}</div>')
-            html_out.append(f'<ul class="nav-list">{"".join(items)}</ul>')
-            html_out.append('</div>')
+    for part, items in sidebar_sections.items():
+        html_out.append('<div class="nav-group">')
+        html_out.append(f'<div class="nav-group-title">{part}</div>')
+        html_out.append(f'<ul class="nav-list">{"".join(items)}</ul>')
+        html_out.append('</div>')
 
     return "\n".join(html_out)
 
@@ -759,7 +803,7 @@ def generate_html_page(rel_path: str, category: str, display_title: str):
     toc_html = build_toc_html(toc_items)
 
     curr_idx = -1
-    for idx, (p, _, _) in enumerate(DOC_FILES):
+    for idx, (p, _, _, _) in enumerate(DOC_FILES):
         if p == rel_path:
             curr_idx = idx
             break
@@ -817,9 +861,9 @@ def generate_html_page(rel_path: str, category: str, display_title: str):
                 <div class="doc-header">
                     <h1 class="doc-title">{display_title}</h1>
                     <div class="doc-meta">
-                        <span class="meta-item"><span class="meta-mark">&sect;</span> {rel_path}</span>
-                        <span class="meta-item"><span class="meta-mark">&para;</span> {word_count:,} words</span>
-                        <span class="meta-item"><span class="meta-mark">&tau;</span> ~{reading_time} min read</span>
+                        <span class="meta-item">{rel_path}</span>
+                        <span class="meta-item">{word_count:,} words</span>
+                        <span class="meta-item">~{reading_time} min read</span>
                     </div>
                 </div>
 
@@ -858,56 +902,32 @@ def generate_index_portal():
     """Generate interactive index.html home portal."""
     sidebar_html = build_sidebar_html("index.html", "./")
 
-    categories = {
-        ("CORE", "Core Architecture"): [
-            ("README.html", "README", "Project Overview", "513.8M-param pure-PyTorch LLaMA-3 reproduction with an 8-technique memory stack (78% VRAM reduction)."),
-            ("AGENTS.html", "AGENTS", "System Architecture", "Codebase contracts, hard rules, Triton kernel carve-out, and memory optimization rules."),
-            ("SKILLS.html", "SKILLS", "Skills Map", "Specialized developer workflows, memory engineering tools, and agent competencies."),
-            ("docs/README.html", "DOCS", "Documentation Index", "A map of the concepts, guides, and API references in this portal."),
-            ("docs/training.html", "CORE", "Training Pipeline", "Corpus mix, 8-technique memory stack, chunked cross-entropy, and training loop."),
-            ("docs/AUDIT.html", "CORE", "Docs & Code Audit", "Verified architectural constants, symbol resolution, and codebase invariants."),
-        ],
-        ("CONCEPTS", "Architecture & Concepts"): [
-            ("docs/concepts/architecture-components.html", "C1", "Architecture Components", "RMSNorm pre-norm, SwiGLU FFN (4096d), chunked cross-entropy, and z-loss formulation."),
-            ("docs/concepts/attention-and-positional.html", "C2", "Attention & RoPE", "Grouped-Query Attention (8Q/4KV) and RoPE θ=500K for long-context extrapolation up to 8192."),
-            ("docs/concepts/data-and-kernels.html", "C3", "Data & Triton Kernels", "Disk-backed uint32 token cache, async prefetching, and sanctioned Triton kernel opt-ins."),
-            ("docs/concepts/training-and-memory.html", "C4", "Training & Memory", "The 8-technique memory stack (92 GB → 20 GB), gradient checkpointing, and numerical stability."),
-        ],
-        ("GUIDES", "Guides & Playbooks"): [
-            ("docs/guides/quickstart.html", "G0", "Quickstart", "From zero to a running training loop — installation, verification, synthetic smoke runs."),
-            ("docs/guides/learning-paths.html", "G1", "Learning Paths", "How to read the docs based on engineering role (Systems, Researcher, Developer)."),
-            ("docs/guides/troubleshooting.html", "G2", "Troubleshooting", "Common failure modes, CUDA OOM mitigation, NaN prevention, and loss divergence."),
-            ("docs/guides/glossary.html", "G3", "Glossary", "Notation, acronyms, tensor shapes, and workspace file layout reference."),
-        ],
-        ("REFS", "API References"): [
-            ("docs/references/model-reference.html", "R1", "Model Reference", "LLaMA3Transformer, Block, GQA, SwiGLU, RMSNorm, and RoPE APIs and tensor signatures."),
-            ("docs/references/data-reference.html", "R2", "Data Reference", "Dataset, Tokenizer, Sharding, and custom Triton kernel contracts."),
-            ("docs/references/training-reference.html", "R3", "Training Reference", "Train loop, optimizer, cosine LR scheduler, and checkpoint manager."),
-            ("docs/references/workspace-data.html", "R4", "Workspace Data", "Universal 8B-token data pipeline (shared_data), sharding, and exact dedup."),
-        ],
-    }
-
-    portal_cards_html = ""
-    for (cat_tag, cat_title), items in categories.items():
-        cards = ""
-        for href, tag, title, desc in items:
-            cards += f"""
-            <a href="{href}" class="portal-card">
-                <span class="card-tag">{tag}</span>
+    # The index is the book's table of contents. It is derived from DOC_FILES
+    # so the sidebar and the index cannot disagree about the chapter list.
+    parts: dict[str, list[str]] = {}
+    chapter_no = 0
+    for rel_path, part, display_title, blurb in DOC_FILES:
+        chapter_no += 1
+        parts.setdefault(part, []).append(f"""
+            <a href="{rel_path.replace('.md', '.html')}" class="portal-card">
+                <span class="card-tag">Ch {chapter_no}</span>
                 <div class="card-body">
-                    <h3 class="card-heading">{title}</h3>
-                    <p class="card-desc">{desc}</p>
+                    <h3 class="card-heading">{display_title}</h3>
+                    <p class="card-desc">{blurb}</p>
                 </div>
             </a>
-            """
+            """)
+
+    portal_cards_html = ""
+    for part, cards in parts.items():
+        n = len(cards)
         portal_cards_html += f"""
         <section class="portal-section">
             <header class="portal-section-head">
-                <span class="portal-section-mark">&sect; {cat_tag.lower()}</span>
-                <h2 class="portal-section-title">{cat_title}</h2>
-                <span class="portal-section-meta">{len(items)} entries</span>
+                <span class="portal-section-mark">{n} {'chapter' if n == 1 else 'chapters'}</span>
+                <h2 class="portal-section-title">{part}</h2>
             </header>
-            <div class="portal-grid">{cards}</div>
+            <div class="portal-grid">{''.join(cards)}</div>
         </section>
         """
 
@@ -945,25 +965,8 @@ def generate_index_portal():
         <main class="main-content">
             <div class="content-container">
                 <div class="hero-banner">
-                    <div class="hero-margin-ticks" aria-hidden="true"></div>
-
-                    <div class="hero-coords" aria-hidden="true">
-                        <span class="coord">FIG &middot; A0</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">PARAM 513.8M</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">GQA 8Q&middot;4KV</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">SWIGLU 4096</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">RMSNORM 1024</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">ROPE &theta;=500K</span>
-                        <span class="coord-sep">/</span>
-                        <span class="coord">78% VRAM CUT</span>
-                    </div>
-                    <h1 class="hero-title">LLaMA<span class="hero-title-em">-3</span><span class="hero-title-em-accent">-Lite</span><span class="hero-title sr-only" data-title="LLAMA-3-LITE"> — documentation portal</span></h1>
-                    <p class="hero-subtitle">From-scratch PyTorch reproduction of LLaMA-3 at ~513.8M params — Grouped-Query Attention (8Q/4KV), RoPE &theta;=500K, fused SwiGLU, and the 8-technique memory stack achieving 78% peak VRAM reduction (92 GB &rarr; 20 GB). Pure PyTorch with three sanctioned Triton opt-in kernels. Read it like a field notebook: a name, a wiring sketch, then the measurements.</p>
+                    <h1 class="hero-title">LLaMA-3-Lite<span class="sr-only" data-title="LLAMA-3-LITE"> — documentation portal</span></h1>
+                    <p class="hero-subtitle">From-scratch PyTorch reproduction of LLaMA-3 at ~513.8M params — Grouped-Query Attention (8Q/4KV), RoPE &theta;=500K, fused SwiGLU, and the 8-technique memory stack achieving 78% peak VRAM reduction (92 GB &rarr; 20 GB). Pure PyTorch with three sanctioned Triton opt-in kernels. Each document shows the arithmetic, not just the result.</p>
 
                     <div class="llama-telemetry-ribbon" aria-label="Key LLaMA-3 Architectural Metrics">
                         <div class="telemetry-card terra">
@@ -1076,7 +1079,7 @@ def generate_index_portal():
 
                     <div class="mechanism-section" aria-label="Interactive LLaMA-3 Core Mechanisms">
                         <div class="mechanism-section-head">
-                            <span class="mechanism-section-title">&sect; LLAMA-3 CORE MECHANISMS &middot; INTERACTIVE BENCHMARK LABS</span>
+                            <span class="mechanism-section-title">Core mechanisms, with live controls</span>
                         </div>
                         <div class="mechanism-grid">
                             <!-- Card 1: GQA 8Q/4KV Compression & Interactive Head Router -->
@@ -1274,13 +1277,17 @@ def generate_assets():
 
 def main():
     print("Building LLaMA-3-Lite HTML Documentation...")
+    # docs_html/ is a build artifact, so wipe it first. Otherwise a chapter
+    # dropped from DOC_FILES survives as a stale page and gets published.
+    if OUTPUT_DIR.exists():
+        shutil.rmtree(OUTPUT_DIR)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     generate_assets()
 
-    for rel_path, category, display_title in DOC_FILES:
+    for rel_path, part, display_title, _blurb in DOC_FILES:
         print(f"Generating: {rel_path} -> docs_html/{rel_path.replace('.md', '.html')}")
-        generate_html_page(rel_path, category, display_title)
+        generate_html_page(rel_path, part, display_title)
 
     generate_index_portal()
     print("\nDocumentation build complete!")
