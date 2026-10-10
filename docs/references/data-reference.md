@@ -1143,11 +1143,7 @@ AGENTS.md rule 2: for any sanctioned Triton path, target **≥ 1.5× speedup ove
   `gpu`/`numeric`/`smoke` marker system and the e2e smoke script.
 - [../training.md](../training.md) — how `train_model` consumes the
   loaders, how `ENABLE_TRITON_KERNELS` interacts with the training loop, and where the mmap data path fits in the 92 → 20 GB memory stack.
-- [../guides/troubleshooting.md](../guides/troubleshooting.md) — Triton
-  import failures on Mac/CPU and related runtime issues.
-- [../guides/glossary.md](../guides/glossary.md) — notation and acronyms
-  (`V`, `BOS/EOS/PAD`, BPE).
-- [../README.md](../README.md) — the new docs nav map.
+- [../README.md](../README.md) — how to read this book.
 
 **Key source files cited in this doc:**
 

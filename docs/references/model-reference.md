@@ -243,7 +243,7 @@ This is what `train.py` uses for the training, warmup, and validation losses (`t
 
 The Triton variant differs: with `cross_entropy_impl="triton"` and triton importable (`HAS_TRITON`), each chunk returns the fused kernel's scalar loss and the per-chunk losses are *averaged* — exact only because the chunks are equal-sized (256 divides 196,608). If `cross_entropy_impl="triton"` but triton is missing, the function raises `ImportError` at entry rather than silently falling back (per AGENTS.md hard rule 7). The averaging branch is documented in the function docstring.
 
-**Why two functions?** `chunked_cross_entropy_with_z` bounds the FP32 loss chain but still requires the caller to own a full logits tensor; it is the reference implementation that the numerical-equivalence tests compare against. `chunked_head_cross_entropy_with_z` additionally bounds the logits themselves, which is what makes training at batch 96 fit in 80 GB. The CE chunk size is a config knob (`config.py:get_config` → `ce_chunk_size: 256`); the [Config Reference](#config-reference-configpyget_config) below documents the knob, [troubleshooting.md](../guides/troubleshooting.md) the OOM symptoms of raising it.
+**Why two functions?** `chunked_cross_entropy_with_z` bounds the FP32 loss chain but still requires the caller to own a full logits tensor; it is the reference implementation that the numerical-equivalence tests compare against. `chunked_head_cross_entropy_with_z` additionally bounds the logits themselves, which is what makes training at batch 96 fit in 80 GB. The CE chunk size is a config knob (`config.py:get_config` → `ce_chunk_size: 256`); the [Config Reference](#config-reference-configpyget_config) below documents the knob, and raising it too far shows up as out-of-memory.
 
 ### `build_transformer` — Factory and Diagnostics
 
@@ -1223,9 +1223,6 @@ starts from the saved shadow rather than a fresh copy.
     (`rmsnorm`, `swiglu`, cross-entropy) and the loader/tokenizer consumers of the data group.
   - [training-reference.md](training-reference.md) — the test classes cited
     above (`TestRoPE`, `TestGroupedQueryAttention`, `TestChunked*`, `TestGetConfig`, `TestTransformerParamCount`, …) and the `REQUIRED_KEYS` contract.
-- **Guides:** [learning-paths.md](../guides/learning-paths.md) (where this
-  doc sits in each path), [glossary.md](../guides/glossary.md) (notation: `B`, `S`, `d`, `N`, `V`, `n_kv`), [troubleshooting.md](../guides/troubleshooting.md) (what to check when a run OOMs or diverges).
-- **Docs index:** [README.md](../README.md) — the new nav map for the docs
-  tree; [../../README.md](../../README.md) — repo root.
+- **Reading order:** [README.md](../README.md) — how to read this book.
 - **Key source files:** `model.py` (`RoPE`, `RMSNorm`, `GroupedQueryAttention`,
   `SwiGLUFFN`, `DecoderBlock`, `Decoder`, `Transformer`, `chunked_cross_entropy_with_z`, `chunked_head_cross_entropy_with_z`, `build_transformer`), `config.py:get_config`, `train.py` (`train_model`, `validate`, `generate_samples`, `save_checkpoint`, `load_checkpoint`, `top_k_top_p_sampling`, `setup_gpu_optimizations`), `data/shared_data/loader.py` (`build_training_data`, `build_synthetic_data`, `build_tokenizer`, `PackedDataset`, `_SyntheticTokenizerStub`), and the contract tests in `tests/test_model.py`, `tests/test_config.py`, `tests/conftest.py`.

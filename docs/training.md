@@ -150,8 +150,7 @@ Key behaviors:
 - The function restores `model.train()` before returning so the caller's
   training state is unaffected.
 
-Note the tokenizer is whatever `train.py:train_model` resolved: the real HF tokenizer when the corpus cache exists, or the byte `data/shared_data/loader.py:_SyntheticTokenizerStub` on the synthetic fallback (in which case "generated text" is byte-clamped noise — see
-[guides/troubleshooting.md](guides/troubleshooting.md)).
+Note the tokenizer is whatever `train.py:train_model` resolved: the real HF tokenizer when the corpus cache exists, or the byte `data/shared_data/loader.py:_SyntheticTokenizerStub` on the synthetic fallback (in which case "generated text" is byte-clamped noise).
 
 ### `_head_weight` and `validate`
 
@@ -810,7 +809,7 @@ gate, up = gate_up.chunk(2, dim=-1)
 return self.down_proj(F.silu(gate) * up)
 ```
 
-The **Triton opt-ins** push the elementwise fusions into GPU SRAM: `kernels/rmsnorm_triton.py` (row-wise RMSNorm), `kernels/swiglu_triton.py` (gate×up fuse), `kernels/cross_entropy_triton.py` (online-softmax CE + z-loss). They are gated twice: per-kernel `rmsnorm_impl` / `swiglu_impl` / `cross_entropy_impl` keys in `config.py:get_config`, and an environment switch — `train.py:train_model` force-restores all three to `'pytorch'` unless `ENABLE_TRITON_KERNELS=1`. Every dispatch has a runtime `try/except` fallback (`model.py:RMSNorm.forward`, `model.py:SwiGLUFFN.forward`, `model.py:chunked_head_cross_entropy_with_z`). Kernel-by-kernel design: [references/data-reference.md](references/data-reference.md) and [concepts/data-and-kernels.md](concepts/data-and-kernels.md).
+The **Triton opt-ins** push the elementwise fusions into GPU SRAM: `kernels/rmsnorm_triton.py` (row-wise RMSNorm), `kernels/swiglu_triton.py` (gate×up fuse), `kernels/cross_entropy_triton.py` (online-softmax CE + z-loss). They are gated twice: per-kernel `rmsnorm_impl` / `swiglu_impl` / `cross_entropy_impl` keys in `config.py:get_config`, and an environment switch — `train.py:train_model` force-restores all three to `'pytorch'` unless `ENABLE_TRITON_KERNELS=1`. Every dispatch is a direct call with no silent fallback (`model.py:RMSNorm.forward`, `model.py:SwiGLUFFN.forward`, `model.py:chunked_head_cross_entropy_with_z`): a missing Triton install surfaces as a hard `ImportError`. Kernel-by-kernel design: [references/data-reference.md](references/data-reference.md) and [concepts/data-and-kernels.md](concepts/data-and-kernels.md).
 
 **8. TF32 matmul acceleration** — nothing in memory, **compute**. `train.py:setup_gpu_optimizations` enables TF32 matmuls and `torch.set_float32_matmul_precision('high')`, trading a 10-bit mantissa for ~3× Tensor-Core matmul throughput on A100. It belongs in the stack because a memory fit is worthless if the run is compute-bound; it is a throughput technique, and the same function also sets `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (config key `cuda_alloc_conf`), which lets the caching allocator grow segments instead of fragmenting. Numerics: [concepts/training-and-memory.md](concepts/training-and-memory.md).
 
@@ -896,8 +895,7 @@ python3 data/prepare_data.py --stage pretrain \
     --skip-download --skip-clean --skip-tokenize
 ```
 
-The pipeline writes shards under `LLM/shared_data`'s `DATA_ROOT`; after the pipeline stages complete, the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) concatenates them in manifest order into the project's `data_cache/tokens.bin` — the single uint32 file the vendored loader mmaps. Running `python train.py` without the cache falls back to synthetic data with a warning — see
-[guides/quickstart.md](guides/quickstart.md).
+The pipeline writes shards under `LLM/shared_data`'s `DATA_ROOT`; after the pipeline stages complete, the shim's bridge stage (`data/prepare_data.py:concat_shards_to_cache`) concatenates them in manifest order into the project's `data_cache/tokens.bin` — the single uint32 file the vendored loader mmaps. Running `python train.py` without the cache falls back to synthetic data with a warning.
 
 ### Tokenizer used by LLaMA-3-Lite
 
@@ -937,7 +935,7 @@ rsync -a LLM/shared_data/loader.py LLM/LLaMA-3-Lite/data/shared_data/loader.py
   memory bound. The full-logits path still exists for the already-materialized case (`model.py:chunked_cross_entropy_with_z`) but training never touches it — the memory win (50.3 GB → ~0.4 GB hidden + ~0.13 GB chunk) is what makes batch 96 fit an 80 GB A100. Derivation in
   [concepts/training-and-memory.md](concepts/training-and-memory.md).
 - **Synthetic fallback is a feature, not a hack**: `python train.py` must
-  run end-to-end on a fresh clone. The fallback prints a precise remedy (`python data/prepare_data.py`); the real pipeline is opt-in by preparing the cache. [guides/quickstart.md](guides/quickstart.md) explains both paths.
+  run end-to-end on a fresh clone. The fallback prints a precise remedy (`python data/prepare_data.py`); the real pipeline is opt-in by preparing the cache.
 - **EMA for validation/generation, raw model for the best checkpoint**: the
   shadow is the low-variance estimate of the recent trajectory, so it is what gets scored and shown; but the persisted `_best.pt` and final weights are the plain model state dict, which is what a deployment would load.
 - **Async checkpointing with explicit join**: `torch.save` releases the
@@ -947,8 +945,7 @@ rsync -a LLM/shared_data/loader.py LLM/LLaMA-3-Lite/data/shared_data/loader.py
 - **`-100` as the mask sentinel**: even though the packed pipeline never
   pads, choosing a sentinel outside the vocab keeps EOS (document boundary) tokens learnable and keeps the loss identical in structure to a padded pipeline.
 - **Memory caps must stay on**: `gradient_checkpointing`, chunked CE at
-  `ce_chunk_size: 256`, and the mmap loader are the three invariants that make the 92 → 20 GB claim hold (see
-  [guides/troubleshooting.md](guides/troubleshooting.md)).
+  `ce_chunk_size: 256`, and the mmap loader are the three invariants that make the 92 → 20 GB claim hold.
 
 ## Edge cases and pitfalls
 
@@ -959,7 +956,7 @@ rsync -a LLM/shared_data/loader.py LLM/LLaMA-3-Lite/data/shared_data/loader.py
 - **Triton keys set but env unset**: silently (but with a WARN) forced to
   `'pytorch'`. If you expected fused kernels, set `ENABLE_TRITON_KERNELS=1` — the config keys alone do nothing.
 - **CUDA graphs and shape changes**: graphs recompile on shape change, so
-  the warmup must use a real batch and shapes must stay fixed. If you see capture stalls, check that batch/seq never change mid-run ([guides/troubleshooting.md](guides/troubleshooting.md)).
+  the warmup must use a real batch and shapes must stay fixed. If you see capture stalls, check that batch/seq never change mid-run.
 - **Corpus exhaustion**: the 42k-step plan (8.26B tokens) can exceed the
   corpus; `_next_batch` wraps with a fresh sampler permutation instead of `StopIteration` crashing the run. Expect the WARN and one "epoch" repeat on an 8B corpus.
 - **`grad_norm` under `gradient_accumulation > 1`**: only optimizer steps
@@ -989,8 +986,6 @@ rsync -a LLM/shared_data/loader.py LLM/LLaMA-3-Lite/data/shared_data/loader.py
   dataloaders, the synthetic fallback, the tokenizer contract, and the Triton kernel reference.
 - [references/training-reference.md](references/training-reference.md) —
   the test suite (fixtures, markers, e2e script).
-- [guides/quickstart.md](guides/quickstart.md), [guides/troubleshooting.md](guides/troubleshooting.md)
-  — first-run and failure-mode guides.
 - Key source files: `train.py` (`train_model`, `validate`,
   `generate_samples`, `save_checkpoint`, `load_checkpoint`, `_next_batch`, `_head_weight`, `setup_gpu_optimizations`, `top_k_top_p_sampling`), `model.py` (`Transformer.forward`, `chunked_head_cross_entropy_with_z`), `data/shared_data/loader.py` (`build_training_data`, `build_synthetic_data`, `PackedDataset`, `ShuffledRangeSampler`, `collate_fn`, `build_tokenizer`), `data/prepare_data.py`.
 - Workspace canonical pipeline: `LLM/shared_data/README.md`; mixture spec

@@ -810,7 +810,7 @@ The opt-in discipline is what makes the hard-error design safe:
 
 Rule 7's "clear error" requirement is satisfied by design: the `ImportError` from the kernel names the missing package, and the `ValueError` from the kernel's `_MAX_BLOCK_SIZE` / `_MAX_VOCAB_BLOCK` guard names the offending dimension. Both messages include the remediation. Any other failure mode (`TritonError` at JIT time, OOM, illegal memory access) is *not* caught by anything in `model.py` and therefore propagates as a hard error — the same loud-failure property the rule asks for, but unconditional.
 
-One alignment note, verified against the working tree: AGENTS.md's "Sanctioned Triton paths" list is current — it names all three kernels (`kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, `kernels/cross_entropy_triton.py`) with their config keys, and the files implement exactly the structure the rule describes (gate on `import triton`, set `HAS_TRITON`, wrap in `torch.autograd.Function`, ship a CPU-runnable reference). Rule 7's hard-fail semantics are enforced in code: the four `model.py` dispatch sites call the kernel directly with no eager fallback, and `model.py:chunked_head_cross_entropy_with_z` additionally pre-validates `HAS_TRITON` and raises `ImportError` at entry. Rule 8's CPU-runnable-reference obligation is satisfied by the `*_pytorch` reference functions (exercised on CPU by `tests/test_model.py`); the GPU-side numerics live in `tests/e2e_gpu_smoke.py:check_triton_kernels` (rmsnorm tolerance 5e-2, swiglu 1.0, CE against the reference), and `tests/test_config.py:REQUIRED_KEYS` pins the config keys. Note there is no `tests/test_<name>_triton.py` per kernel in this tree — the CPU contract is enforced through the reference functions and the e2e script, not through per-kernel test files.
+One alignment note, verified against the working tree: AGENTS.md's "Sanctioned Triton paths" list is current — it names all three kernels (`kernels/rmsnorm_triton.py`, `kernels/swiglu_triton.py`, `kernels/cross_entropy_triton.py`) with their config keys, and the files implement exactly the structure the rule describes (gate on `import triton`, set `HAS_TRITON`, wrap in `torch.autograd.Function`, ship a CPU-runnable reference). Rule 7's hard-fail semantics are enforced in code: the four `model.py` dispatch sites call the kernel directly with no eager fallback, and `model.py:chunked_head_cross_entropy_with_z` additionally pre-validates `HAS_TRITON` and raises `ImportError` at entry. Rule 8's CPU-runnable-reference obligation is satisfied by the `*_pytorch` reference functions and the per-kernel CPU tests (`tests/test_rmsnorm_triton.py`, `tests/test_swiglu_triton.py`, `tests/test_cross_entropy_triton.py`); the GPU-side numerics live in `tests/e2e_gpu_smoke.py:check_triton_kernels` (rmsnorm tolerance 5e-2, swiglu 1.0, CE against the reference), and `tests/test_config.py:REQUIRED_KEYS` pins the config keys.
 
 ## Edge Cases and Pitfalls
 
@@ -888,21 +888,7 @@ Related docs (all links relative to `docs/concepts/`):
   — the test suite, including `tests/e2e_gpu_smoke.py:check_triton_kernels` and `tests/test_config.py:REQUIRED_KEYS`.
 - [../training.md](../training.md) — the loop that consumes `_next_batch`
   and the mmap data path, warmup, and validation.
-- [../guides/quickstart.md](../guides/quickstart.md) — how to run a training
-  or synthetic-data run end to end.
-- [../guides/learning-paths.md](../guides/learning-paths.md) — where this
-  doc sits in the reading order.
-- [../guides/glossary.md](../guides/glossary.md) — Triton, kernel, warp,
-  HBM, memmap, EOS, BPE, logsumexp, z-loss.
-- [../guides/troubleshooting.md](../guides/troubleshooting.md) — the
-  missing-cache fallback and Triton opt-in issues.
-- [../README.md](../README.md) — the full documentation index (supersedes
-  the retired `docs/CODE_MAP.md` and `docs/docs_expansion_plan.md`).
-- [../../AGENTS.md](../../AGENTS.md) — hard rules 2 (1.5× speedup), 6
-  (EOS-separated packing), 7 (no silent Triton fallback), 8 (CPU-runnable references).
-- [../../SKILLS.md](../../SKILLS.md) — Skill 3: extend the mixture by
-  editing the canonical `LLM/shared_data/config/mixture.yaml`, not
-  `config.py`.
+- [../README.md](../README.md) — how to read this book.
 
 Key source files:
 
