@@ -1,7 +1,7 @@
 """Lint ``narration.yaml`` — sentence length, cue ids, and shape.
 
-The rule the plan enforces is **max 22 words per sentence** (section 5, the
-attention walk-through, was rewritten to 12–18 and is capped at 18). Sentence
+The rule the plan enforces is **max 22 words per sentence** (the attention
+walk-throughs, `sec05_matching` and `sec06_blend`, are capped at 18). Sentence
 length is what lets Phase 2 synthesise one clip per cue and cut captions at
 ≤ 17 cps, so it is checked here rather than eyeballed later.
 
@@ -24,9 +24,9 @@ V2 = HERE.parent
 NARRATION = V2 / "narration.yaml"
 
 MAX_WORDS = 22
-STRICT_SECTION = 5
+STRICT_SECTIONS = {"sec05_matching", "sec06_blend"}   # the attention walk-throughs
 STRICT_MAX_WORDS = 18
-SOFT_MAX_WORDS = 18      # outside section 5: a rhythm hint, not a failure
+SOFT_MAX_WORDS = 18      # outside the attention sections: a rhythm hint, not a failure
 SOFT_MIN_WORDS = 5       # very short clips fragment the voice
 ID_RE = re.compile(r"^s(\d{2})\.(\d+)$")
 TERMINAL = ".!?"
@@ -97,10 +97,10 @@ def lint(doc: dict) -> tuple[list[str], list[str], dict]:
             lengths.append(count)
             if count > MAX_WORDS:
                 errors.append(f"{tag}: {count} words (max {MAX_WORDS})")
-            if lineno == STRICT_SECTION and count > STRICT_MAX_WORDS:
-                errors.append(f"{tag}: {count} words — section {STRICT_SECTION} "
-                              f"is capped at {STRICT_MAX_WORDS}")
-            if count > SOFT_MAX_WORDS and lineno != STRICT_SECTION:
+            if section.get("id") in STRICT_SECTIONS and count > STRICT_MAX_WORDS:
+                errors.append(f"{tag}: {count} words — attention sections "
+                              f"are capped at {STRICT_MAX_WORDS}")
+            if count > SOFT_MAX_WORDS and section.get("id") not in STRICT_SECTIONS:
                 warnings.append(f"{tag}: {count} words — above the {SOFT_MAX_WORDS}-word "
                                 f"rhythm target")
             if count < SOFT_MIN_WORDS:

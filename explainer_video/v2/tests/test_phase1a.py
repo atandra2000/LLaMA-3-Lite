@@ -113,9 +113,9 @@ def test_rope_figures_come_from_facts():
 
 # --------------------------------------------------- T1.3 QK-norm caveat ----
 def test_qknorm_caveat_is_narrated():
-    texts = " ".join(s["text"] for s in section(7)["sentences"])
+    texts = " ".join(s["text"] for s in section(8)["sentences"])
     assert "Lite addition" in texts
-    assert "LLaMA 3 itself has none" in texts
+    assert "LLaMA 3 itself has no QK-norm" in texts
 
 
 def test_qknorm_caveat_is_on_screen():
@@ -131,8 +131,8 @@ def test_swiglu_is_a_product_of_two_rows():
 
 
 def test_swiglu_narration_scales_features():
-    text = sentence("s08.6")["text"].replace("\n", " ")
-    assert "scaling each feature" in text
+    text = sentence("s10.12")["text"].replace("\n", " ")
+    assert "scales the up path" in text
     assert "survive" not in text
 
 

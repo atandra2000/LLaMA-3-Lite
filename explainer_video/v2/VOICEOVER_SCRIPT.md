@@ -22,155 +22,277 @@ Voice `en-US-AndrewMultilingualNeural`, rate `+8%`. Production: neural TTS narra
 | Biases | none |
 | Weight tying | none (separate output head) |
 
-Every number above is read from `facts.json`, which is built from `config.py` and the LLaMA-3 tokenizer and gated by `tools/check_facts.py`. 64 sentences; longest is 18 words.
+Every number above is read from `facts.json`, which is built from `config.py` and the LLaMA-3 tokenizer and gated by `tools/check_facts.py`. 159 sentences; longest is 18 words.
 
 ---
 
 ## 1 · The model as a function
 
-> Every large language model is, at its core, a single mathematical function. It takes a sequence of tokens — and returns a probability for every possible next token. LLaMA-3-Lite is a compact, from-scratch implementation of Meta's LLaMA 3 architecture. Sixteen decoder blocks, a model dimension of one thousand twenty-four, and about five hundred fifteen million parameters. Let's open it up and follow one token all the way through.
+> A large language model is one mathematical function. It reads a sequence of tokens and returns a probability for every possible next token. That is the whole interface: text in, a distribution over the next token out. LLaMA-3-Lite is a compact, from-scratch implementation of Meta's LLaMA 3 architecture. Sixteen decoder blocks, a model dimension of one thousand twenty-four, and about five hundred fifteen million parameters. Every layer below shares those dimensions. Take the sentence on screen: The cat sat on the mat. Six tokens, six IDs, and one question: what comes next? One token walks in as an ID and walks out as a probability over the whole vocabulary. Follow that walk from raw text to the sampling loop, one stage at a time. Each stage exists to fix a specific problem the previous stage leaves open. The loop at the end is what turns one prediction into a paragraph.
 
-**On screen:** Title card → token chips t₁ t₂ t₃ → arrow → next-token probability bars ("one function: tokens → probabilities") → spec chips → vertical silhouette of the 16-block stack with embedding row above and unembedding row below; one block circled — "we'll open one block".
+**On screen:** Title card to token chips t1 t2 t3 to arrow to next-token probability bars ("one function: tokens to probabilities") to spec chips to demo sentence "The cat sat on the mat" with IDs to vertical silhouette of the 16-block stack; one block circled.
 
 **Cues**
 
 - `s01.1` — Title card settles; "one mathematical function" takes the glow.
-- `s01.2` — Token chips t₁ t₂ t₃ enter left; the arrow runs right into the probability bars.
-- `s01.3` — The first spec chips build in beneath the demo.
-- `s01.4` — The remaining chips land together; caption holds.
-- `s01.5` — Demo fades; the 16-block silhouette rises, embedding above and unembedding below, then one block is circled.
+- `s01.2` — Token chips t1 t2 t3 enter left; the arrow runs right into the probability bars.
+- `s01.3` — The input and output labels stamp onto the two ends of the demo.
+- `s01.4` — The first spec chips build in beneath the demo.
+- `s01.5` — The remaining chips land together; caption holds.
+- `s01.6` — Spec chips pulse once in sequence.
+- `s01.7` — The demo sentence writes itself in under the chips.
+- `s01.8` — ID numbers settle under the chips; a question mark hangs over the gap at the end.
+- `s01.9` — A single chip travels the demo path from ID to bars.
+- `s01.10` — Demo fades; the 16-block silhouette rises, embedding above and unembedding below, then one block is circled.
+- `s01.11` — Stage ticks light one by one along the silhouette.
+- `s01.12` — A short paragraph types itself under the circled block.
 
-## 2 · Tokens become vectors
+## 2 · Why next-token prediction
 
-> But before any mathematics can happen, text must become numbers. A tokenizer splits text into subword pieces from a vocabulary of one hundred twenty-eight thousand tokens. Each token ID indexes a row of the embedding matrix. That matrix holds one hundred twenty-eight thousand vectors, each one thousand twenty-four numbers long. That lookup places every token as a point in a high-dimensional space, where similar meanings sit close together. From here on, the model never sees characters again. Only these vectors.
+> Before any architecture, ask what the model is trained to do. The objective is next-token prediction, and it is the only one. Training shows the model real text with the next token hidden. The model assigns that hidden token a probability. When the probability is low, training adjusts the weights to raise it. That adjustment is the whole of learning: every weight moves to make real text more likely. No sentiment tags, no answers and no rules are ever labelled. The loss measures surprise: how low the model's probability was for the true token. Pushing surprise down is what shapes the five hundred fifteen million parameters. From that single objective, grammar, style and world knowledge settle into the weights. Nothing in the code says what a noun is. The structure you are about to see is the machinery that makes the prediction possible. Each piece is there because the objective demands it.
 
-**On screen:** "The cat sat on the mat" → six token chips with IDs; embedding matrix with the `cat` row highlighted → pulled out as a numeric vector x = E[t₂]; formula xᵢ = E[tᵢ]; 2-D sketch of the meaning space (cat/kitten close, car/truck far).
-
-**Cues**
-
-- `s02.1` — Section header; the sentence writes itself in at centre.
-- `s02.2` — The sentence breaks into six token chips, each with its ID below.
-- `s02.3` — The embedding matrix appears; the `cat` row highlights.
-- `s02.4` — Matrix dimensions label in; the `cat` row stays lit.
-- `s02.5` — The highlighted row pulls out as x = E[t₂]; the 2-D meaning-space sketch fades in.
-- `s02.6` — Characters dissolve off the chips; only vectors remain.
-- `s02.7` — The vector sits alone at centre, glowing.
-
-## 3 · The residual stream
-
-> These vectors flow through the network along a single channel: the residual stream. Each of the sixteen blocks reads from it, computes a transformation, and adds the result back. The stream is never overwritten, only refined, layer by layer. Each token's vector accumulates context, turning a bare lookup into a rich, position-aware representation.
-
-**On screen:** Horizontal band = the stream, token chips drifting left→right; attention sublayer above, feed-forward sublayer below; read arrows down/up and green write arrows with +; equation x₍t+1₎ = xₜ + f(xₜ); caption "read → transform → add back"; chip "× 16 blocks".
+**On screen:** Training card: real text with the next token hidden; probability gauge on the hidden token; loss dial labelled "surprise" turning down; weight grid updating; empty tag row (no labels) fading out.
 
 **Cues**
 
-- `s03.1` — The horizontal band draws across the frame; token chips drift along it.
-- `s03.2` — Attention above and feed-forward below attach; read and write arrows with + appear.
-- `s03.3` — Write arrows pulse green; the band brightens as the token travels.
-- `s03.4` — The chip's glow grows; equation and the × 16 blocks chip land.
+- `s02.1` — Section header; an empty objective card opens.
+- `s02.2` — "next-token prediction" writes itself onto the card.
+- `s02.3` — A sentence scrolls in; its last token blinks out behind a mask.
+- `s02.4` — A probability gauge ticks up on the hidden slot.
+- `s02.5` — The weight grid shuffles as the gauge climbs.
+- `s02.6` — The grid settles; a "more likely" arrow rises beside the text.
+- `s02.7` — The tag row fades out empty under the objective card.
+- `s02.8` — The surprise dial reads high, then turns down as probability rises.
+- `s02.9` — Parameter tiles mould themselves as the dial falls.
+- `s02.10` — Three faint overlays drift into the weight grid and dissolve.
+- `s02.11` — A "noun" label tries to stick to the grid and slides off.
+- `s02.12` — The 16-block silhouette ghosts in behind the objective card.
+- `s02.13` — The silhouette resolves to full colour as the card fades.
 
-## 4 · RMSNorm: regulating scale
+## 3 · Text becomes IDs
 
-> Inside each block, the first operation is normalization. As activations flow deeper, their scale can grow, and attention's dot products are sensitive to exactly that. RMSNorm measures a vector's root mean square, the square root of the average of its squared components. It divides that out, then rescales with a learned gamma. Unlike LayerNorm, there is no mean subtraction. Only the magnitude is regulated, which makes it cheaper, and just as stable.
+> Text cannot enter a matrix multiply, so the tokenizer goes first. It splits text into subword pieces from a vocabulary of one hundred twenty-eight thousand two hundred fifty-six tokens. The scheme is byte-pair encoding: the most frequent character pairs merge into new tokens. Building it starts from single characters and keeps merging the most common pair. Common words stay whole, and rare words break into smaller pieces the model has seen before. Characters alone would make sequences far too long; whole words alone would explode the vocabulary. Subwords sit in between and cover any input, including words the model has never seen. Their IDs come straight from the vocabulary table. The word cat becomes eight thousand four hundred fifteen; the word mat becomes five thousand six hundred thirty-four. Each ID is just a row number; it carries no meaning of its own. The tokenizer knows nothing about cats. Its only job is to cut text into pieces the model has a row for. The config lists one hundred twenty-eight thousand rows; the tokenizer holds two hundred fifty-six more. The embedding table sizes itself to the tokenizer, not to the config.
 
-**On screen:** Pipeline x → x² → mean → RMS → x̂ → ·γ with real numbers; full formula; geometric inset on a unit circle ("same direction · unit scale"); comparison chips LayerNorm vs RMSNorm; ε = 1e-5.
-
-**Cues**
-
-- `s04.1` — Section header; a single vector x enters the empty pipeline.
-- `s04.2` — The vector's magnitude swells, then a warning tick marks the sensitivity.
-- `s04.3` — Pipeline cells fill with real numbers: x → x² → mean → RMS.
-- `s04.4` — x̂ appears; the ·γ chip lands; the full formula writes in.
-- `s04.5` — Comparison chips: LayerNorm struck through, RMSNorm highlighted.
-- `s04.6` — Geometric inset: the long amber arrow shrinks to unit length in green; ε = 1e-5 chip holds.
-
-## 5 · Self-attention: the core computation
-
-> Now the heart of the model: self-attention. Every token's vector is projected three ways — into a query, a key, and a value. Each query takes a dot product against every key in the sequence, producing a score for every pair. Those scores are scaled by one over the square root of the key dimension. A causal mask hides the future: each token can look back at everything before it, never ahead. Then a softmax turns them into weights that sum to one. Finally, the weights blend the value vectors. Each output is a weighted average of what came before. And this runs not once, but eight times, in parallel heads with independent projections. Their outputs are concatenated and mixed by one last matrix.
-
-**On screen:** Token row; query token circled; q/k/v projections; 4×4 score matrix filling with dot products; ÷√d_k chip; softmax weight bars; causal mask; weighted blend into o₃; row of 8 head badges; attention banner.
+**On screen:** "The cat sat on the mat" to six token chips with real IDs (791, 8415, 7731, 389, 279, 5634); byte-pair merge demo; character bar vs word table vs subword bar; vocab count 128,256.
 
 **Cues**
 
-- `s05.1` — Section header; the token row lands.
-- `s05.2` — q, k and v projections appear with their W_Q, W_K, W_V labels.
-- `s05.3` — The 4×4 score grid fills cell by cell.
-- `s05.4` — The ÷√d_k pill lands; the matrix dims behind it.
-- `s05.5` — The upper triangle reddens and hatches; "future hidden".
-- `s05.6` — Weight bars grow for the highlighted query row.
-- `s05.7` — Weighted arrows converge from the token row.
-- `s05.8` — The o₃ box lights up with its weighted average.
-- `s05.9` — Eight head badges slide in under the diagram.
-- `s05.10` — Concat → W_O caption; the attention banner writes in.
+- `s03.1` — Section header; the sentence writes itself in at centre.
+- `s03.2` — The sentence breaks into six token chips, each with its ID below.
+- `s03.3` — Merge demo: two letters glide together and stamp a new token.
+- `s03.4` — A merge ladder builds upward from letters to whole words.
+- `s03.5` — Whole-word chips glow solid; a longer chip splits into fragments.
+- `s03.6` — Two scale bars contrast: a long character bar and a huge word table.
+- `s03.7` — The subword chip bar settles between the two extremes.
+- `s03.8` — ID numbers light up under each of the six chips.
+- `s03.9` — Those two IDs flash on the cat and mat chips.
+- `s03.10` — The numbers lift clear of the chips and hover as bare indices.
+- `s03.11` — A cat icon shrugs at the tokenizer box and fades.
+- `s03.12` — Scissors tick along the sentence, leaving valid chips behind.
+- `s03.13` — Two counts compare on a small counter card.
+- `s03.14` — The table grows two hundred fifty-six rows to match; 128,256 stamps on top.
 
-## 6 · Rotary positions — RoPE
+## 4 · IDs become vectors
 
-> As defined, attention is order-blind — it sees a bag of tokens. Positions enter through rotary embeddings. Each head's query and key vectors are split into pairs. Each pair is rotated by an angle proportional to the token's position. The pairs rotate at different frequencies. Some spin fast, pinning down nearby positions; others barely move, encoding long-range structure. The elegance: a rotated query meeting a rotated key gives a special dot product. It depends only on the distance between the tokens, never on absolute position. With theta at five hundred thousand, the slowest pairs stay smooth across the entire two-thousand-forty-eight token context.
+> An ID is only a row number; the row it points to carries the meaning. That lookup is the embedding matrix, one row per vocabulary item. Each row holds one thousand twenty-four numbers, so every token becomes a vector of that length. A lookup is all it takes: the ID picks the row, and the row becomes the token's vector. There is no computation here yet, only a learned table. Training moves these rows so tokens used in similar ways land near each other. After training, directions in this space carry meaning. cat sits close to kitten and far from car. Because the table is learned, it can place any piece of text by how that text is used. The vector is a point in one thousand twenty-four dimensions, far too many to picture at once. Two dimensions stand in for the rest whenever the screen shows a sketch. From this point on the model sees only vectors, never characters. The same kind of table runs in reverse at the output, as you will see.
 
-**On screen:** Shuffled sentences with identical scores; circle with a vector rotating by mθ for m = 0…7; rotation matrix and complex form; frequency ladder with period labels; property Rₘq · Rₙk = g(m−n); chip θ = 500 000.
-
-**Cues**
-
-- `s06.1` — Two shuffled sentences land with identical scores.
-- `s06.2` — Section header; a rotating arrow appears on the circle.
-- `s06.3` — The vector splits into paired dimensions.
-- `s06.4` — Rotation matrix and e^{imθ} write in; m animates 0 → 7.
-- `s06.5` — Three circles appear, one per frequency band.
-- `s06.6` — Fast, medium and slow circles, each with its period label.
-- `s06.7` — Rₘq · Rₙk = g(m−n) writes in.
-- `s06.8` — The distance highlight sweeps between the two tokens.
-- `s06.9` — θ = 500 000 chip; the slow circle's arc stretches over the context bar.
-
-## 7 · Grouped-query attention & QK-norm
-
-> Attention itself is grouped. LLaMA-3-Lite uses eight query heads but only four key-and-value heads. Each KV head is shared by two query heads. The KV cache stores keys and values for every layer and every past token. Halving the KV heads halves that memory, and the cache is what grows with context. And before rotation, queries and keys each pass through RMSNorm. It is called QK-norm, and it bounds their magnitude so logits stay well-behaved. A Lite addition — LLaMA 3 itself has none.
-
-**On screen:** Full multi-head diagram (8 Q : 8 KV) morphs into the grouped layout (8 Q : 4 KV, paired arcs); KV-cache stacks MHA vs GQA at half height with a ÷2 arrow, head counts labelled; QK-norm pipeline q → RMSNorm → RoPE and k → RMSNorm → RoPE, carrying the caveat "a Lite addition — LLaMA 3 itself has none".
+**On screen:** Embedding matrix with the `cat` row highlighted, pulled out as a numeric vector x = E[t2]; formula x_i = E[t_i]; row length 1024; 2-D sketch of the meaning space (cat/kitten close, car far); high-D cloud pull-back.
 
 **Cues**
 
-- `s07.1` — Section header; the multi-head diagram lands.
-- `s07.2` — Dense 8:8 lines collapse toward the grouped layout.
-- `s07.3` — 8:4 pairing arcs land; head counts label in.
-- `s07.4` — Cache stacks rise beside the diagram, one bar per past token.
-- `s07.5` — MHA vs GQA stacks; the GQA stack halves in height; ÷ 2 arrow.
-- `s07.6` — QK-norm pipeline: q → RMSNorm, k → RMSNorm.
-- `s07.7` — Magnitude bars clamp to a bound; the logits settle.
-- `s07.8` — The QK-norm chip carries its caveat: a Lite addition, not LLaMA 3.
+- `s04.1` — Section header; an index arrow points into the matrix.
+- `s04.2` — The embedding matrix appears; the `cat` row highlights.
+- `s04.3` — The row length label lands: 1024.
+- `s04.4` — The highlighted row pulls out as x = E[t2].
+- `s04.5` — The matrix stays still; a lookup tick marks it.
+- `s04.6` — The 2-D meaning-space sketch fades in; points drift into clusters.
+- `s04.7` — Axis arrows label themselves on the sketch.
+- `s04.8` — The cat and kitten points link; the car point stays distant.
+- `s04.9` — New points settle into the sketch one by one.
+- `s04.10` — The 2-D sketch pulls back into a cloud of faint high-D points.
+- `s04.11` — The cloud flattens honestly back to the labelled 2-D axes.
+- `s04.12` — Characters dissolve off the chips; the vector sits alone at centre, glowing.
+- `s04.13` — A faint echo of the matrix ghosts in near the unembedding row.
 
-## 8 · SwiGLU: the gated feed-forward
+## 5 · Queries, keys and scores
 
-> After attention comes the second sublayer: a feed-forward network applied to each token independently. The vector is expanded to four thousand ninety-six dimensions, then compressed back to one thousand twenty-four. LLaMA uses a gated variant, SwiGLU. The expansion splits into two paths. One passes through the SiLU activation, a smooth ReLU. It gates the other path element by element, scaling each feature rather than switching it off. Then the result is projected back.
+> A single vector knows its own meaning and nothing about its neighbors. The next problem is context: how a token learns what surrounds it. Self-attention solves this in one layer, by letting every token look back at the tokens before it. Each vector is projected three times: into a query, a key, and a value. The query is what a token asks for. The key is what a token offers for matching. The value is the information a token hands over once it is chosen. All three projections are learned matrices, multiplied into the stream. A query takes a dot product with every key in the sequence. A large dot product means the two vectors point in a similar direction. Each dot product fills one cell of the score matrix. Those scores are divided by the square root of the key dimension. Without the scaling, scores grow with dimension and softmax collapses onto one token. This keeps score variance steady as the dimension grows. The matrix on screen is the map of who will listen to whom.
 
-**On screen:** Block diagram x (1024) → W_gate / W_up (4096) → SiLU → ⊙ → W_down → out (1024); live plot of SiLU(x) = x·σ(x) against dashed ReLU; two rows — SiLU(gate) and up — resolving into their element-wise product; formula FFN(x) = W_down( SiLU(W_gate x) ⊙ W_up x ).
-
-**Cues**
-
-- `s08.1` — Section header; the block diagram x → out appears.
-- `s08.2` — The expansion layer widens to 4096, then narrows to 1024.
-- `s08.3` — The SwiGLU label lands on the block.
-- `s08.4` — The wide layer forks into a gate path and an up path.
-- `s08.5` — The SiLU curve draws against a dashed ReLU.
-- `s08.6` — The ⊙ node pulses; the gate and up rows resolve into their product.
-- `s08.7` — W_down closes the block; the formula writes in.
-
-## 9 · Unembedding & autoregression
-
-> Stack sixteen of these blocks, and the stream reaches a final RMSNorm. The output head scores every vocabulary item — a dot product against one hundred twenty-eight thousand embeddings, producing logits. A softmax turns them into probabilities. The model samples the next token and appends it. The whole network runs again — one forward pass per generated token. And that is the entire architecture: an embedding, a residual stream, and sixteen blocks. Normalized, rotary, grouped, gated computation, then an unembedding head. Five hundred fifteen million parameters — and nothing else.
-
-**On screen:** Compact 16-block stack + final RMSNorm + W_U; context chips with cursor; logits row → softmax → probability bars; predicted token appended with a loop arrow; recap card; end card.
+**On screen:** Token row; query token circled; q/k/v projections with W_Q, W_K, W_V; 4x4 score matrix filling with dot products; aligned-arrow similarity flash; divide-by-sqrt(d_k) chip; variance bar flattening.
 
 **Cues**
 
-- `s09.1` — Compact 16-block stack; the final RMSNorm chip lands.
-- `s09.2` — W_U chip; the logits row fills.
-- `s09.3` — Logits morph into probability bars.
-- `s09.4` — The predicted chip appends to the context row.
-- `s09.5` — The loop arrow strokes above the token row.
-- `s09.6` — Recap card builds its first line.
-- `s09.7` — Recap card completes; the × 16 blocks brace spans it.
-- `s09.8` — End card; spec line; fade out.
+- `s05.1` — Section header; one vector glows alone on the empty field.
+- `s05.2` — Surrounding tokens ghost in around the lone vector.
+- `s05.3` — The token row lands; the query token is circled; look-back arcs draw.
+- `s05.4` — q, k and v projections appear with their W_Q, W_K, W_V labels.
+- `s05.5` — The query badge pulses with a question mark.
+- `s05.6` — The key badges light along the token row.
+- `s05.7` — The value badge slides forward from the row.
+- `s05.8` — W_Q, W_K, W_V matrix tiles glow beside their arrows.
+- `s05.9` — The 4x4 score grid fills cell by cell.
+- `s05.10` — Two aligned arrows flash as their score cell jumps high.
+- `s05.11` — The last empty score cell snaps in.
+- `s05.12` — The divide-by-sqrt(d_k) pill lands; the matrix dims behind it.
+- `s05.13` — A spike bar shoots up, then flattens after the pill applies.
+- `s05.14` — The variance bar settles from wild to flat.
+- `s05.15` — The grid takes a soft glow; cell heights settle into place.
+
+## 6 · Mask, softmax and heads
+
+> Scores are still raw numbers; they need to become weights. A causal mask hides the future from every query. A token may attend to itself and to earlier tokens, never later ones. Training never allows a token to read the answer it is being asked to predict. Masked scores are pushed to negative infinity before the softmax runs. Softmax turns the remaining scores into positive weights that sum to one. Look at the row for the word sat on screen. It places zero point eight six of its weight on cat. The masked future cell holds zero. The weights then blend the value vectors into a single output. The output is a weighted average of past values, so it stays near their neighborhood. Each token leaves attention carrying a summary of its own past. This whole computation runs eight times in parallel, one per head. Each head has its own three projections, so each learns a different matching pattern. The eight outputs are concatenated and multiplied by one output matrix. The result is written back into the residual stream.
+
+**On screen:** Causal mask with minus-infinity cells; softmax weight bars for the `sat` row showing 0.12 / 0.86 / 0.02 / 0.00; weighted blend into o3; row of 8 head badges; concat and W_O; green write arrow to the residual stream.
+
+**Cues**
+
+- `s06.1` — Section header; the score grid waits above empty weight bars.
+- `s06.2` — The upper triangle reddens and hatches; "future hidden".
+- `s06.3` — Masked cells grey out; the lower triangle stays live.
+- `s06.4` — A future chip shows the answer, then blinks out behind the mask.
+- `s06.5` — Masked cells tick to minus infinity.
+- `s06.6` — Weight bars grow for the highlighted query row.
+- `s06.7` — The sat row highlights on the matrix and the bars.
+- `s06.8` — The cat bar rises to 0.86 and glows.
+- `s06.9` — The last bar sits at 0.00 under the hatched mask.
+- `s06.10` — Weighted arrows converge from the token row into o3.
+- `s06.11` — The o3 point settles inside the cloud of value vectors.
+- `s06.12` — The o3 box lights up with its weighted average.
+- `s06.13` — Eight head badges slide in under the diagram.
+- `s06.14` — Projection sets fan out per head badge.
+- `s06.15` — Concat to W_O caption writes in.
+- `s06.16` — A green write arrow returns to the band; the banner holds.
+
+## 7 · Rotary positions: RoPE
+
+> Attention as written cannot see word order; shuffling the tokens leaves the scores unchanged. The scores only see vectors, and the vectors so far carry meaning without position. So the next piece adds position without touching the meaning. Rotary embeddings fix this by rotating query and key vectors according to position. Each vector is split into pairs of dimensions, sixty-four pairs per head. Each pair is read as a point in two dimensions, or as a complex number. Position m rotates every pair by an angle of m times a base frequency. The rotation matrix on screen is the pair version of that turn. Different pairs turn at different speeds. Fast pairs pin down nearby structure; slow pairs mark long-range position. A pair that turns fully in one step marks neighbors; one that barely turns marks the far ends. When a rotated query meets a rotated key, the rotation terms cancel. Their dot product depends only on the distance between the two tokens. The score between two tokens depends on how far apart they sit, not on where the sequence began. With theta at five hundred thousand, the slowest pairs stay smooth across two thousand forty-eight tokens. Theta sets the slowest wavelength; a larger theta pushes it further.
+
+**On screen:** Shuffled sentences with identical scores; empty position slot; circle with a vector rotating by m-theta for m = 0 to 7; rotation matrix and complex form; 64-pair diagram; frequency ladder with period labels; property R_m q dot R_n k = g(m-n); chip theta = 500 000.
+
+**Cues**
+
+- `s07.1` — Two shuffled sentences land with identical scores.
+- `s07.2` — Meaning chips label the vectors; a position slot sits empty.
+- `s07.3` — A position tile slides toward the empty slot.
+- `s07.4` — Section header; a rotating arrow appears on the circle.
+- `s07.5` — The vector splits into paired dimensions across the circle.
+- `s07.6` — One pair zooms to a 2-D point with real and imaginary axes.
+- `s07.7` — Rotation matrix and e^{im theta} write in; m animates 0 to 7.
+- `s07.8` — The matrix cells align with the turning pair on the circle.
+- `s07.9` — Three circles appear, one per frequency band.
+- `s07.10` — Fast, medium and slow circles, each with its period label.
+- `s07.11` — The fastest circle completes a turn while the slowest barely moves.
+- `s07.12` — The two rotation arcs flash and neutralize on the score cell.
+- `s07.13` — R_m q dot R_n k = g(m-n) writes in.
+- `s07.14` — Two sequences of different start points show matching score curves.
+- `s07.15` — theta = 500 000 chip; the slow circle's arc stretches over the context bar.
+- `s07.16` — The theta dial turns and the slowest arc lengthens with it.
+
+## 8 · A Lite detail: QK-norm
+
+> One Lite detail lands between projection and rotation. Queries and keys each pass through RMSNorm before RoPE is applied. This bounds their magnitude so the attention logits stay well behaved. The norm runs per head, on each query and key vector on its own. That is one learned gain of one hundred twenty-eight numbers per head. Small enough to hide in the parameter count, strong enough to keep training calm. LLaMA 3 itself has no QK-norm; the step is a Lite addition.
+
+**On screen:** QK-norm pipeline q to RMSNorm to RoPE and k to RMSNorm to RoPE; per-head gamma chip (128); magnitude bars clamping; caveat card "a Lite addition: LLaMA 3 itself has none".
+
+**Cues**
+
+- `s08.1` — Section header; the q and k paths pause before the RoPE dial.
+- `s08.2` — QK-norm pipeline fills: q to RMSNorm, k to RMSNorm.
+- `s08.3` — Magnitude bars clamp to a bound; the logits settle.
+- `s08.4` — Head badges each carry their own small norm chip.
+- `s08.5` — The 128 gamma chip lights on a single head badge.
+- `s08.6` — A tiny parameter sliver sits beside a steady loss curve.
+- `s08.7` — The QK-norm chip carries its caveat: a Lite addition, not LLaMA 3.
+
+## 9 · Grouped-query attention and the KV cache
+
+> Attention during training sees the whole sentence at once. Generation is different: the model writes one token, then the next, then the next. Each new token still has to see everything before it. Recomputing every past key and value at every step would waste work. So the model stores those vectors in the KV cache. Each layer stores two vectors per token for every key-value head. With sixteen layers and four key-value heads, one token costs sixteen thousand three hundred eighty-four stored numbers. That count assumes one hundred twenty-eight numbers per head. At two thousand forty-eight tokens of context, the cache passes thirty-three million numbers. The cache is the main memory cost of long conversations. LLaMA-3-Lite runs eight query heads and four key-value heads. Each key-value head is shared by two query heads. This layout is grouped-query attention. Sharing key-value heads cuts the cache in half while the math of attention stays the same. Matching power is unchanged; only the stored keys and values shrink.
+
+**On screen:** Generation strip with tokens arriving one by one; KV cache stacks growing; math card (16 x 2 x 4 x 128 = 16 384 per token; tens of millions at full context); multi-head 8:8 diagram morphing to grouped 8:4 with pairing arcs; MHA vs GQA stacks with divide-by-2 arrow.
+
+**Cues**
+
+- `s09.1` — Section header; the full token row lights in one pass.
+- `s09.2` — The generation strip appends chips one at a time.
+- `s09.3` — Look-back arcs redraw from the newest chip over the whole strip.
+- `s09.4` — A ghost recompute pass flashes over the old chips, then fades.
+- `s09.5` — Cache stacks rise beside the strip, one bar per past token.
+- `s09.6` — A K tile and a V tile pair up on one cache bar.
+- `s09.7` — Math card builds: 16 x 2 x 4 x 128 = 16 384.
+- `s09.8` — The 128 head-dim chip highlights on the math card.
+- `s09.9` — The cache stack grows against a context ruler to the full context.
+- `s09.10` — A memory meter fills mostly with cache colour.
+- `s09.11` — The multi-head diagram lands with head counts.
+- `s09.12` — Dense 8:8 lines collapse toward the grouped layout; pairing arcs land.
+- `s09.13` — The GQA label stamps onto the diagram.
+- `s09.14` — MHA vs GQA stacks; the GQA stack halves in height; divide-by-2 arrow.
+- `s09.15` — Query fan-out stays full; only the KV stacks shorten.
+
+## 10 · The gated feed-forward
+
+> Two sublayers sit in every block; attention is the first. The second is a feed-forward network applied to each token on its own. Attention mixes tokens; the feed-forward works on each vector in isolation. It widens the vector from one thousand twenty-four to four thousand ninety-six, then compresses it back. The wide middle gives the block room to transform features between the two widths. Count the parameters and the feed-forward dominates: over twelve million per block against about three million for attention. LLaMA gates this expansion with SwiGLU. The wide layer splits into two parallel paths: a gate path and an up path. Both paths start from the same input vector. The gate path passes through the SiLU activation, which is x times its own sigmoid. SiLU is smooth: small inputs pass nearly unchanged, and very negative inputs close softly. Element by element, the gate path scales the up path. Features with an open gate pass through at full strength; the rest shrink. Only the product of the two paths flows onward. Multiplicative gating lets one path decide how much of the other to keep. A final matrix projects the result back into the residual stream.
+
+**On screen:** Block diagram x (1024) to W_gate / W_up (4096) to SiLU to element-wise product to W_down to out (1024); live plot of SiLU(x) = x * sigmoid(x) against dashed ReLU; two rows resolving into their product; open vs closed gate features; parameter comparison bar (FFN vs attention); formula FFN(x) = W_down( SiLU(W_gate x) * W_up x ).
+
+**Cues**
+
+- `s10.1` — Section header; the block outline shows two slots.
+- `s10.2` — The lower slot fills with the x to out diagram.
+- `s10.3` — A split view: arcs between tokens above, single-token paths below.
+- `s10.4` — The expansion layer widens to 4096, then narrows to 1024.
+- `s10.5` — Feature marks scatter through the wide layer as the vector crosses.
+- `s10.6` — Parameter bars compare the two sublayers side by side.
+- `s10.7` — The SwiGLU label lands on the block.
+- `s10.8` — The wide layer forks into a gate path and an up path.
+- `s10.9` — The fork point glows once for both branches.
+- `s10.10` — The SiLU curve draws against a dashed ReLU; formula labels in.
+- `s10.11` — Markers ride the SiLU curve at near-zero and deep-negative x.
+- `s10.12` — The product node pulses; the gate and up rows resolve into their product.
+- `s10.13` — Product row shows strong and weak features side by side.
+- `s10.14` — A single output row leaves the product node; both inputs fade.
+- `s10.15` — The gate dial opens and closes while the up row scales with it.
+- `s10.16` — W_down closes the block; the formula writes in.
+
+## 11 · Unembedding and autoregression
+
+> After sixteen blocks, one last RMSNorm settles the stream. The output head scores every vocabulary item against one hundred twenty-eight thousand two hundred fifty-six embeddings. Each score, called a logit, is one dot product between the final vector and one candidate row. This unembedding table is as large as the embedding table: about one hundred thirty-one million parameters in each. Together, the two tables hold just over half of the model. Large logits mean the candidate fits the context well. A softmax turns the logits into probabilities over the whole vocabulary. Sampling picks one token, and that token is appended to the context. The full network then runs again for the next one. One forward pass per generated token; that is the generation loop. The KV cache keeps past keys and values, so each new pass only computes the newest token. Without that cache, every step would re-read the whole sequence from scratch. What began as one function on a table of numbers now writes a paragraph.
+
+**On screen:** Compact 16-block stack + final RMSNorm + W_U; logits row to softmax to probability bars; predicted token appended with a loop arrow; two equal-size table cards (embedding and unembedding, ~131M each); KV cache reuse note; paragraph typing out.
+
+**Cues**
+
+- `s11.1` — Compact 16-block stack; the final RMSNorm chip lands.
+- `s11.2` — W_U chip; the logits row fills across the vocabulary ruler.
+- `s11.3` — One logit cell expands to show its dot product.
+- `s11.4` — Two equal-size table cards face each other across the stack.
+- `s11.5` — A pie bar splits: tables just past halfway, blocks filling the rest.
+- `s11.6` — The tallest logit cell rises above its neighbors.
+- `s11.7` — Logits morph into probability bars.
+- `s11.8` — The predicted chip appends to the context row.
+- `s11.9` — The loop arrow strokes above the token row.
+- `s11.10` — The loop arrow completes its stroke and holds.
+- `s11.11` — Cache bars stay lit while a single new token runs the stack.
+- `s11.12` — A ghost rerun of the full sequence flashes, then fades.
+- `s11.13` — The paragraph completes under the loop arrow.
+
+## 12 · The path end to end
+
+> Walk the whole path once more, from text to a sampled token. The tokenizer cuts the sentence into six pieces with integer IDs. The embedding table turns each ID into a vector of one thousand twenty-four numbers. The residual stream carries those vectors through sixteen blocks. In each block, RMSNorm controls scale, attention mixes context, and the gated feed-forward rewrites features. Rotary embeddings keep the order of the tokens visible through all of it. Grouped-query attention keeps the cache affordable; QK-norm keeps the logits stable. The unembedding table scores every candidate, and sampling takes one. About five hundred fifteen million parameters, and one function from tokens to probabilities.
+
+**On screen:** One clean end-to-end diagram: text to tokenizer to embedding to 16 blocks (RMSNorm, RoPE attention in groups, SwiGLU) to final norm to unembedding to sampling loop; recap card; end card with spec line.
+
+**Cues**
+
+- `s12.1` — Section header; the end-to-end diagram draws in one sweep.
+- `s12.2` — Token chips and IDs reappear at the diagram's start.
+- `s12.3` — The matrix pulls rows out into vectors.
+- `s12.4` — The stream band runs the length of the diagram.
+- `s12.5` — One block opens to show its three stages in sequence.
+- `s12.6` — The RoPE dial turns quietly beside the block.
+- `s12.7` — The GQA stacks and the QK-norm chip flash in place.
+- `s12.8` — The probability bars resolve to a single chosen chip.
+- `s12.9` — End card; spec line; fade out.
 
 ---
 
-*64 sentences, 739 words. Build pipeline: `generate_audio.py` → `render_scenes.py` → `build_full_video.py` (see `README.md`).*
+*159 sentences, 1949 words. Build pipeline: `generate_audio.py` → `render_scenes.py` → `build_full_video.py` (see `README.md`).*

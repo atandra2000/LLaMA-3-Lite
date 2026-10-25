@@ -94,11 +94,12 @@ def test_script_lint_is_clean(narration):
     assert stats["max"] <= lint_script.MAX_WORDS
 
 
-def test_section_five_is_tight(narration):
-    section = narration["sections"][4]
-    assert section["number"] == 5
-    for sentence in section["sentences"]:
-        assert lint_script.word_count(sentence["text"]) <= lint_script.STRICT_MAX_WORDS
+def test_attention_sections_are_tight(narration):
+    tight = [s for s in narration["sections"] if s["id"] in lint_script.STRICT_SECTIONS]
+    assert {s["id"] for s in tight} == lint_script.STRICT_SECTIONS
+    for section in tight:
+        for sentence in section["sentences"]:
+            assert lint_script.word_count(sentence["text"]) <= lint_script.STRICT_MAX_WORDS
 
 
 def test_cue_ids_are_unique_and_ordered(narration):
