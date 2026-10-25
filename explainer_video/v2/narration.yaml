@@ -1,0 +1,476 @@
+# Narration — the single source for every spoken sentence and its cue.
+#
+# Rules (enforced by tools/lint_script.py):
+#   · one sentence per line-as-item, max 22 words; section 5 max 18
+#   · ids are s<NN>.<n>; NN matches the section number, n starts at 1
+#   · every sentence carries a `visual` note for the cue map
+#
+# Numbers that appear on screen come from facts.json, not from this file.
+# tools/build_script_doc.py turns this into VOICEOVER_SCRIPT.md; TTS reads it
+# per sentence (Phase 2) so `id` doubles as the cue name.
+version: 1
+title: "Inside LLaMA-3-Lite — The Complete Architecture"
+voice: en-US-AndrewMultilingualNeural
+rate: "+8%"
+timing:
+  lead: 0.30          # silence before the first word of a scene
+  tail: 0.40          # silence after the last word
+  sentence_gap: 0.20  # gap inserted between synthesised sentences
+
+sections:
+  - id: sec01_function
+    number: 1
+    chapter: "01 · THE FUNCTION"
+    title: "The model as a function"
+    screen: >-
+      Title card → token chips t₁ t₂ t₃ → arrow → next-token probability bars
+      ("one function: tokens → probabilities") → spec chips → vertical silhouette
+      of the 16-block stack with embedding row above and unembedding row below;
+      one block circled — "we'll open one block".
+    sentences:
+      - id: s01.1
+        text: >-
+          Every large language model is, at its core, a single mathematical
+          function.
+        visual: >-
+          Title card settles; "one mathematical function" takes the glow.
+      - id: s01.2
+        text: >-
+          It takes a sequence of tokens — and returns a probability for every
+          possible next token.
+        visual: >-
+          Token chips t₁ t₂ t₃ enter left; the arrow runs right into the
+          probability bars.
+      - id: s01.3
+        text: >-
+          LLaMA-3-Lite is a compact, from-scratch implementation of Meta's
+          LLaMA 3 architecture.
+        visual: >-
+          The first spec chips build in beneath the demo.
+      - id: s01.4
+        text: >-
+          Sixteen decoder blocks, a model dimension of one thousand
+          twenty-four, and about five hundred fifteen million parameters.
+        visual: >-
+          The remaining chips land together; caption holds.
+      - id: s01.5
+        text: >-
+          Let's open it up and follow one token all the way through.
+        visual: >-
+          Demo fades; the 16-block silhouette rises, embedding above and
+          unembedding below, then one block is circled.
+
+  - id: sec02_tokens
+    number: 2
+    chapter: "02 · TOKENS"
+    title: "Tokens become vectors"
+    screen: >-
+      "The cat sat on the mat" → six token chips with IDs; embedding matrix with
+      the `cat` row highlighted → pulled out as a numeric vector x = E[t₂];
+      formula xᵢ = E[tᵢ]; 2-D sketch of the meaning space (cat/kitten close,
+      car/truck far).
+    sentences:
+      - id: s02.1
+        text: >-
+          But before any mathematics can happen, text must become numbers.
+        visual: >-
+          Section header; the sentence writes itself in at centre.
+      - id: s02.2
+        text: >-
+          A tokenizer splits text into subword pieces from a vocabulary of one
+          hundred twenty-eight thousand tokens.
+        visual: >-
+          The sentence breaks into six token chips, each with its ID below.
+      - id: s02.3
+        text: >-
+          Each token ID indexes a row of the embedding matrix.
+        visual: >-
+          The embedding matrix appears; the `cat` row highlights.
+      - id: s02.4
+        text: >-
+          That matrix holds one hundred twenty-eight thousand vectors, each one
+          thousand twenty-four numbers long.
+        visual: >-
+          Matrix dimensions label in; the `cat` row stays lit.
+      - id: s02.5
+        text: >-
+          That lookup places every token as a point in a high-dimensional
+          space, where similar meanings sit close together.
+        visual: >-
+          The highlighted row pulls out as x = E[t₂]; the 2-D meaning-space
+          sketch fades in.
+      - id: s02.6
+        text: >-
+          From here on, the model never sees characters again.
+        visual: >-
+          Characters dissolve off the chips; only vectors remain.
+      - id: s02.7
+        text: >-
+          Only these vectors.
+        visual: >-
+          The vector sits alone at centre, glowing.
+
+  - id: sec03_residual
+    number: 3
+    chapter: "03 · RESIDUAL STREAM"
+    title: "The residual stream"
+    screen: >-
+      Horizontal band = the stream, token chips drifting left→right; attention
+      sublayer above, feed-forward sublayer below; read arrows down/up and green
+      write arrows with +; equation x₍t+1₎ = xₜ + f(xₜ); caption "read →
+      transform → add back"; chip "× 16 blocks".
+    sentences:
+      - id: s03.1
+        text: >-
+          These vectors flow through the network along a single channel: the
+          residual stream.
+        visual: >-
+          The horizontal band draws across the frame; token chips drift along it.
+      - id: s03.2
+        text: >-
+          Each of the sixteen blocks reads from it, computes a transformation,
+          and adds the result back.
+        visual: >-
+          Attention above and feed-forward below attach; read and write arrows
+          with + appear.
+      - id: s03.3
+        text: >-
+          The stream is never overwritten, only refined, layer by layer.
+        visual: >-
+          Write arrows pulse green; the band brightens as the token travels.
+      - id: s03.4
+        text: >-
+          Each token's vector accumulates context, turning a bare lookup into a
+          rich, position-aware representation.
+        visual: >-
+          The chip's glow grows; equation and the × 16 blocks chip land.
+
+  - id: sec04_rmsnorm
+    number: 4
+    chapter: "04 · RMSNORM"
+    title: "RMSNorm: regulating scale"
+    screen: >-
+      Pipeline x → x² → mean → RMS → x̂ → ·γ with real numbers; full formula;
+      geometric inset on a unit circle ("same direction · unit scale");
+      comparison chips LayerNorm vs RMSNorm; ε = 1e-5.
+    sentences:
+      - id: s04.1
+        text: >-
+          Inside each block, the first operation is normalization.
+        visual: >-
+          Section header; a single vector x enters the empty pipeline.
+      - id: s04.2
+        text: >-
+          As activations flow deeper, their scale can grow, and attention's dot
+          products are sensitive to exactly that.
+        visual: >-
+          The vector's magnitude swells, then a warning tick marks the
+          sensitivity.
+      - id: s04.3
+        text: >-
+          RMSNorm measures a vector's root mean square, the square root of the
+          average of its squared components.
+        visual: >-
+          Pipeline cells fill with real numbers: x → x² → mean → RMS.
+      - id: s04.4
+        text: >-
+          It divides that out, then rescales with a learned gamma.
+        visual: >-
+          x̂ appears; the ·γ chip lands; the full formula writes in.
+      - id: s04.5
+        text: >-
+          Unlike LayerNorm, there is no mean subtraction.
+        visual: >-
+          Comparison chips: LayerNorm struck through, RMSNorm highlighted.
+      - id: s04.6
+        text: >-
+          Only the magnitude is regulated, which makes it cheaper, and just as
+          stable.
+        visual: >-
+          Geometric inset: the long amber arrow shrinks to unit length in
+          green; ε = 1e-5 chip holds.
+
+  - id: sec05_attention
+    number: 5
+    chapter: "05 · SELF-ATTENTION"
+    title: "Self-attention: the core computation"
+    screen: >-
+      Token row; query token circled; q/k/v projections; 4×4 score matrix
+      filling with dot products; ÷√d_k chip; softmax weight bars; causal mask;
+      weighted blend into o₃; row of 8 head badges; attention banner.
+    sentences:
+      - id: s05.1
+        text: >-
+          Now the heart of the model: self-attention.
+        visual: >-
+          Section header; the token row lands.
+      - id: s05.2
+        text: >-
+          Every token's vector is projected three ways — into a query, a key,
+          and a value.
+        visual: >-
+          q, k and v projections appear with their W_Q, W_K, W_V labels.
+      - id: s05.3
+        text: >-
+          Each query takes a dot product against every key in the sequence,
+          producing a score for every pair.
+        visual: >-
+          The 4×4 score grid fills cell by cell.
+      - id: s05.4
+        text: >-
+          Those scores are scaled by one over the square root of the key
+          dimension.
+        visual: >-
+          The ÷√d_k pill lands; the matrix dims behind it.
+      - id: s05.5
+        text: >-
+          A causal mask hides the future: each token can look back at
+          everything before it, never ahead.
+        visual: >-
+          The upper triangle reddens and hatches; "future hidden".
+      - id: s05.6
+        text: >-
+          Then a softmax turns them into weights that sum to one.
+        visual: >-
+          Weight bars grow for the highlighted query row.
+      - id: s05.7
+        text: >-
+          Finally, the weights blend the value vectors.
+        visual: >-
+          Weighted arrows converge from the token row.
+      - id: s05.8
+        text: >-
+          Each output is a weighted average of what came before.
+        visual: >-
+          The o₃ box lights up with its weighted average.
+      - id: s05.9
+        text: >-
+          And this runs not once, but eight times, in parallel heads with
+          independent projections.
+        visual: >-
+          Eight head badges slide in under the diagram.
+      - id: s05.10
+        text: >-
+          Their outputs are concatenated and mixed by one last matrix.
+        visual: >-
+          Concat → W_O caption; the attention banner writes in.
+
+  - id: sec06_rope
+    number: 6
+    chapter: "06 · ROTARY POSITIONS"
+    title: "Rotary positions — RoPE"
+    screen: >-
+      Shuffled sentences with identical scores; circle with a vector rotating by
+      mθ for m = 0…7; rotation matrix and complex form; frequency ladder with
+      period labels; property Rₘq · Rₙk = g(m−n); chip θ = 500 000.
+    sentences:
+      - id: s06.1
+        text: >-
+          As defined, attention is order-blind — it sees a bag of tokens.
+        visual: >-
+          Two shuffled sentences land with identical scores.
+      - id: s06.2
+        text: >-
+          Positions enter through rotary embeddings.
+        visual: >-
+          Section header; a rotating arrow appears on the circle.
+      - id: s06.3
+        text: >-
+          Each head's query and key vectors are split into pairs.
+        visual: >-
+          The vector splits into paired dimensions.
+      - id: s06.4
+        text: >-
+          Each pair is rotated by an angle proportional to the token's
+          position.
+        visual: >-
+          Rotation matrix and e^{imθ} write in; m animates 0 → 7.
+      - id: s06.5
+        text: >-
+          The pairs rotate at different frequencies.
+        visual: >-
+          Three circles appear, one per frequency band.
+      - id: s06.6
+        text: >-
+          Some spin fast, pinning down nearby positions; others barely move,
+          encoding long-range structure.
+        visual: >-
+          Fast, medium and slow circles, each with its period label.
+      - id: s06.7
+        text: >-
+          The elegance: a rotated query meeting a rotated key gives a special
+          dot product.
+        visual: >-
+          Rₘq · Rₙk = g(m−n) writes in.
+      - id: s06.8
+        text: >-
+          It depends only on the distance between the tokens, never on
+          absolute position.
+        visual: >-
+          The distance highlight sweeps between the two tokens.
+      - id: s06.9
+        text: >-
+          With theta at five hundred thousand, the slowest pairs stay smooth
+          across the entire two-thousand-forty-eight token context.
+        visual: >-
+          θ = 500 000 chip; the slow circle's arc stretches over the context
+          bar.
+
+  - id: sec07_gqa
+    number: 7
+    chapter: "07 · GQA & QK-NORM"
+    title: "Grouped-query attention & QK-norm"
+    screen: >-
+      Full multi-head diagram (8 Q : 8 KV) morphs into the grouped layout
+      (8 Q : 4 KV, paired arcs); KV-cache stacks MHA vs GQA at half height with
+      a ÷2 arrow, head counts labelled; QK-norm pipeline q → RMSNorm → RoPE and
+      k → RMSNorm → RoPE, carrying the caveat "a Lite addition — LLaMA 3 itself
+      has none".
+    sentences:
+      - id: s07.1
+        text: >-
+          Attention itself is grouped.
+        visual: >-
+          Section header; the multi-head diagram lands.
+      - id: s07.2
+        text: >-
+          LLaMA-3-Lite uses eight query heads but only four key-and-value
+          heads.
+        visual: >-
+          Dense 8:8 lines collapse toward the grouped layout.
+      - id: s07.3
+        text: >-
+          Each KV head is shared by two query heads.
+        visual: >-
+          8:4 pairing arcs land; head counts label in.
+      - id: s07.4
+        text: >-
+          The KV cache stores keys and values for every layer and every past
+          token.
+        visual: >-
+          Cache stacks rise beside the diagram, one bar per past token.
+      - id: s07.5
+        text: >-
+          Halving the KV heads halves that memory, and the cache is what grows
+          with context.
+        visual: >-
+          MHA vs GQA stacks; the GQA stack halves in height; ÷ 2 arrow.
+      - id: s07.6
+        text: >-
+          And before rotation, queries and keys each pass through RMSNorm.
+        visual: >-
+          QK-norm pipeline: q → RMSNorm, k → RMSNorm.
+      - id: s07.7
+        text: >-
+          It is called QK-norm, and it bounds their magnitude so logits stay
+          well-behaved.
+        visual: >-
+          Magnitude bars clamp to a bound; the logits settle.
+      - id: s07.8
+        text: >-
+          A Lite addition — LLaMA 3 itself has none.
+        visual: >-
+          The QK-norm chip carries its caveat: a Lite addition, not LLaMA 3.
+
+  - id: sec08_swiglu
+    number: 8
+    chapter: "08 · SWIGLU"
+    title: "SwiGLU: the gated feed-forward"
+    screen: >-
+      Block diagram x (1024) → W_gate / W_up (4096) → SiLU → ⊙ → W_down → out
+      (1024); live plot of SiLU(x) = x·σ(x) against dashed ReLU; two rows —
+      SiLU(gate) and up — resolving into their element-wise product; formula
+      FFN(x) = W_down( SiLU(W_gate x) ⊙ W_up x ).
+    sentences:
+      - id: s08.1
+        text: >-
+          After attention comes the second sublayer: a feed-forward network
+          applied to each token independently.
+        visual: >-
+          Section header; the block diagram x → out appears.
+      - id: s08.2
+        text: >-
+          The vector is expanded to four thousand ninety-six dimensions, then
+          compressed back to one thousand twenty-four.
+        visual: >-
+          The expansion layer widens to 4096, then narrows to 1024.
+      - id: s08.3
+        text: >-
+          LLaMA uses a gated variant, SwiGLU.
+        visual: >-
+          The SwiGLU label lands on the block.
+      - id: s08.4
+        text: >-
+          The expansion splits into two paths.
+        visual: >-
+          The wide layer forks into a gate path and an up path.
+      - id: s08.5
+        text: >-
+          One passes through the SiLU activation, a smooth ReLU.
+        visual: >-
+          The SiLU curve draws against a dashed ReLU.
+      - id: s08.6
+        text: >-
+          It gates the other path element by element, scaling each feature
+          rather than switching it off.
+        visual: >-
+          The ⊙ node pulses; the gate and up rows resolve into their product.
+      - id: s08.7
+        text: >-
+          Then the result is projected back.
+        visual: >-
+          W_down closes the block; the formula writes in.
+
+  - id: sec09_output
+    number: 9
+    chapter: "09 · UNEMBEDDING"
+    title: "Unembedding & autoregression"
+    screen: >-
+      Compact 16-block stack + final RMSNorm + W_U; context chips with cursor;
+      logits row → softmax → probability bars; predicted token appended with a
+      loop arrow; recap card; end card.
+    sentences:
+      - id: s09.1
+        text: >-
+          Stack sixteen of these blocks, and the stream reaches a final
+          RMSNorm.
+        visual: >-
+          Compact 16-block stack; the final RMSNorm chip lands.
+      - id: s09.2
+        text: >-
+          The output head scores every vocabulary item — a dot product against
+          one hundred twenty-eight thousand embeddings, producing logits.
+        visual: >-
+          W_U chip; the logits row fills.
+      - id: s09.3
+        text: >-
+          A softmax turns them into probabilities.
+        visual: >-
+          Logits morph into probability bars.
+      - id: s09.4
+        text: >-
+          The model samples the next token and appends it.
+        visual: >-
+          The predicted chip appends to the context row.
+      - id: s09.5
+        text: >-
+          The whole network runs again — one forward pass per generated token.
+        visual: >-
+          The loop arrow strokes above the token row.
+      - id: s09.6
+        text: >-
+          And that is the entire architecture: an embedding, a residual stream,
+          and sixteen blocks.
+        visual: >-
+          Recap card builds its first line.
+      - id: s09.7
+        text: >-
+          Normalized, rotary, grouped, gated computation, then an unembedding
+          head.
+        visual: >-
+          Recap card completes; the × 16 blocks brace spans it.
+      - id: s09.8
+        text: >-
+          Five hundred fifteen million parameters — and nothing else.
+        visual: >-
+          End card; spec line; fade out.

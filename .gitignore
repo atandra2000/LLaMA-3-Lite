@@ -28,6 +28,9 @@ venv/
 .venv/
 env/
 
+# uv download cache when a sandbox forces UV_CACHE_DIR into the workspace
+.uv-cache/
+
 # opencode local tooling
 .opencode/
 
@@ -42,3 +45,6 @@ docs_html/
 
 # Agent session/tooling state (autoharness queues, session files)
 .claude/
+
+# Manim transient build and partial movie media directories
+explainer_video/**/media/

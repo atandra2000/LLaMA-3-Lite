@@ -1,6 +1,6 @@
 # LLaMA-3-Lite explainer — v3 remediation plan
 
-**Status:** planning complete · implementation not started
+**Status:** Phase 0 complete · Phase 1a complete · Phase 1b complete · Phase 2 complete · Visual Redesign complete
 **Baseline:** `main` @ `a68c2c6` · v2 master `llama3_lite_architecture_explainer.mp4` (301.2 s, 5:01, 1080p30)
 **Scope:** all review findings — correctness, layout, rhythm, accessibility, pipeline, positioning
 **Tracking:** check boxes as tasks land; update the status table and append to the log at the bottom.
@@ -99,63 +99,65 @@ New files: `facts.json`, `narration.yaml`, `tools/{build_facts,check_facts,build
 
 ### Phase 0 — Foundations · 2 days
 
-- [ ] **T0.1 Fact builder** — import `config.get_config()`, load the Llama-3 tokenizer, compute
+- [x] **T0.1 Fact builder** — import `config.get_config()`, load the Llama-3 tokenizer, compute
       params (513.8 M @128,000 / 514.4 M @128,256), demo token IDs, attention
       raw → scaled → masked softmax, RoPE pair count. → `facts.json` (`tools/build_facts.py`, 0.5 d)
-- [ ] **T0.2 Narration single source** — per-sentence `id` + `visual` notes; generate the
+- [x] **T0.2 Narration single source** — per-sentence `id` + `visual` notes; generate the
       Markdown script doc from it. → `narration.yaml`, `tools/build_script_doc.py` (0.5 d)
-- [ ] **T0.3 Script lint + sentence split** — max 22 words per sentence; rewrite the long
+- [x] **T0.3 Script lint + sentence split** — max 22 words per sentence; rewrite the long
       section-5 sentences into 12–18 word units. → `tools/lint_script.py` (1 d)
-- [ ] **T0.4 Fonts** — bundle, register, retune the type scale (no label below 12 pt).
+- [x] **T0.4 Fonts** — bundle, register, retune the type scale (no label below 12 pt).
       → `assets/fonts/`, `render_scenes.py` header constants (0.5 d)
 
-**Gate:** `python tools/check_facts.py` exits 0 after a rebuild; deleting `facts.json` and
-rebuilding produces a byte-identical file.
+**Gate (met 2026-10-25):** `python tools/check_facts.py` exits 0 after a rebuild (37 checks);
+deleting `facts.json` and rebuilding produces a byte-identical file
+(`sha256 2a584995…`). Fonts render from `assets/fonts/` with `USE_SYSTEM_FONTS` unset.
 
 ### Phase 1 — Correctness and layout · 4 days
 
 **1a. Facts into the scenes**
 
-- [ ] **T1.1 Wire facts** — spec chips, token chips, matrix dims, `128K` → `128,256`,
+- [x] **T1.1 Wire facts** — spec chips, token chips, matrix dims, `128K` → `128,256`,
       `515M` → `≈515M`. → `Section01`, `Section02`, `Section09.construct`
-- [ ] **T1.2 Attention demo** — raw scores → `÷√d_k` strip → masked softmax → weights; the
+- [x] **T1.2 Attention demo** — raw scores → `÷√d_k` strip → masked softmax → weights; the
       masked key gets `0.00`, not `0.05`. → `Section05.construct`
-- [ ] **T1.3 QK-norm caveat** — narration + caption: "a Lite addition — LLaMA 3 itself has none".
+- [x] **T1.3 QK-norm caveat** — narration + caption: "a Lite addition — LLaMA 3 itself has none".
       → `narration.yaml` s07, `Section07.construct`
-- [ ] **T1.4 SwiGLU gating** — two rows (SiLU gate, up) → product row; drop the 0.3 "survival"
+- [x] **T1.4 SwiGLU gating** — two rows (SiLU gate, up) → product row; drop the 0.3 "survival"
       threshold; narration says "scales each feature". → `Section08.construct`
-- [ ] **T1.5 KV cache** — halve **height** (8 vs 16 bars), per the script's own wording; label
+- [x] **T1.5 KV cache** — halve **height** (8 vs 16 bars), per the script's own wording; label
       head counts. → `Section07.construct`
-- [ ] **T1.6 Wording** — "word" → "token" in the opening line. → `narration.yaml` s01
+- [x] **T1.6 Wording** — "word" → "token" in the opening line. → `narration.yaml` s01
 
 **1b. Layout defects**
 
-- [ ] **T1.7 §4 relayout** — geometry inset + LN/RMS/ε chips inside y ≥ −3.45; remove dead
+- [x] **T1.7 §4 relayout** — geometry inset + LN/RMS/ε chips inside y ≥ −3.45; remove dead
       `Circumscribe(mean_chip)`; remove or connect the floating √.
-- [ ] **T1.8 §5 banner** — move `wcap` below the bars; fade the header before the banner, then
+- [x] **T1.8 §5 banner** — move `wcap` below the bars; fade the header before the banner, then
       place the banner at y ≈ 2.45; move `hcap` under the heads on two lines.
-- [ ] **T1.9 §9 loop** — stroke-only (`fill_opacity=0`), routed **above** the token row; keep all
+- [x] **T1.9 §9 loop** — stroke-only (`fill_opacity=0`), routed **above** the token row; keep all
       four probability bars and draw the chip from a copy.
-- [ ] **T1.10 Layout sweep** — §3 `× 16 blocks` off the band edge; §8 FFN card up to y = −3.1;
+- [x] **T1.10 Layout sweep** — §3 `× 16 blocks` off the band edge; §8 FFN card up to y = −3.1;
       §7 caption up; §1 header rule; §1 circle block 1 not 12; §9 recap brace over the two
       middle pills; watermark only on the end card; progress bar at y = −3.85 with chapter ticks.
-- [ ] **T1.11 §6 RoPE** — delete the unlabeled 3×3 grid or make it a labeled score matrix;
+- [x] **T1.11 §6 RoPE** — delete the unlabeled 3×3 grid or make it a labeled score matrix;
       animate m continuously 0→7; constant-frequency rotation with period labels.
-- [ ] **T1.12 Safe-rect guard** — `SAFE = (-6.7, 6.7, -3.6, 3.6)`; after each beat assert every
+- [x] **T1.12 Safe-rect guard** — `SAFE = (-6.7, 6.7, -3.6, 3.6)`; after each beat assert every
       text bbox is inside and log overlaps of top-level groups.
 
-**Gate:** 480p render with `--check_layout` produces zero violations; one contact sheet per
-scene reviewed.
+**Gate (met 2026-10-25):** 480p15 render of all 9 scenes with `--check_layout` —
+`0 safe-rect violations, 0 partial overlaps` on every scene. One contact sheet per scene
+(`media/sheets/Section01..09.png`) reviewed against the finding it closes.
 
 ### Phase 2 — Timeline and rhythm · 3 days
 
-- [ ] **T2.1 Per-sentence audio** — trim silence, assemble with 200 ms gaps, emit
+- [x] **T2.1 Per-sentence audio** — trim silence, assemble with 200 ms gaps, emit
       `audio/timings.json` with exact sentence start/end. (1 d)
-- [ ] **T2.2 Cue API** — `self.cue("s07.2")` waits until that sentence's offset + `LEAD`;
+- [x] **T2.2 Cue API** — `self.cue("s07.2")` waits until that sentence's offset + `LEAD`;
       replace all `beat(frac)` sites scene by scene; delete `beat()` at the end. (1.5 d)
-- [ ] **T2.3 Motion pass** — ambient pulse updater, cue-synced `flow` pulses, a moving
+- [x] **T2.3 Motion pass** — ambient pulse updater, cue-synced `flow` pulses, a moving
       highlight for the spoken clause; no hold > 3.5 s. (0.75 d)
-- [ ] **T2.4 Measure and iterate** — `freezedetect`; repeat until the freeze gate is met. (0.5 d)
+- [x] **T2.4 Measure and iterate** — `freezedetect`; repeat until the freeze gate is met. (0.5 d)
 
 **Timing rules**
 
@@ -163,6 +165,12 @@ scene reviewed.
 - `sync_end()` uses the renderer clock (`self.time`), waits the remainder, then **raises** if
   `abs(self.time - budget) > 1/30`.
 - `build_full_video.py` fails if `section_audio + LEAD > scene_duration - 0.1`.
+
+**Gate (met 2026-10-25):** 9/9 scenes render with `sync_end()` happy — no budget
+raise, no `cue` LATE warning. `tools/check_freeze.py` on the assembled cut:
+`2 holds ≥1 s · 1.0% frozen · longest hold 1.73 s`. Budget error is bounded by one
+frame (`sync_end` slack is `1 / config.frame_rate`), and `build_full_video.py`
+refuses a scene whose narration does not fit.
 
 **Gate:** total duration = sum of budgets ±0.1 s; no scene overruns; freeze gate met.
 
@@ -283,3 +291,8 @@ model or its docs.
 | Date | Phase | Note |
 |---|---|---|
 | 2026-10-25 | planning | Plan written against `a68c2c6`; v2 master frozen as baseline |
+| 2026-10-25 | 0 | T0.1–T0.4 landed. `facts.json` (vocab 128,256 · 514,364,416 params · tokens 791/8415/7731/389/279/5634 · attention raw→scaled→masked softmax · RoPE 64 pairs) built and gated by 37 checks; `narration.yaml` is the only narration source (63 sentences, max 18 words) with `VOICEOVER_SCRIPT.md` and `generate_audio.py` generated/loaded from it; Inter + Barlow Semi Condensed bundled and registered, `MIN_LABEL_SIZE = 12` enforced by `pt()` and an AST test; 15 tests green |
+| 2026-10-25 | 1a | T1.1–T1.6 landed. `render_scenes.py` loads `facts.json` once; spec chips (`≈515M`, `1,024`, `128,256`, `2,048`), token chips/IDs, embedding and unembedding dims, the Section 5 attention demo (raw → ÷√d_k → masked softmax → `0.12/0.86/0.02/0.00`), Section 7 head counts and cache (16 vs 8 bars, same width), Section 9's recap figures, and §6's θ/context/slowest-pair labels all come from facts. SwiGLU now shows SiLU(gate) and up rows resolving into their product (no 0.3 threshold); QK-norm carries the “a Lite addition — LLaMA 3 itself has none” caveat in s07.8 and on screen; s01.2 says token. `narration.yaml` edited (audio re-record is T2.1), `VOICEOVER_SCRIPT.md` regenerated, 31 tests green, all nine scenes render at 480p15, and frame checks on 1–9 are clean. |
+| 2026-10-25 | 1b | T1.7–T1.12 landed. §4 geometry inset at `[-5.0,-2.5]` with the √ on the mean→RMS arrow and the dead `Circumscribe(mean_chip)` dropped; §5 header fades before the banner at y=2.45, `wcap` under the bars, two-line `hcap` under the heads; §9 loop stroke-only above the token row with all four bars kept; §3 `× 16 blocks` at `[5.5,1.25]`; §8 FFN card at y=−3.1; §7 QK strip at y=−2.15; §1 header rule (no `stretch(0.01`) and ring on `stack[0]`; §9 recap brace over the two middle pills; watermark end-card only; progress bar at y=−3.85 with one tick per chapter; §6 orphan 3×3 grid gone, m sweeps 0→7 continuously, period labels from `facts.rope.samples`. Safe-rect guard `SAFE=(-6.7,6.7,-3.6,3.6)` runs at every beat and raises in `sync_end()`. Gate met: 9/9 scenes at 480p15 with `--check_layout`, `0 safe-rect violations, 0 partial overlaps` each, 55 tests green, contact sheets `media/sheets/Section01..09.png` reviewed. Budget note for Phase 2: sec02 +0.11 s, sec05 +0.14 s, sec06 +0.14 s, sec07 +0.31 s over; sec01/sec04 under by 0.01 s (trips the `rem < 1/30` wording branch in `sync_end`). |
+| 2026-10-25 | 2 | T2.1–T2.4 landed. `generate_audio.py` now synthesises per sentence (63 clips in `audio/sentences/`), trims silence, joins with 200 ms gaps and writes `audio/timings.json` — the only timing source; `render_scenes.py` reads it and `durations.json` is gone. `beat(fraction)` is deleted; 64 `self.cue("sNN.n")` calls wait on `LEAD + sentence start` and self-correct against the absolute offset. Run times snap to whole frames (`_snap`) so the tracked clock equals the rendered one. `sync_end()` fills the remainder then **raises** outside one frame of budget. T2.3: the ambient field drifts and breathes on a shared clock, the clause playhead slides across the progress track and flares at every cue. `build_full_video.py` reads `timings.json`, places `.wav` tracks and refuses a scene whose narration does not fit. Gate met: 9/9 scenes render with no budget raise and no late cue; `tools/check_freeze.py` reports `2 holds ≥1 s · 1.0% frozen · longest hold 1.73 s` (from 87 holds / 69.9% / 5.7 s); 70 tests green; layout gate still `0 safe-rect violations, 0 partial overlaps`. Two content fixes fell out: s05.5/s05.6 swapped so the mask precedes the softmax it feeds, and §1/§2/§8 tails trimmed to their clause windows. Drive-by on the §5 attention beat (pre-existing, from Phase 1b): `v = x W_V` sat on top of `wcap` and `zero_note`. `glow_dot` returns a VGroup whose halo is 0.97 wide, so `next_to(vdot, UP)` measured from the halo and parked the label 0.6 units too high. The three projection labels now anchor on the dot core (`dot[-1]`), matching what the arrows already did. Why the gate missed it: `group_overlaps` needs `w*h ≥ 0.06` and the real overlap was 0.045, and `safe_violations` never compares two glyphs. |
+| 2026-10-26 | redesign | Aesthetic overhaul landed. Swapped "Aurora" dashboard/card look for a 3Blue1Brown-inspired mathematical canvas: flat matte blackboard (#0B0E14), ambient blooms/orbs disabled, bottom scrubber rail removed, clunky card/pill wrappers excised. Matrix brackets added to self-attention demo, projection collisions resolved, coordinate crosshair axes added to RoPE dials, slide headers fade out so geometry fills the 1080p canvas. Full 9-scene 1080p30 render complete with 0 safe-rect violations, 0 partial overlaps, 70/70 tests passing, master video assembled at 296.60s with 0.000s A/V drift. |
