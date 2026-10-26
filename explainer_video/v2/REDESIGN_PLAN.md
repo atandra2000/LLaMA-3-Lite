@@ -1,6 +1,11 @@
 # LLaMA-3-Lite Explainer v3: Mathematical Storytelling & Visual Redesign Plan
 **Engineering and Art Direction Specification**
 
+> **STATUS 2026-10-26 — this document describes the old cut.** The line below
+> about "64 beats across 9 sections" is history. The narration is now **12
+> sections, 167 sentences**, and the design work here needs to be re-applied on
+> top of it (Phase R in `PLAN.md`). See `REVIEW.md` for what is still wrong.
+
 ## 1. Executive Summary & Aesthetic Thesis
 This document defines the complete visual redesign of the LLaMA-3-Lite explainer video (`v2/`).
 

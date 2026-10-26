@@ -14,11 +14,12 @@ import os
 import subprocess
 from pathlib import Path
 
+import yaml
+
 HERE = Path(__file__).parent
 # QA renders can point at a smaller scene dir instead of the 1080p master.
 MEDIA = Path(os.environ.get(
     "SCENE_MEDIA", HERE / "media" / "videos" / "render_scenes" / "1080p30"))
-SCENE_VIDS = [MEDIA / f"Section{i:02d}.mp4" for i in range(1, 10)]
 AUDIO_DIR = HERE / "audio"
 BED = HERE / "assets" / "music" / "bed.mp3"
 BED_LUFS = -28.0
@@ -28,10 +29,11 @@ OUT = HERE / "llama3_lite_architecture_explainer.mp4"
 TIMINGS = json.loads((AUDIO_DIR / "timings.json").read_text())
 LEAD = TIMINGS["lead"]
 ORDER = list(TIMINGS["sections"])
-TITLES = ["The model as a function", "Tokens become vectors",
-          "The residual stream", "RMSNorm", "Self-attention", "Rotary positions",
-          "Grouped-query attention", "SwiGLU feed-forward",
-          "Unembedding and autoregression"]
+# One scene per section, emitted by render_scenes.py as SectionNN.mp4.
+SCENE_VIDS = [MEDIA / f"Section{i:02d}.mp4" for i in range(1, len(ORDER) + 1)]
+# Chapter titles come from narration.yaml — never typed twice.
+NARRATION = yaml.safe_load((HERE / "narration.yaml").read_text(encoding="utf-8"))
+TITLES = [s["title"] for s in NARRATION["sections"]]
 
 
 def probe_duration(path: Path) -> float:
@@ -62,12 +64,22 @@ def measure_loudnorm(path: Path) -> dict:
     """First loudnorm pass over a file: returns its measured_* values."""
     r = subprocess.run(
         ["ffmpeg", "-hide_banner", "-i", str(path), "-af",
-         "loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+         "loudnorm=I=-16:TP=-1.6:LRA=11:print_format=json", "-f", "null", "-"],
         capture_output=True, text=True)
     return parse_loudnorm_json(r.stderr)
 
 
 def main() -> None:
+    # Catch a stale timings.json before anything is encoded: the narration and
+    # the cue map must describe the same set of sections.
+    if len(TITLES) != len(ORDER):
+        raise RuntimeError(
+            f"narration.yaml has {len(TITLES)} sections but timings.json has "
+            f"{len(ORDER)} — re-run generate_audio.py")
+    if [s["id"] for s in NARRATION["sections"]] != ORDER:
+        raise RuntimeError(
+            "section order differs between narration.yaml and timings.json — "
+            "re-run generate_audio.py")
     for v in SCENE_VIDS:
         assert v.exists(), f"missing {v}"
 
@@ -127,7 +139,7 @@ def main() -> None:
 
     # two-pass loudnorm (linear) on the final mix
     m = measure_loudnorm(mix_wav)
-    ln = ("loudnorm=I=-16:TP=-1.5:LRA=11:"
+    ln = ("loudnorm=I=-16:TP=-1.6:LRA=11:"
           f"measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
           f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
           f"offset={m['target_offset']}:linear=true,"

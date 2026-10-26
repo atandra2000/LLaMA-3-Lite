@@ -49,8 +49,8 @@ sections:
           The input and output labels stamp onto the two ends of the demo.
       - id: s01.4
         text: >-
-          LLaMA-3-Lite is a compact, from-scratch implementation of Meta's
-          LLaMA 3 architecture.
+          LLaMA-3-Lite is a compact, from-scratch model built in the
+          LLaMA-3 style.
         visual: >-
           The first spec chips build in beneath the demo.
       - id: s01.5
@@ -61,7 +61,7 @@ sections:
           The remaining chips land together; caption holds.
       - id: s01.6
         text: >-
-          Every layer below shares those dimensions.
+          The same model width runs through all sixteen blocks.
         visual: >-
           Spec chips pulse once in sequence.
       - id: s01.7
@@ -116,7 +116,8 @@ sections:
           Section header; an empty objective card opens.
       - id: s02.2
         text: >-
-          The objective is next-token prediction, and it is the only one.
+          The objective is next-token cross-entropy, plus a small z-loss at
+          one ten-thousandth.
         visual: >-
           "next-token prediction" writes itself onto the card.
       - id: s02.3
@@ -143,7 +144,8 @@ sections:
           The grid settles; a "more likely" arrow rises beside the text.
       - id: s02.7
         text: >-
-          No sentiment tags, no answers and no rules are ever labelled.
+          Next-token training needs no extra manual labels: no sentiment tags,
+          no answers, no rules.
         visual: >-
           The tag row fades out empty under the objective card.
       - id: s02.8
@@ -171,11 +173,21 @@ sections:
           A "noun" label tries to stick to the grid and slides off.
       - id: s02.12
         text: >-
+          Training runs that prediction at every position in parallel.
+        visual: >-
+          Six prediction marks light along the training sentence at once.
+      - id: s02.13
+        text: >-
+          Generation instead reveals one new token at a time.
+        visual: >-
+          The marks collapse to one; a single token writes at the end.
+      - id: s02.14
+        text: >-
           The structure you are about to see is the machinery that makes
           the prediction possible.
         visual: >-
           The 16-block silhouette ghosts in behind the objective card.
-      - id: s02.13
+      - id: s02.15
         text: >-
           Each piece is there because the objective demands it.
         visual: >-
@@ -280,7 +292,8 @@ sections:
       Embedding matrix with the `cat` row highlighted, pulled out as a
       numeric vector x = E[t2]; formula x_i = E[t_i]; row length 1024; 2-D
       sketch of the meaning space (cat/kitten close, car far); high-D cloud
-      pull-back.
+      pull-back; residual-stream rail with a pre-norm block diagram (RMSNorm
+      to attention and SwiGLU, results added back).
     sentences:
       - id: s04.1
         text: >-
@@ -312,24 +325,26 @@ sections:
           The matrix stays still; a lookup tick marks it.
       - id: s04.6
         text: >-
-          Training moves these rows so tokens used in similar ways land near
-          each other.
+          Training can move these rows so tokens used in similar ways land
+          near each other.
         visual: >-
           The 2-D meaning-space sketch fades in; points drift into clusters.
       - id: s04.7
         text: >-
-          After training, directions in this space carry meaning.
+          This is how it can learn semantic geometry: directions that carry
+          meaning.
         visual: >-
           Axis arrows label themselves on the sketch.
       - id: s04.8
         text: >-
-          cat sits close to kitten and far from car.
+          An illustrative sketch might place cat near kitten and far from
+          car.
         visual: >-
           The cat and kitten points link; the car point stays distant.
       - id: s04.9
         text: >-
-          Because the table is learned, it can place any piece of text by
-          how that text is used.
+          Because the table is learned, it embeds each token by how that
+          token is used.
         visual: >-
           New points settle into the sketch one by one.
       - id: s04.10
@@ -352,8 +367,42 @@ sections:
           glowing.
       - id: s04.13
         text: >-
-          The same kind of table runs in reverse at the output, as you
-          will see.
+          From here, each token carries its vector through all sixteen
+          blocks.
+        visual: >-
+          The vector rides downward through a 16-block rail.
+      - id: s04.14
+        text: >-
+          That carried vector is called the residual stream.
+        visual: >-
+          The rail labels itself: residual stream.
+      - id: s04.15
+        text: >-
+          Inside a block, attention and SwiGLU each read a normalized copy
+          of the stream.
+        visual: >-
+          Two taps off the rail pass RMSNorm chips into attention and
+          SwiGLU.
+      - id: s04.16
+        text: >-
+          Each writes its result back onto the stream by simple addition.
+        visual: >-
+          Two add-back arrows return each result to the rail.
+      - id: s04.17
+        text: >-
+          This pre-norm shape is the structure of every decoder block.
+        visual: >-
+          The whole block frame stamps PRE-NORM; the frame repeats.
+      - id: s04.18
+        text: >-
+          A last RMSNorm at the output cleans that same stream before
+          scoring.
+        visual: >-
+          A final RMSNorm chip lands on the rail before the output.
+      - id: s04.19
+        text: >-
+          A separate, untied table of the same kind runs at the output, as
+          you will see.
         visual: >-
           A faint echo of the matrix ghosts in near the unembedding row.
 
@@ -418,8 +467,7 @@ sections:
           The 4x4 score grid fills cell by cell.
       - id: s05.10
         text: >-
-          A large dot product means the two vectors point in a similar
-          direction.
+          A large dot product means similar direction, long length, or both.
         visual: >-
           Two aligned arrows flash as their score cell jumps high.
       - id: s05.11
@@ -434,13 +482,14 @@ sections:
           The divide-by-sqrt(d_k) pill lands; the matrix dims behind it.
       - id: s05.13
         text: >-
-          Without the scaling, scores grow with dimension and softmax
-          collapses onto one token.
+          Without scaling, scores grow with the dimension and the softmax
+          saturates.
         visual: >-
           A spike bar shoots up, then flattens after the pill applies.
       - id: s05.14
         text: >-
-          This keeps score variance steady as the dimension grows.
+          Scaling controls that growth and keeps the softmax away from
+          saturation.
         visual: >-
           The variance bar settles from wild to flat.
       - id: s05.15
@@ -531,8 +580,8 @@ sections:
           Eight head badges slide in under the diagram.
       - id: s06.14
         text: >-
-          Each head has its own three projections, so each learns a different
-          matching pattern.
+          Query projections are per head, but keys and values are shared by
+          pairs of heads.
         visual: >-
           Projection sets fan out per head badge.
       - id: s06.15
@@ -559,8 +608,8 @@ sections:
     sentences:
       - id: s07.1
         text: >-
-          Attention as written cannot see word order; shuffling the tokens
-          leaves the scores unchanged.
+          Attention as written cannot see word order: shuffle the tokens and
+          the outputs shuffle to match.
         visual: >-
           Two shuffled sentences land with identical scores.
       - id: s07.2
@@ -616,26 +665,26 @@ sections:
           Fast, medium and slow circles, each with its period label.
       - id: s07.11
         text: >-
-          A pair that turns fully in one step marks neighbors; one that
-          barely turns marks the far ends.
+          The fastest pair shown completes a full turn in about six point
+          three tokens.
         visual: >-
           The fastest circle completes a turn while the slowest barely moves.
       - id: s07.12
         text: >-
-          When a rotated query meets a rotated key, the rotation terms
-          cancel.
+          When a rotated query meets a rotated key, their rotations combine
+          into one relative turn.
         visual: >-
           The two rotation arcs flash and neutralize on the score cell.
       - id: s07.13
         text: >-
-          Their dot product depends only on the distance between the two
-          tokens.
+          So the positional part of their dot product depends on the distance
+          between them.
         visual: >-
           R_m q dot R_n k = g(m-n) writes in.
       - id: s07.14
         text: >-
-          The score between two tokens depends on how far apart they sit,
-          not on where the sequence began.
+          Content still shapes the score; position adds only how far apart
+          the two tokens sit.
         visual: >-
           Two sequences of different start points show matching score curves.
       - id: s07.15
@@ -672,8 +721,8 @@ sections:
           QK-norm pipeline fills: q to RMSNorm, k to RMSNorm.
       - id: s08.3
         text: >-
-          This bounds their magnitude so the attention logits stay well
-          behaved.
+          This controls the scale of each query and key, so the logits
+          stay well behaved.
         visual: >-
           Magnitude bars clamp to a bound; the logits settle.
       - id: s08.4
@@ -683,14 +732,14 @@ sections:
           Head badges each carry their own small norm chip.
       - id: s08.5
         text: >-
-          That is one learned gain of one hundred twenty-eight numbers per
-          head.
+          Each layer has one shared gain of one hundred twenty-eight numbers
+          for queries, and one for keys.
         visual: >-
           The 128 gamma chip lights on a single head badge.
       - id: s08.6
         text: >-
-          Small enough to hide in the parameter count, strong enough to keep
-          training calm.
+          The point of the step is training stability, at a tiny parameter
+          cost.
         visual: >-
           A tiny parameter sliver sits beside a steady loss curve.
       - id: s08.7
@@ -733,7 +782,8 @@ sections:
           A ghost recompute pass flashes over the old chips, then fades.
       - id: s09.5
         text: >-
-          So the model stores those vectors in the KV cache.
+          An inference-time optimization can store those vectors in a KV
+          cache.
         visual: >-
           Cache stacks rise beside the strip, one bar per past token.
       - id: s09.6
@@ -760,7 +810,7 @@ sections:
           The cache stack grows against a context ruler to the full context.
       - id: s09.10
         text: >-
-          The cache is the main memory cost of long conversations.
+          The cache is a growing memory cost at inference time.
         visual: >-
           A memory meter fills mostly with cache colour.
       - id: s09.11
@@ -781,15 +831,15 @@ sections:
           The GQA label stamps onto the diagram.
       - id: s09.14
         text: >-
-          Sharing key-value heads cuts the cache in half while the math of
-          attention stays the same.
+          Four key-value heads halve the cache against eight, while the math
+          of attention stays the same.
         visual: >-
           MHA vs GQA stacks; the GQA stack halves in height; divide-by-2
           arrow.
       - id: s09.15
         text: >-
-          Matching power is unchanged; only the stored keys and values
-          shrink.
+          The attention operation is unchanged, though a smaller key-value set
+          can still change model quality.
         visual: >-
           Query fan-out stays full; only the KV stacks shorten.
 
@@ -863,8 +913,8 @@ sections:
           The SiLU curve draws against a dashed ReLU; formula labels in.
       - id: s10.11
         text: >-
-          SiLU is smooth: small inputs pass nearly unchanged, and very
-          negative inputs close softly.
+          Near zero, SiLU passes about half the input; large positive inputs
+          pass nearly unchanged.
         visual: >-
           Markers ride the SiLU curve at near-zero and deep-negative x.
       - id: s10.12
@@ -875,8 +925,7 @@ sections:
           product.
       - id: s10.13
         text: >-
-          Features with an open gate pass through at full strength; the rest
-          shrink.
+          The gate can shrink a feature, pass it unchanged, or amplify it.
         visual: >-
           Product row shows strong and weak features side by side.
       - id: s10.14
@@ -913,8 +962,8 @@ sections:
           Compact 16-block stack; the final RMSNorm chip lands.
       - id: s11.2
         text: >-
-          The output head scores every vocabulary item against one hundred
-          twenty-eight thousand two hundred fifty-six embeddings.
+          A separate, untied matrix scores all one hundred twenty-eight
+          thousand two hundred fifty-six candidates.
         visual: >-
           W_U chip; the logits row fills across the vocabulary ruler.
       - id: s11.3
@@ -963,14 +1012,14 @@ sections:
           The loop arrow completes its stroke and holds.
       - id: s11.11
         text: >-
-          The KV cache keeps past keys and values, so each new pass only
-          computes the newest token.
+          A KV cache would keep past keys and values, so each new pass
+          computes only the newest token.
         visual: >-
           Cache bars stay lit while a single new token runs the stack.
       - id: s11.12
         text: >-
-          Without that cache, every step would re-read the whole sequence
-          from scratch.
+          Without one, every step re-reads the whole sequence; this code does
+          exactly that.
         visual: >-
           A ghost rerun of the full sequence flashes, then fades.
       - id: s11.13

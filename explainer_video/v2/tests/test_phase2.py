@@ -35,7 +35,7 @@ def test_no_beat_api_remains():
     assert "self.beat(" not in RENDER
 
 
-@pytest.mark.skip(reason="script v2 rewrite: scene re-cue pending (12 sections, 159 cues)")
+@pytest.mark.skip(reason="script v2 rewrite: scene re-cue pending (12 sections, 167 cues)")
 def test_every_sentence_has_exactly_one_cue():
     """T2.2: the cue map covers the narration, one cue per spoken line."""
     ids = [s["id"] for sec in NARRATION["sections"] for s in sec["sentences"]]
@@ -61,7 +61,6 @@ def test_timings_spans_are_monotonic_and_inside_their_section():
             prev_end = span["end"]
 
 
-@pytest.mark.skip(reason="script v2 rewrite: TTS re-record pending (timings.json is v1)")
 def test_timings_cover_every_section():
     assert list(TIMINGS["sections"]) == [s["id"] for s in NARRATION["sections"]]
 

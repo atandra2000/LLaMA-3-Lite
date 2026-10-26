@@ -1,6 +1,20 @@
 # LLaMA-3-Lite explainer — v3 remediation plan
 
-**Status:** Phase 0 complete · Phase 1a complete · Phase 1b complete · Phase 2 complete · Visual Redesign complete · Phase 3 in progress (T3.1 done)
+> **STATUS 2026-10-26 — DO NOT PUBLISH THE CURRENT MASTER.**
+> The script was rewritten to a 12-section deep dive and then corrected after a
+> production review. Everything measured in Phases 0–3 describes the old
+> **63-sentence** cut. The new script is **167 sentences** (12 sections), and the
+> review report is `REVIEW.md`.
+> What this means:
+> - Old Phase 2 checks covered the 63-sentence cut. They do not clear the new one.
+> - Narration, timings, cues, scenes, captions, and the master all need regeneration.
+> - Verification must expect 12 sections, not nine.
+> - The "no re-recording" line in §10 conflicts with the new script. It is lifted.
+> - Scene IDs drive tests and gates. Positional indices break after insertions.
+> - Scene code is still structured around Sections 01–09. It needs a 12-scene re-cue.
+> Recovery work is Phase R below. Phases 0–4 stay as history.
+
+**Status:** Phase 0 complete · Phase 1a complete · Phase 1b complete · Phase 2 complete · Visual Redesign complete · Phase 3 in progress (T3.1 done) · Phase R in progress (R1, R2 done)
 **Baseline:** `main` @ `a68c2c6` · v2 master `llama3_lite_architecture_explainer.mp4` (301.2 s, 5:01, 1080p30)
 **Scope:** all review findings — correctness, layout, rhythm, accessibility, pipeline, positioning
 **Tracking:** check boxes as tasks land; update the status table and append to the log at the bottom.
@@ -182,8 +196,10 @@ refuses a scene whose narration does not fit.
       splits; `--burn` option. (0.75 d)
 - [ ] **T3.3 Packaging** — cover/thumbnail 1280×720; README + `docs/README.md` links with
       poster; end-card repo URL + Part 2 teaser; hold 3 s then fade to black. (0.5 d)
-- [ ] **T3.4 Verification + CI** — `verify_video.py`, `Makefile`, CI job (facts/timeline/bbox on
-      480p, full render on tag). (0.5 d)
+- [ ] **T3.4 Verification + CI** — `tools/verify_video.py` and the `Makefile` are
+      written and exercised (T3.4a, done below). What remains is the CI job and
+      the golden-frame diff. `build_timeline.py` and `make_contact_sheet.py`
+      were never written. (0.5 d)
 
 **Audio decisions:** keep voice mono; bed stereo; final stereo only if the bed is present. Stop
 upsampling 24 kHz voice to 48 kHz stereo at 192 kbps.
@@ -204,16 +220,27 @@ Proceed only after the Phase 3 gate is signed off.
 ## 6. Verification harness
 
 ```
-make facts     # rebuild facts.json + diff
-make check     # facts, timeline, bbox at 480p (~2 min)
-make video     # 9 scenes at 1080p30 + assemble
-make verify    # verify_video.py
-make sheet     # 12 frames/scene contact sheets
+make check     # facts, script lint, doc sync, tests (fast, no render)
+make layout    # every scene at 480p with the safe-rect guard
+make facts     # rebuild facts.json + verify
+make audio     # re-record narration, rebuild audio/timings.json
+make scenes    # every scene at 1080p30
+make video     # scenes + assemble the master
+make verify    # tools/verify_video.py
+make all       # check + audio + video + verify
 ```
 
-`verify_video.py` asserts: duration; 9 chapters with expected starts; audio present;
-loudness/TP; freeze share and longest hold; cue monotonicity; every sentence fits its scene.
-Golden frames (3 per scene) live in `media/golden/`; a pixel diff > 2% fails.
+The scene list is discovered from `render_scenes.py`, so a new section does not
+mean editing the Makefile. Still unbuilt from this section's original list: a
+`build_timeline.py`, `make sheet` / `make_contact_sheet.py`, and the CI job.
+
+`verify_video.py` asserts, against the artefacts a reader receives: duration and
+an audio track; one chapter per narration section, contiguous and titled from
+`narration.yaml`; each section's speech plus lead fits inside its chapter, with
+monotonic sentence spans; integrated loudness −16.0 ±0.5 LUFS and true peak at
+or below −1.5 dBFS; frozen share ≤35% with no hold over 3.5 s; SRT and VTT both
+present, one cue per sentence. Golden frames (3 per scene) live in
+`media/golden/`; a pixel diff > 2% fails.
 
 ---
 
@@ -278,11 +305,35 @@ parallel with the TTS work.
 
 ---
 
+## 5b. Phase R — Recovery for the 167-sentence production · 5–7 days
+
+The review in `REVIEW.md` set this order. Each step gates the next.
+
+- [x] **R1 Script lock** — correct every P0 claim, add the residual-stream and
+      pre-norm foundation, contrast training with generation, soften the strong
+      claims. `narration.yaml` 159 → 167 sentences (12 sections), lint 0 warnings,
+      `VOICEOVER_SCRIPT.md` regenerated, 70 tests green. (0.5 d)
+- [x] **R2 Plan docs** — this banner, Phase R, and the same scope note in
+      `README.md` and `REDESIGN_PLAN.md`. (0.25 d)
+- [ ] **R3 Animatic** — low-resolution 12-scene pass first. Check comprehension,
+      timing, and mobile text size before any 1080p render. (1.5 d)
+- [ ] **R4 TTS re-record** — new timings for 167 sentences; A/B the hard lines.
+      The no-re-recording constraint is lifted. (1 d)
+- [ ] **R5 Scene re-cue** — 12 scenes instead of 9; new sections 02/04/08/11;
+      cue by scene ID, not by position. (2 d)
+- [ ] **R6 Render, package, gate** — 1080p master, captions, chapters, end card
+      with the "Almost In F" credit, then `make verify`. (1 d)
+
+**Gate:** `make verify` green on a master whose narration is the 167-sentence
+script; freeze share ≤35%; longest hold ≤3.5 s; 12 chapters present.
+
+---
+
 ## 10. Out of scope
 
-No redesign of the Aurora language; no 4K/10-bit unless banding is confirmed; no re-recording of
-the voice beyond the edited lines; no chapters beyond Part 2; no changes to the LLaMA-3-Lite
-model or its docs.
+No redesign of the Aurora language; no 4K/10-bit unless banding is confirmed; no chapters beyond
+Part 2; no changes to the LLaMA-3-Lite model or its docs. Re-recording is in scope for Phase R:
+the new script needs it.
 
 ---
 
@@ -300,3 +351,7 @@ model or its docs.
 | 2026-10-26 | 3 | Bed swapped on taste rejection (Komiku too busy, had a beat). New bed: Kevin MacLeod **"Almost In F"** — slow contemplative piano, 3b1b-style, per user reference. **Deviation from the CC0-only rule:** this track is **CC BY 4.0**, so the artist credit line in `assets/music/CREDITS.md` must appear on the end card (T3.3). Rebuilt master: 296.60 s, 0.000 s A/V drift, **−16.0 LUFS** integrated, **TP −1.4 dBFS** (0.1 over the −1.5 target; within one dither step of loudnorm's TP ceiling). Duck and fades unchanged. |
 | 2026-10-26 | script | Narration rewritten for depth (user ask: "much more explanatory and in depth", runtime limit lifted). `narration.yaml`: 63 → **94 sentences** (sec01 7, sec02 10, sec03 8, sec04 10, sec05 18, sec06 10, sec07 12, sec08 9, sec09 10), mean 12.1 words, max 18, lint clean with 0 warnings. Every stage now carries its reason (why scale control, why ÷√d_k, why the causal mask, why GQA shrinks memory, why SwiGLU gates). Fact fix folded in: vocabulary is spoken as **128,256**, not 128,000 (s02.2, s09.2). Humanizer pass applied: no em dashes, no staged run-ups ("Let's open it up" gone), no "at its core" / "the heart of" / "the elegance". End card no longer says "and nothing else". `VOICEOVER_SCRIPT.md` regenerated. **Cascade still open:** new timings need a TTS re-record, `render_scenes.py` needs re-cue (64 cue sites) plus any new visuals the deeper lines call for, then 9-scene re-render and reassembly. User authorized adding animations/elements to support narration. |
 | 2026-10-26 | script v2 | Script expanded to a 3b1b-style deep dive (user: "don't hesitate to add more sections", "powerful and in detail", "just like 3blue1brown"). Structure: 9 → **12 sections**. New sections: **02 the objective** (why next-token prediction is the only training signal, surprise/loss, no labels), **04 embeddings** (split out of tokens: learned meaning space, the honest 2-D sketch note), **08 QK-norm** (its own beat: per-head RMSNorm on q/k, 128-number gamma), **11 the generation loop** (split out of output). Attention split into **05 matching** (q/k/v, scores, ÷√d_k) and **06 blending** (mask, softmax, heads). `narration.yaml`: 94 → **159 sentences**, mean 12.3 words, max 18, lint 0 warnings. `tools/lint_script.py`: the 18-word cap now keys on attention section **ids** (`sec05_matching`, `sec06_blend`) instead of the old positional index 5. Real figures woven in from `facts.json`: token IDs 8415/5634, the `sat` row weight 0.86 on `cat` with 0.00 on the masked cell, KV-cache math 16×2×4×128 = 16,384 per token and 33M at full context, FFN ~12M vs attention ~3M params per block, embedding and unembedding ~131M each (just over half the model). Projected runtime **~13–15 min** at the current voice rate. **Video rework is now a restructure, not a re-cue:** 12 scenes instead of 9, new section 02/04/08/11 scenes, user has authorized new animations. |
+| 2026-10-26 | R1 | Production review landed as `REVIEW.md` (verdict: do not publish the current master). R1 script lock applied to `narration.yaml`: **159 → 167 sentences**, lint 0 warnings, `VOICEOVER_SCRIPT.md` regenerated, 70 tests green (same 2 honest skips). P0 claim fixes: s02.2 now says cross-entropy is the objective with z-loss at one ten-thousandth (was "the only one"); s04.19/s11.2 say a separate, untied output matrix (no weight tying implied); s04.8 marks the cat/kitten sketch as illustrative; s06.14 says query projections are per head but keys and values are shared by pairs; s07.1 says shuffling tokens shuffles the outputs to match (permutation-equivariant, not "scores unchanged"); s07.11 gives the fastest pair a full turn in about six point three tokens; s07.12 says the rotations combine into a relative turn; s07.13/s07.14 scope the distance claim to the positional part and keep content in the score; s08.3 says RMSNorm controls scale (no strict bound); s08.5 gives one shared 128-number gain per layer for queries and one for keys; s09.5/s11.11/s11.12 present the KV cache as an inference-time optimization and say this code recomputes the full sequence; s09.10 calls the cache a growing inference-time memory cost; s09.14 states the four-vs-eight baseline; s09.15 keeps the attention operation but allows quality change; s10.11 gives the real SiLU shape (half the input near zero, nearly unchanged for large positive); s10.13 lets the gate shrink, pass, or amplify. Foundation added: **sec04 s04.13–s04.18** carry the residual stream and the pre-norm block picture (RMSNorm → attention/SwiGLU → add back); **sec02 s02.12–s02.13** contrast parallel training with one-token-at-a-time generation. Softens applied in s01.4, s01.6, s02.7, s04.6, s04.7, s04.9, s05.10, s05.13, s05.14, s08.6. Renumbered inside sec02 and sec04 only; scene code still references the old IDs and needs the R5 re-cue. |
+| 2026-10-26 | R2 | Plan docs caught up. The `STATUS 2026-10-26 — DO NOT PUBLISH` banner, the Phase R block, and the matching scope note in `README.md` and `REDESIGN_PLAN.md` were already in the working tree; R2's box was simply never ticked. Stale counts corrected: `REVIEW.md` said 159 sentences in three places (now 167), and the `test_phase2.py` skip reason said 159 cues (now 167). |
+| 2026-10-26 | R4a | TTS re-record landed. `generate_audio.py` → 167 clips, 12 section tracks, `audio/timings.json` rebuilt from `narration.yaml` alone. Measured **736.2 s = 12.3 min** of speech (edge-tts `en-US-AndrewMultilingualNeural` at +8%), so the new master lands near **12.5 min** with lead and tail — against 4:56 for the old cut. Per-section: sec01 53.7s/12, sec02 63.3s/15, sec03 69.9s/14, sec04 83.4s/19, sec05 56.9s/15, sec06 60.6s/16, sec07 76.3s/16, sec08 30.8s/7, sec09 66.1s/15, sec10 69.8s/16, sec11 61.9s/13, sec12 43.5s/9. `test_timings_cover_every_section` un-skipped and green; suite is **74 passed, 1 skipped**. Still open on R4: the A/B listening pass on the hard lines. `synth()` has no cache, so every re-record is a full 20 min network job — worth a text-hash skip before R5 iterations. |
+| 2026-10-26 | T3.4a | Release gate written and exercised. `tools/verify_video.py` checks what a reader receives: duration and an audio track; one chapter per narration section, contiguous and titled from `narration.yaml`; speech + lead fits inside its chapter with monotonic spans; integrated −16.0 ±0.5 LUFS and true peak ≤ −1.5 dBFS; frozen share ≤35% and no hold over 3.5 s; SRT and VTT present with one cue per sentence. It reuses `check_freeze.measure` and `parse_ebur128` (pure, pinned in `tests/test_phase3.py`). Pointed at the current master it fails **15 of 20** checks and independently reproduces REVIEW.md's freeze numbers exactly (75.8% frozen, 10.67 s longest hold) plus the −1.4 dBFS true-peak overage. `Makefile` added: `check` / `layout` / `facts` / `audio` / `scenes` / `video` / `verify` / `all`. The scene list is discovered from `render_scenes.py` rather than hardcoded, so the 9 → 12 change does not mean editing the Makefile. `build_full_video.py` now derives its scene count from `timings.json` and its chapter titles from `narration.yaml`, and targets `TP=-1.6` so the master lands under the −1.5 dBFS ceiling. **Left unbuilt from §6's original list:** `build_timeline.py`, `make sheet` / `make_contact_sheet.py`, golden-frame diffing, and the CI job. |

@@ -7,378 +7,911 @@
   "sections": {
     "sec01_function": {
       "file": "sec01_function.wav",
-      "duration": 27.0839,
+      "duration": 53.6884,
       "sentences": {
         "s01.1": {
           "start": 0.0,
-          "end": 4.5868,
-          "text": "Every large language model is, at its core, a single mathematical function."
+          "end": 2.7711,
+          "text": "A large language model is one mathematical function."
         },
         "s01.2": {
-          "start": 4.7868,
-          "end": 10.2467,
-          "text": "It takes a sequence of tokens \u2014 and returns a probability for every possible next token."
+          "start": 2.9711,
+          "end": 8.1475,
+          "text": "It reads a sequence of tokens and returns a probability for every possible next token."
         },
         "s01.3": {
-          "start": 10.4467,
-          "end": 17.0449,
-          "text": "LLaMA-3-Lite is a compact, from-scratch implementation of Meta's LLaMA 3 architecture."
+          "start": 8.3475,
+          "end": 12.8424,
+          "text": "That is the whole interface: text in, a distribution over the next token out."
         },
         "s01.4": {
-          "start": 17.2449,
-          "end": 23.7961,
-          "text": "Sixteen decoder blocks, a model dimension of one thousand twenty-four, and about five hundred fifteen million parameters."
+          "start": 13.0424,
+          "end": 18.5998,
+          "text": "LLaMA-3-Lite is a compact, from-scratch model built in the LLaMA-3 style."
         },
         "s01.5": {
-          "start": 23.9961,
-          "end": 27.0839,
-          "text": "Let's open it up and follow one token all the way through."
+          "start": 18.7998,
+          "end": 25.351,
+          "text": "Sixteen decoder blocks, a model dimension of one thousand twenty-four, and about five hundred fifteen million parameters."
+        },
+        "s01.6": {
+          "start": 25.551,
+          "end": 28.3986,
+          "text": "The same model width runs through all sixteen blocks."
+        },
+        "s01.7": {
+          "start": 28.5986,
+          "end": 30.9934,
+          "text": "Take the sentence on screen: The cat sat on the mat."
+        },
+        "s01.8": {
+          "start": 31.1934,
+          "end": 35.0391,
+          "text": "Six tokens, six IDs, and one question: what comes next?"
+        },
+        "s01.9": {
+          "start": 35.2391,
+          "end": 40.9747,
+          "text": "One token walks in as an ID and walks out as a probability over the whole vocabulary."
+        },
+        "s01.10": {
+          "start": 41.1747,
+          "end": 45.0142,
+          "text": "Follow that walk from raw text to the sampling loop, one stage at a time."
+        },
+        "s01.11": {
+          "start": 45.2142,
+          "end": 49.9439,
+          "text": "Each stage exists to fix a specific problem the previous stage leaves open."
+        },
+        "s01.12": {
+          "start": 50.1439,
+          "end": 53.6884,
+          "text": "The loop at the end is what turns one prediction into a paragraph."
         }
       }
     },
-    "sec02_tokens": {
-      "file": "sec02_tokens.wav",
-      "duration": 30.5155,
+    "sec02_objective": {
+      "file": "sec02_objective.wav",
+      "duration": 63.3165,
       "sentences": {
         "s02.1": {
           "start": 0.0,
-          "end": 3.6296,
-          "text": "But before any mathematics can happen, text must become numbers."
+          "end": 3.2167,
+          "text": "Before any architecture, ask what the model is trained to do."
         },
         "s02.2": {
-          "start": 3.8296,
-          "end": 9.9165,
-          "text": "A tokenizer splits text into subword pieces from a vocabulary of one hundred twenty-eight thousand tokens."
+          "start": 3.4167,
+          "end": 8.888,
+          "text": "The objective is next-token cross-entropy, plus a small z-loss at one ten-thousandth."
         },
         "s02.3": {
-          "start": 10.1165,
-          "end": 13.4611,
-          "text": "Each token ID indexes a row of the embedding matrix."
+          "start": 9.088,
+          "end": 12.0552,
+          "text": "Training shows the model real text with the next token hidden."
         },
         "s02.4": {
-          "start": 13.6611,
-          "end": 19.2394,
-          "text": "That matrix holds one hundred twenty-eight thousand vectors, each one thousand twenty-four numbers long."
+          "start": 12.2552,
+          "end": 15.189,
+          "text": "The model assigns that hidden token a probability."
         },
         "s02.5": {
-          "start": 19.4394,
-          "end": 26.1013,
-          "text": "That lookup places every token as a point in a high-dimensional space, where similar meanings sit close together."
+          "start": 15.389,
+          "end": 18.9587,
+          "text": "When the probability is low, training adjusts the weights to raise it."
         },
         "s02.6": {
-          "start": 26.3013,
-          "end": 29.2383,
-          "text": "From here on, the model never sees characters again."
+          "start": 19.1587,
+          "end": 24.5887,
+          "text": "That adjustment is the whole of learning: every weight moves to make real text more likely."
         },
         "s02.7": {
-          "start": 29.4383,
-          "end": 30.5155,
-          "text": "Only these vectors."
+          "start": 24.7887,
+          "end": 31.2863,
+          "text": "Next-token training needs no extra manual labels: no sentiment tags, no answers, no rules."
+        },
+        "s02.8": {
+          "start": 31.4863,
+          "end": 36.0517,
+          "text": "The loss measures surprise: how low the model's probability was for the true token."
+        },
+        "s02.9": {
+          "start": 36.2517,
+          "end": 40.5056,
+          "text": "Pushing surprise down is what shapes the five hundred fifteen million parameters."
+        },
+        "s02.10": {
+          "start": 40.7056,
+          "end": 46.0374,
+          "text": "From that single objective, grammar, style and world knowledge settle into the weights."
+        },
+        "s02.11": {
+          "start": 46.2374,
+          "end": 48.2759,
+          "text": "Nothing in the code says what a noun is."
+        },
+        "s02.12": {
+          "start": 48.4759,
+          "end": 52.242,
+          "text": "Training runs that prediction at every position in parallel."
+        },
+        "s02.13": {
+          "start": 52.442,
+          "end": 56.1262,
+          "text": "Generation instead reveals one new token at a time."
+        },
+        "s02.14": {
+          "start": 56.3262,
+          "end": 60.4987,
+          "text": "The structure you are about to see is the machinery that makes the prediction possible."
+        },
+        "s02.15": {
+          "start": 60.6987,
+          "end": 63.3165,
+          "text": "Each piece is there because the objective demands it."
         }
       }
     },
-    "sec03_residual": {
-      "file": "sec03_residual.wav",
-      "duration": 21.3993,
+    "sec03_tokens": {
+      "file": "sec03_tokens.wav",
+      "duration": 69.9358,
       "sentences": {
         "s03.1": {
           "start": 0.0,
-          "end": 4.6859,
-          "text": "These vectors flow through the network along a single channel: the residual stream."
+          "end": 4.5079,
+          "text": "Text cannot enter a matrix multiply, so the tokenizer goes first."
         },
         "s03.2": {
-          "start": 4.8859,
-          "end": 9.9562,
-          "text": "Each of the sixteen blocks reads from it, computes a transformation, and adds the result back."
+          "start": 4.7079,
+          "end": 11.6775,
+          "text": "It splits text into subword pieces from a vocabulary of one hundred twenty-eight thousand two hundred fifty-six tokens."
         },
         "s03.3": {
-          "start": 10.1562,
-          "end": 14.2758,
-          "text": "The stream is never overwritten, only refined, layer by layer."
+          "start": 11.8775,
+          "end": 17.2226,
+          "text": "The scheme is byte-pair encoding: the most frequent character pairs merge into new tokens."
         },
         "s03.4": {
-          "start": 14.4758,
-          "end": 21.3993,
-          "text": "Each token's vector accumulates context, turning a bare lookup into a rich, position-aware representation."
+          "start": 17.4226,
+          "end": 21.4954,
+          "text": "Building it starts from single characters and keeps merging the most common pair."
+        },
+        "s03.5": {
+          "start": 21.6954,
+          "end": 27.3915,
+          "text": "Common words stay whole, and rare words break into smaller pieces the model has seen before."
+        },
+        "s03.6": {
+          "start": 27.5915,
+          "end": 33.3951,
+          "text": "Characters alone would make sequences far too long; whole words alone would explode the vocabulary."
+        },
+        "s03.7": {
+          "start": 33.5951,
+          "end": 38.9154,
+          "text": "Subwords sit in between and cover any input, including words the model has never seen."
+        },
+        "s03.8": {
+          "start": 39.1154,
+          "end": 41.738,
+          "text": "Their IDs come straight from the vocabulary table."
+        },
+        "s03.9": {
+          "start": 41.938,
+          "end": 48.2088,
+          "text": "The word cat becomes eight thousand four hundred fifteen; the word mat becomes five thousand six hundred thirty-four."
+        },
+        "s03.10": {
+          "start": 48.4088,
+          "end": 52.2601,
+          "text": "Each ID is just a row number; it carries no meaning of its own."
+        },
+        "s03.11": {
+          "start": 52.4601,
+          "end": 55.0488,
+          "text": "The tokenizer knows nothing about cats."
+        },
+        "s03.12": {
+          "start": 55.2488,
+          "end": 59.2155,
+          "text": "Its only job is to cut text into pieces the model has a row for."
+        },
+        "s03.13": {
+          "start": 59.4155,
+          "end": 65.517,
+          "text": "The config lists one hundred twenty-eight thousand rows; the tokenizer holds two hundred fifty-six more."
+        },
+        "s03.14": {
+          "start": 65.717,
+          "end": 69.9358,
+          "text": "The embedding table sizes itself to the tokenizer, not to the config."
         }
       }
     },
-    "sec04_rmsnorm": {
-      "file": "sec04_rmsnorm.wav",
-      "duration": 28.1772,
+    "sec04_embedding": {
+      "file": "sec04_embedding.wav",
+      "duration": 83.374,
       "sentences": {
         "s04.1": {
           "start": 0.0,
-          "end": 3.69,
-          "text": "Inside each block, the first operation is normalization."
+          "end": 3.8858,
+          "text": "An ID is only a row number; the row it points to carries the meaning."
         },
         "s04.2": {
-          "start": 3.89,
-          "end": 10.6913,
-          "text": "As activations flow deeper, their scale can grow, and attention's dot products are sensitive to exactly that."
+          "start": 4.0858,
+          "end": 8.0381,
+          "text": "That lookup is the embedding matrix, one row per vocabulary item."
         },
         "s04.3": {
-          "start": 10.8912,
-          "end": 16.8478,
-          "text": "RMSNorm measures a vector's root mean square, the square root of the average of its squared components."
+          "start": 8.2381,
+          "end": 13.4797,
+          "text": "Each row holds one thousand twenty-four numbers, so every token becomes a vector of that length."
         },
         "s04.4": {
-          "start": 17.0478,
-          "end": 19.8189,
-          "text": "It divides that out, then rescales with a learned gamma."
+          "start": 13.6797,
+          "end": 19.014,
+          "text": "A lookup is all it takes: the ID picks the row, and the row becomes the token's vector."
         },
         "s04.5": {
-          "start": 20.0189,
-          "end": 22.9701,
-          "text": "Unlike LayerNorm, there is no mean subtraction."
+          "start": 19.214,
+          "end": 22.1605,
+          "text": "There is no computation here yet, only a learned table."
         },
         "s04.6": {
-          "start": 23.1701,
-          "end": 28.1772,
-          "text": "Only the magnitude is regulated, which makes it cheaper, and just as stable."
+          "start": 22.3605,
+          "end": 27.3297,
+          "text": "Training can move these rows so tokens used in similar ways land near each other."
+        },
+        "s04.7": {
+          "start": 27.5297,
+          "end": 31.7976,
+          "text": "This is how it can learn semantic geometry: directions that carry meaning."
+        },
+        "s04.8": {
+          "start": 31.9976,
+          "end": 35.8658,
+          "text": "An illustrative sketch might place cat near kitten and far from car."
+        },
+        "s04.9": {
+          "start": 36.0658,
+          "end": 40.6749,
+          "text": "Because the table is learned, it embeds each token by how that token is used."
+        },
+        "s04.10": {
+          "start": 40.8749,
+          "end": 45.9758,
+          "text": "The vector is a point in one thousand twenty-four dimensions, far too many to picture at once."
+        },
+        "s04.11": {
+          "start": 46.1758,
+          "end": 50.1068,
+          "text": "Two dimensions stand in for the rest whenever the screen shows a sketch."
+        },
+        "s04.12": {
+          "start": 50.3068,
+          "end": 53.9577,
+          "text": "From this point on the model sees only vectors, never characters."
+        },
+        "s04.13": {
+          "start": 54.1577,
+          "end": 58.3763,
+          "text": "From here, each token carries its vector through all sixteen blocks."
+        },
+        "s04.14": {
+          "start": 58.5763,
+          "end": 61.1295,
+          "text": "That carried vector is called the residual stream."
+        },
+        "s04.15": {
+          "start": 61.3295,
+          "end": 66.5421,
+          "text": "Inside a block, attention and SwiGLU each read a normalized copy of the stream."
+        },
+        "s04.16": {
+          "start": 66.7421,
+          "end": 69.8299,
+          "text": "Each writes its result back onto the stream by simple addition."
+        },
+        "s04.17": {
+          "start": 70.0299,
+          "end": 73.471,
+          "text": "This pre-norm shape is the structure of every decoder block."
+        },
+        "s04.18": {
+          "start": 73.671,
+          "end": 78.2146,
+          "text": "A last RMSNorm at the output cleans that same stream before scoring."
+        },
+        "s04.19": {
+          "start": 78.4146,
+          "end": 83.374,
+          "text": "A separate, untied table of the same kind runs at the output, as you will see."
         }
       }
     },
-    "sec05_attention": {
-      "file": "sec05_attention.wav",
-      "duration": 43.4329,
+    "sec05_matching": {
+      "file": "sec05_matching.wav",
+      "duration": 56.9186,
       "sentences": {
         "s05.1": {
           "start": 0.0,
-          "end": 2.3537,
-          "text": "Now the heart of the model: self-attention."
+          "end": 3.5782,
+          "text": "A single vector knows its own meaning and nothing about its neighbors."
         },
         "s05.2": {
-          "start": 2.5537,
-          "end": 8.1553,
-          "text": "Every token's vector is projected three ways \u2014 into a query, a key, and a value."
+          "start": 3.7782,
+          "end": 7.4554,
+          "text": "The next problem is context: how a token learns what surrounds it."
         },
         "s05.3": {
-          "start": 8.3552,
-          "end": 14.2156,
-          "text": "Each query takes a dot product against every key in the sequence, producing a score for every pair."
+          "start": 7.6554,
+          "end": 13.2227,
+          "text": "Self-attention solves this in one layer, by letting every token look back at the tokens before it."
         },
         "s05.4": {
-          "start": 14.4156,
-          "end": 17.8952,
-          "text": "Those scores are scaled by one over the square root of the key dimension."
+          "start": 13.4227,
+          "end": 18.6952,
+          "text": "Each vector is projected three times: into a query, a key, and a value."
         },
         "s05.5": {
-          "start": 18.0952,
-          "end": 23.9187,
-          "text": "A causal mask hides the future: each token can look back at everything before it, never ahead."
+          "start": 18.8952,
+          "end": 20.7172,
+          "text": "The query is what a token asks for."
         },
         "s05.6": {
-          "start": 24.1187,
-          "end": 27.6819,
-          "text": "Then a softmax turns them into weights that sum to one."
+          "start": 20.9172,
+          "end": 22.9535,
+          "text": "The key is what a token offers for matching."
         },
         "s05.7": {
-          "start": 27.8819,
-          "end": 30.9353,
-          "text": "Finally, the weights blend the value vectors."
+          "start": 23.1535,
+          "end": 26.5008,
+          "text": "The value is the information a token hands over once it is chosen."
         },
         "s05.8": {
-          "start": 31.1353,
-          "end": 33.87,
-          "text": "Each output is a weighted average of what came before."
+          "start": 26.7008,
+          "end": 30.9337,
+          "text": "All three projections are learned matrices, multiplied into the stream."
         },
         "s05.9": {
-          "start": 34.07,
-          "end": 39.5287,
-          "text": "And this runs not once, but eight times, in parallel heads with independent projections."
+          "start": 31.1337,
+          "end": 34.5492,
+          "text": "A query takes a dot product with every key in the sequence."
         },
         "s05.10": {
-          "start": 39.7287,
-          "end": 43.4329,
-          "text": "Their outputs are concatenated and mixed by one last matrix."
+          "start": 34.7492,
+          "end": 38.5662,
+          "text": "A large dot product means similar direction, long length, or both."
+        },
+        "s05.11": {
+          "start": 38.7662,
+          "end": 41.7456,
+          "text": "Each dot product fills one cell of the score matrix."
+        },
+        "s05.12": {
+          "start": 41.9456,
+          "end": 44.7487,
+          "text": "Those scores are divided by the square root of the key dimension."
+        },
+        "s05.13": {
+          "start": 44.9487,
+          "end": 49.1955,
+          "text": "Without scaling, scores grow with the dimension and the softmax saturates."
+        },
+        "s05.14": {
+          "start": 49.3955,
+          "end": 53.8468,
+          "text": "Scaling controls that growth and keeps the softmax away from saturation."
+        },
+        "s05.15": {
+          "start": 54.0468,
+          "end": 56.9186,
+          "text": "The matrix on screen is the map of who will listen to whom."
         }
       }
     },
-    "sec06_rope": {
-      "file": "sec06_rope.wav",
-      "duration": 40.4284,
+    "sec06_blend": {
+      "file": "sec06_blend.wav",
+      "duration": 60.642,
       "sentences": {
         "s06.1": {
           "start": 0.0,
-          "end": 4.7365,
-          "text": "As defined, attention is order-blind \u2014 it sees a bag of tokens."
+          "end": 3.203,
+          "text": "Scores are still raw numbers; they need to become weights."
         },
         "s06.2": {
-          "start": 4.9365,
-          "end": 7.3268,
-          "text": "Positions enter through rotary embeddings."
+          "start": 3.403,
+          "end": 6.2805,
+          "text": "A causal mask hides the future from every query."
         },
         "s06.3": {
-          "start": 7.5268,
-          "end": 10.5896,
-          "text": "Each head's query and key vectors are split into pairs."
+          "start": 6.4805,
+          "end": 11.0087,
+          "text": "A token may attend to itself and to earlier tokens, never later ones."
         },
         "s06.4": {
-          "start": 10.7896,
-          "end": 14.6372,
-          "text": "Each pair is rotated by an angle proportional to the token's position."
+          "start": 11.2087,
+          "end": 15.1686,
+          "text": "Training never allows a token to read the answer it is being asked to predict."
         },
         "s06.5": {
-          "start": 14.8372,
-          "end": 17.233,
-          "text": "The pairs rotate at different frequencies."
+          "start": 15.3686,
+          "end": 19.3628,
+          "text": "Masked scores are pushed to negative infinity before the softmax runs."
         },
         "s06.6": {
-          "start": 17.433,
-          "end": 24.2636,
-          "text": "Some spin fast, pinning down nearby positions; others barely move, encoding long-range structure."
+          "start": 19.5628,
+          "end": 24.0814,
+          "text": "Softmax turns the remaining scores into positive weights that sum to one."
         },
         "s06.7": {
-          "start": 24.4636,
-          "end": 29.2238,
-          "text": "The elegance: a rotated query meeting a rotated key gives a special dot product."
+          "start": 24.2814,
+          "end": 26.2718,
+          "text": "Look at the row for the word sat on screen."
         },
         "s06.8": {
-          "start": 29.4238,
-          "end": 33.6374,
-          "text": "It depends only on the distance between the tokens, never on absolute position."
+          "start": 26.4718,
+          "end": 29.7846,
+          "text": "It places zero point eight six of its weight on cat."
         },
         "s06.9": {
-          "start": 33.8374,
-          "end": 40.4284,
-          "text": "With theta at five hundred thousand, the slowest pairs stay smooth across the entire two-thousand-forty-eight token context."
+          "start": 29.9846,
+          "end": 31.9577,
+          "text": "The masked future cell holds zero."
+        },
+        "s06.10": {
+          "start": 32.1577,
+          "end": 35.3813,
+          "text": "The weights then blend the value vectors into a single output."
+        },
+        "s06.11": {
+          "start": 35.5813,
+          "end": 39.9213,
+          "text": "The output is a weighted average of past values, so it stays near their neighborhood."
+        },
+        "s06.12": {
+          "start": 40.1213,
+          "end": 43.6117,
+          "text": "Each token leaves attention carrying a summary of its own past."
+        },
+        "s06.13": {
+          "start": 43.8117,
+          "end": 47.9222,
+          "text": "This whole computation runs eight times in parallel, one per head."
+        },
+        "s06.14": {
+          "start": 48.1223,
+          "end": 53.1553,
+          "text": "Query projections are per head, but keys and values are shared by pairs of heads."
+        },
+        "s06.15": {
+          "start": 53.3553,
+          "end": 57.5129,
+          "text": "The eight outputs are concatenated and multiplied by one output matrix."
+        },
+        "s06.16": {
+          "start": 57.7129,
+          "end": 60.642,
+          "text": "The result is written back into the residual stream."
         }
       }
     },
-    "sec07_gqa": {
-      "file": "sec07_gqa.wav",
-      "duration": 33.1386,
+    "sec07_rope": {
+      "file": "sec07_rope.wav",
+      "duration": 76.315,
       "sentences": {
         "s07.1": {
           "start": 0.0,
-          "end": 1.792,
-          "text": "Attention itself is grouped."
+          "end": 5.5778,
+          "text": "Attention as written cannot see word order: shuffle the tokens and the outputs shuffle to match."
         },
         "s07.2": {
-          "start": 1.992,
-          "end": 7.3858,
-          "text": "LLaMA-3-Lite uses eight query heads but only four key-and-value heads."
+          "start": 5.7778,
+          "end": 11.6084,
+          "text": "The scores only see vectors, and the vectors so far carry meaning without position."
         },
         "s07.3": {
-          "start": 7.5858,
-          "end": 10.2309,
-          "text": "Each KV head is shared by two query heads."
+          "start": 11.8084,
+          "end": 14.6369,
+          "text": "So the next piece adds position without touching the meaning."
         },
         "s07.4": {
-          "start": 10.4309,
-          "end": 15.3823,
-          "text": "The KV cache stores keys and values for every layer and every past token."
+          "start": 14.8369,
+          "end": 19.833,
+          "text": "Rotary embeddings fix this by rotating query and key vectors according to position."
         },
         "s07.5": {
-          "start": 15.5823,
-          "end": 20.5035,
-          "text": "Halving the KV heads halves that memory, and the cache is what grows with context."
+          "start": 20.033,
+          "end": 24.4322,
+          "text": "Each vector is split into pairs of dimensions, sixty-four pairs per head."
         },
         "s07.6": {
-          "start": 20.7035,
-          "end": 25.1955,
-          "text": "And before rotation, queries and keys each pass through RMSNorm."
+          "start": 24.6322,
+          "end": 29.0156,
+          "text": "Each pair is read as a point in two dimensions, or as a complex number."
         },
         "s07.7": {
-          "start": 25.3955,
-          "end": 30.2436,
-          "text": "It is called QK-norm, and it bounds their magnitude so logits stay well-behaved."
+          "start": 29.2156,
+          "end": 33.9903,
+          "text": "Position m rotates every pair by an angle of m times a base frequency."
         },
         "s07.8": {
-          "start": 30.4436,
-          "end": 33.1386,
-          "text": "A Lite addition \u2014 LLaMA 3 itself has none."
+          "start": 34.1903,
+          "end": 37.6689,
+          "text": "The rotation matrix on screen is the pair version of that turn."
+        },
+        "s07.9": {
+          "start": 37.8689,
+          "end": 39.9504,
+          "text": "Different pairs turn at different speeds."
+        },
+        "s07.10": {
+          "start": 40.1504,
+          "end": 44.6691,
+          "text": "Fast pairs pin down nearby structure; slow pairs mark long-range position."
+        },
+        "s07.11": {
+          "start": 44.8691,
+          "end": 49.2785,
+          "text": "The fastest pair shown completes a full turn in about six point three tokens."
+        },
+        "s07.12": {
+          "start": 49.4785,
+          "end": 55.5462,
+          "text": "When a rotated query meets a rotated key, their rotations combine into one relative turn."
+        },
+        "s07.13": {
+          "start": 55.7462,
+          "end": 59.3063,
+          "text": "So the positional part of their dot product depends on the distance between them."
+        },
+        "s07.14": {
+          "start": 59.5063,
+          "end": 65.169,
+          "text": "Content still shapes the score; position adds only how far apart the two tokens sit."
+        },
+        "s07.15": {
+          "start": 65.369,
+          "end": 71.4815,
+          "text": "With theta at five hundred thousand, the slowest pairs stay smooth across two thousand forty-eight tokens."
+        },
+        "s07.16": {
+          "start": 71.6815,
+          "end": 76.315,
+          "text": "Theta sets the slowest wavelength; a larger theta pushes it further."
         }
       }
     },
-    "sec08_swiglu": {
-      "file": "sec08_swiglu.wav",
-      "duration": 29.261,
+    "sec08_qknorm": {
+      "file": "sec08_qknorm.wav",
+      "duration": 30.7653,
       "sentences": {
         "s08.1": {
           "start": 0.0,
-          "end": 5.9549,
-          "text": "After attention comes the second sublayer: a feed-forward network applied to each token independently."
+          "end": 3.3181,
+          "text": "One Lite detail lands between projection and rotation."
         },
         "s08.2": {
-          "start": 6.1549,
-          "end": 12.9084,
-          "text": "The vector is expanded to four thousand ninety-six dimensions, then compressed back to one thousand twenty-four."
+          "start": 3.5181,
+          "end": 8.091,
+          "text": "Queries and keys each pass through RMSNorm before RoPE is applied."
         },
         "s08.3": {
-          "start": 13.1084,
-          "end": 15.7281,
-          "text": "LLaMA uses a gated variant, SwiGLU."
+          "start": 8.291,
+          "end": 13.1547,
+          "text": "This controls the scale of each query and key, so the logits stay well behaved."
         },
         "s08.4": {
-          "start": 15.9281,
-          "end": 18.2806,
-          "text": "The expansion splits into two paths."
+          "start": 13.3547,
+          "end": 17.0315,
+          "text": "The norm runs per head, on each query and key vector on its own."
         },
         "s08.5": {
-          "start": 18.4806,
-          "end": 22.2969,
-          "text": "One passes through the SiLU activation, a smooth ReLU."
+          "start": 17.2315,
+          "end": 22.3726,
+          "text": "Each layer has one shared gain of one hundred twenty-eight numbers for queries, and one for keys."
         },
         "s08.6": {
-          "start": 22.4969,
-          "end": 27.364,
-          "text": "It gates the other path element by element, scaling each feature rather than switching it off."
+          "start": 22.5726,
+          "end": 26.5318,
+          "text": "The point of the step is training stability, at a tiny parameter cost."
         },
         "s08.7": {
-          "start": 27.564,
-          "end": 29.261,
-          "text": "Then the result is projected back."
+          "start": 26.7318,
+          "end": 30.7653,
+          "text": "LLaMA 3 itself has no QK-norm; the step is a Lite addition."
         }
       }
     },
-    "sec09_output": {
-      "file": "sec09_output.wav",
-      "duration": 36.7085,
+    "sec09_gqa": {
+      "file": "sec09_gqa.wav",
+      "duration": 66.1412,
       "sentences": {
         "s09.1": {
           "start": 0.0,
-          "end": 4.2898,
-          "text": "Stack sixteen of these blocks, and the stream reaches a final RMSNorm."
+          "end": 3.2465,
+          "text": "Attention during training sees the whole sentence at once."
         },
         "s09.2": {
-          "start": 4.4898,
-          "end": 11.8634,
-          "text": "The output head scores every vocabulary item \u2014 a dot product against one hundred twenty-eight thousand embeddings, producing logits."
+          "start": 3.4465,
+          "end": 8.8133,
+          "text": "Generation is different: the model writes one token, then the next, then the next."
         },
         "s09.3": {
-          "start": 12.0634,
-          "end": 14.973,
-          "text": "A softmax turns them into probabilities."
+          "start": 9.0132,
+          "end": 12.0943,
+          "text": "Each new token still has to see everything before it."
         },
         "s09.4": {
-          "start": 15.173,
-          "end": 17.6424,
-          "text": "The model samples the next token and appends it."
+          "start": 12.2943,
+          "end": 17.265,
+          "text": "Recomputing every past key and value at every step would waste work."
         },
         "s09.5": {
-          "start": 17.8424,
-          "end": 22.4544,
-          "text": "The whole network runs again \u2014 one forward pass per generated token."
+          "start": 17.465,
+          "end": 21.4163,
+          "text": "An inference-time optimization can store those vectors in a KV cache."
         },
         "s09.6": {
-          "start": 22.6544,
-          "end": 28.732,
-          "text": "And that is the entire architecture: an embedding, a residual stream, and sixteen blocks."
+          "start": 21.6163,
+          "end": 25.4177,
+          "text": "Each layer stores two vectors per token for every key-value head."
         },
         "s09.7": {
-          "start": 28.932,
-          "end": 33.5316,
-          "text": "Normalized, rotary, grouped, gated computation, then an unembedding head."
+          "start": 25.6177,
+          "end": 33.1422,
+          "text": "With sixteen layers and four key-value heads, one token costs sixteen thousand three hundred eighty-four stored numbers."
         },
         "s09.8": {
-          "start": 33.7316,
-          "end": 36.7085,
-          "text": "Five hundred fifteen million parameters \u2014 and nothing else."
+          "start": 33.3422,
+          "end": 35.9648,
+          "text": "That count assumes one hundred twenty-eight numbers per head."
+        },
+        "s09.9": {
+          "start": 36.1648,
+          "end": 41.4931,
+          "text": "At two thousand forty-eight tokens of context, the cache passes thirty-three million numbers."
+        },
+        "s09.10": {
+          "start": 41.6931,
+          "end": 44.6812,
+          "text": "The cache is a growing memory cost at inference time."
+        },
+        "s09.11": {
+          "start": 44.8812,
+          "end": 49.9482,
+          "text": "LLaMA-3-Lite runs eight query heads and four key-value heads."
+        },
+        "s09.12": {
+          "start": 50.1482,
+          "end": 53.0536,
+          "text": "Each key-value head is shared by two query heads."
+        },
+        "s09.13": {
+          "start": 53.2536,
+          "end": 55.3118,
+          "text": "This layout is grouped-query attention."
+        },
+        "s09.14": {
+          "start": 55.5118,
+          "end": 60.4795,
+          "text": "Four key-value heads halve the cache against eight, while the math of attention stays the same."
+        },
+        "s09.15": {
+          "start": 60.6795,
+          "end": 66.1412,
+          "text": "The attention operation is unchanged, though a smaller key-value set can still change model quality."
+        }
+      }
+    },
+    "sec10_swiglu": {
+      "file": "sec10_swiglu.wav",
+      "duration": 69.7591,
+      "sentences": {
+        "s10.1": {
+          "start": 0.0,
+          "end": 4.0563,
+          "text": "Two sublayers sit in every block; attention is the first."
+        },
+        "s10.2": {
+          "start": 4.2563,
+          "end": 8.0089,
+          "text": "The second is a feed-forward network applied to each token on its own."
+        },
+        "s10.3": {
+          "start": 8.2089,
+          "end": 13.0778,
+          "text": "Attention mixes tokens; the feed-forward works on each vector in isolation."
+        },
+        "s10.4": {
+          "start": 13.2778,
+          "end": 18.9998,
+          "text": "It widens the vector from one thousand twenty-four to four thousand ninety-six, then compresses it back."
+        },
+        "s10.5": {
+          "start": 19.1998,
+          "end": 23.4185,
+          "text": "The wide middle gives the block room to transform features between the two widths."
+        },
+        "s10.6": {
+          "start": 23.6185,
+          "end": 30.1538,
+          "text": "Count the parameters and the feed-forward dominates: over twelve million per block against about three million for attention."
+        },
+        "s10.7": {
+          "start": 30.3538,
+          "end": 33.0398,
+          "text": "LLaMA gates this expansion with SwiGLU."
+        },
+        "s10.8": {
+          "start": 33.2398,
+          "end": 37.5173,
+          "text": "The wide layer splits into two parallel paths: a gate path and an up path."
+        },
+        "s10.9": {
+          "start": 37.7173,
+          "end": 39.8613,
+          "text": "Both paths start from the same input vector."
+        },
+        "s10.10": {
+          "start": 40.0613,
+          "end": 44.653,
+          "text": "The gate path passes through the SiLU activation, which is x times its own sigmoid."
+        },
+        "s10.11": {
+          "start": 44.853,
+          "end": 50.9228,
+          "text": "Near zero, SiLU passes about half the input; large positive inputs pass nearly unchanged."
+        },
+        "s10.12": {
+          "start": 51.1228,
+          "end": 53.86,
+          "text": "Element by element, the gate path scales the up path."
+        },
+        "s10.13": {
+          "start": 54.06,
+          "end": 58.0183,
+          "text": "The gate can shrink a feature, pass it unchanged, or amplify it."
+        },
+        "s10.14": {
+          "start": 58.2183,
+          "end": 60.9322,
+          "text": "Only the product of the two paths flows onward."
+        },
+        "s10.15": {
+          "start": 61.1322,
+          "end": 65.9883,
+          "text": "Multiplicative gating lets one path decide how much of the other to keep."
+        },
+        "s10.16": {
+          "start": 66.1883,
+          "end": 69.7591,
+          "text": "A final matrix projects the result back into the residual stream."
+        }
+      }
+    },
+    "sec11_loop": {
+      "file": "sec11_loop.wav",
+      "duration": 61.8915,
+      "sentences": {
+        "s11.1": {
+          "start": 0.0,
+          "end": 4.1754,
+          "text": "After sixteen blocks, one last RMSNorm settles the stream."
+        },
+        "s11.2": {
+          "start": 4.3754,
+          "end": 10.2667,
+          "text": "A separate, untied matrix scores all one hundred twenty-eight thousand two hundred fifty-six candidates."
+        },
+        "s11.3": {
+          "start": 10.4667,
+          "end": 15.8168,
+          "text": "Each score, called a logit, is one dot product between the final vector and one candidate row."
+        },
+        "s11.4": {
+          "start": 16.0168,
+          "end": 22.6214,
+          "text": "This unembedding table is as large as the embedding table: about one hundred thirty-one million parameters in each."
+        },
+        "s11.5": {
+          "start": 22.8214,
+          "end": 25.9964,
+          "text": "Together, the two tables hold just over half of the model."
+        },
+        "s11.6": {
+          "start": 26.1964,
+          "end": 29.1903,
+          "text": "Large logits mean the candidate fits the context well."
+        },
+        "s11.7": {
+          "start": 29.3903,
+          "end": 34.0408,
+          "text": "A softmax turns the logits into probabilities over the whole vocabulary."
+        },
+        "s11.8": {
+          "start": 34.2408,
+          "end": 38.6065,
+          "text": "Sampling picks one token, and that token is appended to the context."
+        },
+        "s11.9": {
+          "start": 38.8065,
+          "end": 41.2498,
+          "text": "The full network then runs again for the next one."
+        },
+        "s11.10": {
+          "start": 41.4498,
+          "end": 45.6073,
+          "text": "One forward pass per generated token; that is the generation loop."
+        },
+        "s11.11": {
+          "start": 45.8073,
+          "end": 51.8208,
+          "text": "A KV cache would keep past keys and values, so each new pass computes only the newest token."
+        },
+        "s11.12": {
+          "start": 52.0208,
+          "end": 57.4473,
+          "text": "Without one, every step re-reads the whole sequence; this code does exactly that."
+        },
+        "s11.13": {
+          "start": 57.6473,
+          "end": 61.8915,
+          "text": "What began as one function on a table of numbers now writes a paragraph."
+        }
+      }
+    },
+    "sec12_recap": {
+      "file": "sec12_recap.wav",
+      "duration": 43.4984,
+      "sentences": {
+        "s12.1": {
+          "start": 0.0,
+          "end": 3.5804,
+          "text": "Walk the whole path once more, from text to a sampled token."
+        },
+        "s12.2": {
+          "start": 3.7804,
+          "end": 7.6795,
+          "text": "The tokenizer cuts the sentence into six pieces with integer IDs."
+        },
+        "s12.3": {
+          "start": 7.8795,
+          "end": 13.0543,
+          "text": "The embedding table turns each ID into a vector of one thousand twenty-four numbers."
+        },
+        "s12.4": {
+          "start": 13.2543,
+          "end": 16.8587,
+          "text": "The residual stream carries those vectors through sixteen blocks."
+        },
+        "s12.5": {
+          "start": 17.0587,
+          "end": 24.457,
+          "text": "In each block, RMSNorm controls scale, attention mixes context, and the gated feed-forward rewrites features."
+        },
+        "s12.6": {
+          "start": 24.657,
+          "end": 28.4144,
+          "text": "Rotary embeddings keep the order of the tokens visible through all of it."
+        },
+        "s12.7": {
+          "start": 28.6144,
+          "end": 33.823,
+          "text": "Grouped-query attention keeps the cache affordable; QK-norm keeps the logits stable."
+        },
+        "s12.8": {
+          "start": 34.023,
+          "end": 38.3351,
+          "text": "The unembedding table scores every candidate, and sampling takes one."
+        },
+        "s12.9": {
+          "start": 38.5351,
+          "end": 43.4984,
+          "text": "About five hundred fifteen million parameters, and one function from tokens to probabilities."
         }
       }
     }
   },
-  "total_narration": 290.1453
+  "total_narration": 736.2457
 }

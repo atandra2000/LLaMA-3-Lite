@@ -1,5 +1,11 @@
 # LLaMA-3-Lite Architecture Explainer — v2
 
+> **STATUS 2026-10-26 — do not publish the current master.**
+> The MP4 below is the old **63-sentence** cut. The narration is now a
+> **12-section, 167-sentence** deep dive with corrected claims, and the voice,
+> timings, cues and scenes still belong to the old script. Recovery work is
+> **Phase R** in `PLAN.md`. The review is `REVIEW.md`.
+
 Motion-graphics explainer video: **`llama3_lite_architecture_explainer.mp4`**
 (5 min 01 s · 1920×1080 · 30 fps · H.264 + AAC · chapter markers embedded).
 
