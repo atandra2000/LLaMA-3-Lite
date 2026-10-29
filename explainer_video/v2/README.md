@@ -1,13 +1,12 @@
 # LLaMA-3-Lite Architecture Explainer — v2
 
-> **STATUS 2026-10-26 — do not publish the current master.**
-> The MP4 below is the old **63-sentence** cut. The narration is now a
-> **12-section, 167-sentence** deep dive with corrected claims, and the voice,
-> timings, cues and scenes still belong to the old script. Recovery work is
-> **Phase R** in `PLAN.md`. The review is `REVIEW.md`.
+> **STATUS 2026-10-29 — master gates clean; packaging not started.**
+> The 12-section, 167-sentence master is built and `make verify` passes 13 of
+> 13 checks. No cover, thumbnail or repository link exists yet. Phase R is in
+> `PLAN.md`; the review is `REVIEW.md`.
 
 Motion-graphics explainer video: **`llama3_lite_architecture_explainer.mp4`**
-(5 min 01 s · 1920×1080 · 30 fps · H.264 + AAC · chapter markers embedded).
+(12 min 25 s · 1920×1080 · 30 fps · H.264 + AAC · chapter markers embedded).
 
 **Design language ("Aurora", v3):** ambient deep-indigo/teal gradient background
 with drifting light orbs and a faint dot grid, glass panels and pill chips,
@@ -60,7 +59,7 @@ sentence from `narration.yaml`.
 ## Folder layout
 
 ```
-llama3_lite_architecture_explainer.mp4   deliverable (5:01, 1080p30, pre-Phase-0 facts)
+llama3_lite_architecture_explainer.mp4   deliverable (12:25, 1080p30, 167 sentences)
 PLAN.md                                  remediation plan (Phase 0 done)
 facts.json                               generated: every number on screen
 narration.yaml                           generated-from source: spoken script + cue ids

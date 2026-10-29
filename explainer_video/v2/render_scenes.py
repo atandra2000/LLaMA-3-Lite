@@ -3920,8 +3920,8 @@ class Section12(Section):
         rule = RoundedRectangle(corner_radius=0.015, width=1.4, height=0.03,
                                 stroke_width=0, fill_color=GOLD,
                                 fill_opacity=0.9)
-        end2 = T(f"{PARAMS_LABEL} parameters — and nothing else.", size=20,
-                 color=MUTED)
+        end2 = T(f"{PARAMS_LABEL} parameters, one function from text to a"
+                 f" sampled token.", size=20, color=MUTED)
         nums = Text(f"d_model {D_MODEL:,}   ·   {N_HEADS} Q : {N_KV_HEADS} KV"
                     f"   ·   d_ff {D_FF:,}   ·   vocab {VOCAB_LABEL}   ·   "
                     f"θ = {THETA_LABEL}   ·   ε = {EPS_LABEL}",
@@ -3936,6 +3936,15 @@ class Section12(Section):
                   Write(nums), Write(footer), FadeIn(wm), run_time=1.8)
         self.play(Indicate(end1, scale_factor=1.04, color=GOLD), run_time=0.8)
 
+        # CC BY 4.0: the music credit must stay on screen. Held, not faded.
+        credits = VGroup(
+            T('Music: "Almost in F" by Kevin MacLeod (incompetech.com)',
+              size=TYPE["micro"], color=DIM),
+            T("Licensed under Creative Commons: By Attribution 4.0",
+              size=TYPE["micro"], color=DIM),
+        ).arrange(DOWN, buff=0.12).move_to([0, -3.20, 0])
+        self.play(FadeIn(credits), run_time=0.6)
+        self.wait(0.9)
         self.fade_content(0.40)
         self.sync_end()
 
