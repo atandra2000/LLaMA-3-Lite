@@ -26,6 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import yaml
 
 try:  # imported as ``tools.verify_video``
@@ -43,6 +44,9 @@ DEFAULT_MASTER = V2 / "llama3_lite_architecture_explainer.mp4"
 I_LO = -16.5
 I_HI = -15.5
 TP_MAX = -1.5
+# Speech has to beat the gaps by this much. A dropped voice reads negative:
+# the music bed plays on where the narration should be.
+VOICE_MIN = 6.0
 FROZEN_MAX = 0.35
 HOLD_MAX = 3.5
 
@@ -236,6 +240,61 @@ def check_captions(gate: Gate, master: Path, n_sentences: int) -> None:
                 gate.fail(f"captions {ext}", f"{n} cues != {n_sentences} sentences")
 
 
+def speech_over_gaps(x: np.ndarray, chaps: list[dict], lead: float,
+                     order: list[str], sections: dict, sr: int = 8000) -> float:
+    """Level of the spoken spans minus the level of the gaps, in dB.
+
+    Negative means the gaps are louder than the sentences, which is what a
+    mix with the voice dropped and the bed left in looks like.
+    """
+    mask = np.zeros(len(x), dtype=bool)
+    for i, k in enumerate(order):
+        if i >= len(chaps):
+            break
+        base = chaps[i]["start"] + lead
+        for span in sections[k]["sentences"].values():
+            a = int(round((base + span["start"]) * sr))
+            b = int(round((base + span["end"]) * sr))
+            if 0 <= a < len(x):
+                mask[a:min(b, len(x))] = True
+    if not mask.any() or mask.all():
+        raise ValueError("no speech windows landed inside the master")
+
+    def rms(y: np.ndarray) -> float:
+        return 20 * np.log10(np.sqrt((y ** 2).mean()) + 1e-12)
+
+    return rms(x[mask]) - rms(x[~mask])
+
+
+def check_voice_present(gate: Gate, master: Path, chaps: list[dict], lead: float,
+                        order: list[str], sections: dict) -> None:
+    """Speech must sit clearly above the gaps between sentences.
+
+    Integrated loudness passing does not prove the narration reached the mix:
+    a build that drops the voice and keeps the music bed still lands near
+    −16 LUFS. Measure the master itself and compare the two populations.
+    """
+    r = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(master), "-ac", "1", "-ar", "8000",
+         "-f", "s16le", "-"], capture_output=True)
+    if r.returncode != 0 or not r.stdout:
+        gate.fail("voice in mix", "could not decode the audio track")
+        return
+    x = np.frombuffer(r.stdout, dtype=np.int16).astype(np.float32) / 32768.0
+
+    try:
+        delta = speech_over_gaps(x, chaps, lead, order, sections)
+    except ValueError as e:
+        gate.fail("voice in mix", str(e))
+        return
+    if delta > VOICE_MIN:
+        gate.ok("voice in mix", f"speech {delta:+.1f} dB over the gaps")
+    else:
+        gate.fail("voice in mix",
+                  f"speech only {delta:+.1f} dB over the gaps (needs "
+                  f"> {VOICE_MIN:.0f}) — the narration is not in the mix")
+
+
 def main(argv: list[str]) -> int:
     master = Path(argv[1]) if len(argv) > 1 else DEFAULT_MASTER
     if not master.exists():
@@ -265,6 +324,7 @@ def main(argv: list[str]) -> int:
     check_container(gate, master, total)
     chaps = check_chapters(gate, master, total, sections)
     check_narration_fit(gate, chaps, lead, order, timings["sections"])
+    check_voice_present(gate, master, chaps, lead, order, timings["sections"])
 
     integrated, peak = measure_loudness(master)
     if I_LO <= integrated <= I_HI:

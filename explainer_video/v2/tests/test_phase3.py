@@ -5,10 +5,11 @@ build_full_video.py. T3.4 adds tools/verify_video.py. The pure parsers —
 loudnorm JSON, ebur128, SRT cue counting — are the steps worth pinning; the
 rest of the gate shells out to ffmpeg and is covered by running it.
 """
+import numpy as np
 import pytest
 
 from build_full_video import parse_loudnorm_json
-from tools.verify_video import count_srt_cues, parse_ebur128
+from tools.verify_video import count_srt_cues, parse_ebur128, speech_over_gaps
 
 
 def test_parse_loudnorm_json_extracts_trailing_block():
@@ -67,3 +68,38 @@ def test_count_srt_cues_reads_arrow_lines_only(tmp_path):
         "2\n00:00:02,200 --> 00:00:04,000\nOne function.\n",
         encoding="utf-8")
     assert count_srt_cues(f) == 2
+
+
+# The voice-in-mix gate: a build can drop the narration and still measure in
+# spec on loudness, so this compares the speech spans against the gaps.
+_ORDER = ["sec01"]
+_SECTIONS = {"sec01": {"sentences": {
+    "s01.1": {"start": 0.0, "end": 1.0},
+    "s01.2": {"start": 2.0, "end": 3.0},
+}}}
+_CHAPS = [{"start": 0.0, "end": 4.0}]
+
+
+def _tone_with(speech_gain: float) -> np.ndarray:
+    """4 s at 8 kHz: tones only inside the sentence spans, off elsewhere."""
+    x = np.zeros(4 * 8000, dtype=np.float32)
+    for a, b in ((0.0, 1.0), (2.0, 3.0)):
+        i = int(a * 8000)
+        x[i:i + 8000] = speech_gain * np.sin(2 * np.pi * 440
+                                             * np.arange(8000) / 8000)
+    return x
+
+
+def test_speech_over_gaps_sees_the_voice():
+    delta = speech_over_gaps(_tone_with(0.5), _CHAPS, 0.0, _ORDER, _SECTIONS)
+    assert delta > 20.0
+
+
+def test_speech_over_gaps_reports_a_dropped_voice():
+    # Voice gone, bed left playing through the gaps: 8 dB quieter in speech.
+    x = np.full(4 * 8000, 0.4, dtype=np.float32) * np.sin(
+        2 * np.pi * 440 * np.arange(32000) / 8000)
+    for a, b in ((0.0, 1.0), (2.0, 3.0)):
+        x[int(a * 8000):int(b * 8000)] = 0.0
+    delta = speech_over_gaps(x, _CHAPS, 0.0, _ORDER, _SECTIONS)
+    assert delta < 0.0

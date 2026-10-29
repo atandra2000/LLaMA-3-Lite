@@ -11,8 +11,8 @@
 # per sentence (Phase 2) so `id` doubles as the cue name.
 version: 1
 title: "Inside LLaMA-3-Lite — The Complete Architecture"
-voice: en-US-AndrewMultilingualNeural
-rate: "+8%"
+voice: chatterbox-clone:audio/Sample_voice_2.m4a
+rate: "1.0"
 timing:
   lead: 0.30          # silence before the first word of a scene
   tail: 0.40          # silence after the last word

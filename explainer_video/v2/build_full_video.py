@@ -25,7 +25,14 @@ MEDIA = Path(os.environ.get(
 AUDIO_DIR = HERE / "audio"
 BED = HERE / "assets" / "music" / "bed.mp3"
 BED_LUFS = -28.0
+# The TTS engine ships its clips about 6 dB quieter than the previous one, and
+# the sidechain key is a fixed absolute threshold, so a quiet voice fails to
+# duck the bed and the gate sees speech level with the gaps. Normalise the voice
+# to -20 LUFS and the key threshold means the same thing for any engine.
+VOICE_LUFS = -20.0
 OUT = HERE / "llama3_lite_architecture_explainer.mp4"
+# The release gate's loudness window, so the build aims at the same number.
+I_LO, I_HI = -16.5, -15.5
 
 # The only timing source: exact per-sentence spans from the assembled tracks.
 TIMINGS = json.loads((AUDIO_DIR / "timings.json").read_text())
@@ -192,8 +199,10 @@ def main() -> None:
         filters.append(f"[{i + 1}:a]aresample=48000,aformat=channel_layouts=stereo,"
                        f"adelay={ms}|{ms}[n{i}]")
     mix_in = "[0:a]" + "".join(f"[n{i}]" for i in range(len(ORDER)))
+    # level=true is a measured gain, not a limiter, so the track shape is kept.
     filters.append(f"{mix_in}amix=inputs={len(ORDER) + 1}:"
-                   f"duration=first:normalize=0[voice]")
+                   f"duration=first:normalize=0,"
+                   f"loudnorm=I={VOICE_LUFS:.1f}:TP=-2:LRA=7:linear=true[voice]")
     # loop the bed over the whole runtime, levelled to -28 LUFS, 1.5 s fades
     inputs += ["-stream_loop", "-1", "-t", f"{total:.3f}", "-i", str(BED)]
     inputs += ["-i", str(sfx_wav)]
@@ -205,10 +214,14 @@ def main() -> None:
                    f"afade=t=in:st=0:d=1.5,"
                    f"afade=t=out:st={total - 1.5:.3f}:d=1.5[bedv]")
     filters.append(f"[{sfx_idx}:a]aresample=48000,aformat=channel_layouts=stereo[sfxv]")
-    # duck the bed under the voice, then mix voice + ducked bed + subtle sfx
-    filters.append("[bedv][voice]sidechaincompress=threshold=0.015:ratio=12:"
+    # Duck the bed under the voice, then mix voice + ducked bed + subtle sfx.
+    # [voice] needs two consumers, so it must be split: ffmpeg feeds a label to
+    # one filter at a time, and a second read returns silence — which buried the
+    # narration under the bed while loudness still measured in spec.
+    filters.append("[voice]asplit=2[vkey][vmix]")
+    filters.append("[bedv][vkey]sidechaincompress=threshold=0.015:ratio=12:"
                    "attack=20:release=300:makeup=1[ducked]")
-    filters.append("[voice][ducked][sfxv]amix=inputs=3:duration=first:normalize=0,"
+    filters.append("[vmix][ducked][sfxv]amix=inputs=3:duration=first:normalize=0,"
                    "alimiter=limit=0.95[outa]")
     mix_wav = HERE / "_mix.wav"
     run(["ffmpeg", "-y", "-v", "error", *inputs,
@@ -216,22 +229,34 @@ def main() -> None:
          "-map", "[outa]", "-c:a", "pcm_s16le", str(mix_wav)])
     sfx_wav.unlink(missing_ok=True)
 
-    # Two-pass loudnorm (linear) on the final mix. The I target sits above the
-    # -16 gate because alimiter below removes loudness with the peaks.
+    # Two-pass linear loudnorm on the final mix, then a closed loop on the
+    # result. The alimiter after loudnorm gives back loudness with the peaks, so
+    # how far the file lands under the target depends on the mix. Measure the
+    # encode and spend the error on the next pass: a hand-tuned I only suits the
+    # one mix it was tuned on.
     m = measure_loudnorm(mix_wav)
-    # linear=true sets the gain to hit I=-16 and then leaves the peaks alone,
-    # so a TP target in the same chain is not enforced. alimiter is what actually
-    # holds the ceiling. 0.72 is -2.85 dBFS, because the AAC encode lifts
-    # inter-sample peaks by about a decibel on top of whatever the limiter sets.
-    ln = ("loudnorm=I=-15.3:TP=-1.6:LRA=11:"
-          f"measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
-          f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
-          f"offset={m['target_offset']}:linear=true,"
-          "alimiter=limit=0.72:level=disabled,"
-          "aresample=48000")
     narr = HERE / "_narration.m4a"
-    run(["ffmpeg", "-y", "-v", "error", "-i", str(mix_wav),
-         "-af", ln, "-c:a", "aac", "-b:a", "192k", str(narr)])
+    target = -16.0
+    got = target
+    for _ in range(4):
+        # linear=true sets the gain to hit I and leaves the peaks alone, so a TP
+        # target in the same chain is not enforced. alimiter is what actually
+        # holds the ceiling. 0.72 is -2.85 dBFS, because the AAC encode lifts
+        # inter-sample peaks by about a decibel on top of whatever it sets.
+        ln = (f"loudnorm=I={target:.2f}:TP=-1.6:LRA=11:"
+              f"measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
+              f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
+              f"offset={m['target_offset']}:linear=true,"
+              "alimiter=limit=0.72:level=disabled,"
+              "aresample=48000")
+        run(["ffmpeg", "-y", "-v", "error", "-i", str(mix_wav),
+             "-af", ln, "-c:a", "aac", "-b:a", "192k", str(narr)])
+        got = float(measure_loudnorm(narr)["input_i"])
+        if abs(got - target) <= 0.1:
+            break
+        target += target - got
+    print(f"narration loudness: {got:.2f} LUFS (target {target:.2f}, "
+          f"gate {I_LO}…{I_HI})")
 
     # ---- 3. chapters ---------------------------------------------------------
     def ts(sec: float) -> str:

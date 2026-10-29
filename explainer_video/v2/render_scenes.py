@@ -2474,8 +2474,8 @@ class Section06(Section):
                       T("+", size=20, color=MINT,
                         weight="BOLD").move_to(p_center))
         write_back = data_arrow([0, -1.55, 0], plus[0].get_bottom(), MINT, w=3.0)
-        self.play(Create(band), Write(band_lab), run_time=1.1)
-        self.play(Create(write_back), GrowFromCenter(plus), run_time=1.1)
+        self.play(Create(band), Write(band_lab), run_time=1.0)
+        self.play(Create(write_back), GrowFromCenter(plus), run_time=0.9)
 
         self.fade_content(0.40)
         self.sync_end()
@@ -2774,7 +2774,7 @@ class Section07(Section):
                                 stroke_color=GOLD,
                                 stroke_width=4.0).move_to(
                                     rings[2].get_center())),
-                  run_time=1.3)
+                  run_time=1.2)
 
         self.fade_content(0.40)
         self.sync_end()

@@ -1,503 +1,503 @@
 WEBVTT
 
 
-00:00:00.300 --> 00:00:03.071
+00:00:00.300 --> 00:00:04.148
 A large language model is one mathematical function.
 
-00:00:03.271 --> 00:00:08.448
+00:00:04.348 --> 00:00:10.347
 It reads a sequence of tokens and returns a probability for every possible next token.
 
-00:00:08.648 --> 00:00:13.142
+00:00:10.547 --> 00:00:15.408
 That is the whole interface: text in, a distribution over the next token out.
 
-00:00:13.342 --> 00:00:18.900
+00:00:15.608 --> 00:00:22.155
 LLaMA-3-Lite is a compact, from-scratch model built in the LLaMA-3 style.
 
-00:00:19.100 --> 00:00:25.651
+00:00:22.355 --> 00:00:30.914
 Sixteen decoder blocks, a model dimension of one thousand twenty-four, and about five hundred fifteen million parameters.
 
-00:00:25.851 --> 00:00:28.699
+00:00:31.114 --> 00:00:34.931
 The same model width runs through all sixteen blocks.
 
-00:00:28.899 --> 00:00:31.293
+00:00:35.131 --> 00:00:38.641
 Take the sentence on screen: The cat sat on the mat.
 
-00:00:31.493 --> 00:00:35.339
+00:00:38.841 --> 00:00:43.929
 Six tokens, six IDs, and one question: what comes next?
 
-00:00:35.539 --> 00:00:41.275
+00:00:44.129 --> 00:00:50.860
 One token walks in as an ID and walks out as a probability over the whole vocabulary.
 
-00:00:41.475 --> 00:00:45.314
+00:00:51.060 --> 00:00:55.643
 Follow that walk from raw text to the sampling loop, one stage at a time.
 
-00:00:45.514 --> 00:00:50.244
+00:00:55.843 --> 00:01:01.459
 Each stage exists to fix a specific problem the previous stage leaves open.
 
-00:00:50.444 --> 00:00:53.988
+00:01:01.659 --> 00:01:06.337
 The loop at the end is what turns one prediction into a paragraph.
 
-00:00:54.700 --> 00:00:57.916
+00:01:07.033 --> 00:01:11.075
 Before any architecture, ask what the model is trained to do.
 
-00:00:58.116 --> 00:01:03.588
+00:01:11.275 --> 00:01:18.196
 The objective is next-token cross-entropy, plus a small z-loss at one ten-thousandth.
 
-00:01:03.788 --> 00:01:06.755
+00:01:18.396 --> 00:01:22.969
 Training shows the model real text with the next token hidden.
 
-00:01:06.955 --> 00:01:09.889
+00:01:23.169 --> 00:01:26.410
 The model assigns that hidden token a probability.
 
-00:01:10.089 --> 00:01:13.658
+00:01:26.610 --> 00:01:30.658
 When the probability is low, training adjusts the weights to raise it.
 
-00:01:13.858 --> 00:01:19.288
+00:01:30.858 --> 00:01:36.970
 That adjustment is the whole of learning: every weight moves to make real text more likely.
 
-00:01:19.488 --> 00:01:25.986
+00:01:37.170 --> 00:01:44.336
 Next-token training needs no extra manual labels: no sentiment tags, no answers, no rules.
 
-00:01:26.186 --> 00:01:30.751
+00:01:44.536 --> 00:01:49.950
 The loss measures surprise: how low the model's probability was for the true token.
 
-00:01:30.951 --> 00:01:35.205
+00:01:50.150 --> 00:01:55.060
 Pushing surprise down is what shapes the five hundred fifteen million parameters.
 
-00:01:35.405 --> 00:01:40.737
+00:01:55.260 --> 00:02:00.751
 From that single objective, grammar, style and world knowledge settle into the weights.
 
-00:01:40.937 --> 00:01:42.976
+00:02:00.951 --> 00:02:03.721
 Nothing in the code says what a noun is.
 
-00:01:43.176 --> 00:01:46.942
+00:02:03.921 --> 00:02:08.157
 Training runs that prediction at every position in parallel.
 
-00:01:47.142 --> 00:01:50.826
+00:02:08.357 --> 00:02:11.773
 Generation instead reveals one new token at a time.
 
-00:01:51.026 --> 00:01:55.198
+00:02:11.973 --> 00:02:16.570
 The structure you are about to see is the machinery that makes the prediction possible.
 
-00:01:55.398 --> 00:01:58.016
+00:02:16.770 --> 00:02:20.040
 Each piece is there because the objective demands it.
 
-00:01:58.700 --> 00:02:03.208
+00:02:20.733 --> 00:02:25.152
 Text cannot enter a matrix multiply, so the tokenizer goes first.
 
-00:02:03.408 --> 00:02:10.377
+00:02:25.352 --> 00:02:33.541
 It splits text into subword pieces from a vocabulary of one hundred twenty-eight thousand two hundred fifty-six tokens.
 
-00:02:10.577 --> 00:02:15.922
+00:02:33.741 --> 00:02:39.729
 The scheme is byte-pair encoding: the most frequent character pairs merge into new tokens.
 
-00:02:16.122 --> 00:02:20.195
+00:02:39.929 --> 00:02:45.105
 Building it starts from single characters and keeps merging the most common pair.
 
-00:02:20.395 --> 00:02:26.091
+00:02:45.305 --> 00:02:52.580
 Common words stay whole, and rare words break into smaller pieces the model has seen before.
 
-00:02:26.291 --> 00:02:32.095
+00:02:52.780 --> 00:02:59.706
 Characters alone would make sequences far too long; whole words alone would explode the vocabulary.
 
-00:02:32.295 --> 00:02:37.615
+00:02:59.906 --> 00:03:06.479
 Subwords sit in between and cover any input, including words the model has never seen.
 
-00:02:37.815 --> 00:02:40.438
+00:03:06.679 --> 00:03:09.697
 Their IDs come straight from the vocabulary table.
 
-00:02:40.638 --> 00:02:46.908
+00:03:09.897 --> 00:03:16.785
 The word cat becomes eight thousand four hundred fifteen; the word mat becomes five thousand six hundred thirty-four.
 
-00:02:47.108 --> 00:02:50.960
+00:03:16.985 --> 00:03:21.985
 Each ID is just a row number; it carries no meaning of its own.
 
-00:02:51.160 --> 00:02:53.748
+00:03:22.185 --> 00:03:25.087
 The tokenizer knows nothing about cats.
 
-00:02:53.948 --> 00:02:57.915
+00:03:25.287 --> 00:03:29.247
 Its only job is to cut text into pieces the model has a row for.
 
-00:02:58.115 --> 00:03:04.217
+00:03:29.447 --> 00:03:35.729
 The config lists one hundred twenty-eight thousand rows; the tokenizer holds two hundred fifty-six more.
 
-00:03:04.417 --> 00:03:08.635
+00:03:35.929 --> 00:03:40.461
 The embedding table sizes itself to the tokenizer, not to the config.
 
-00:03:09.333 --> 00:03:13.219
+00:03:41.233 --> 00:03:46.159
 An ID is only a row number; the row it points to carries the meaning.
 
-00:03:13.419 --> 00:03:17.371
+00:03:46.359 --> 00:03:51.564
 That lookup is the embedding matrix, one row per vocabulary item.
 
-00:03:17.571 --> 00:03:22.813
+00:03:51.764 --> 00:03:58.269
 Each row holds one thousand twenty-four numbers, so every token becomes a vector of that length.
 
-00:03:23.013 --> 00:03:28.347
+00:03:58.469 --> 00:04:04.805
 A lookup is all it takes: the ID picks the row, and the row becomes the token's vector.
 
-00:03:28.547 --> 00:03:31.494
+00:04:05.005 --> 00:04:08.859
 There is no computation here yet, only a learned table.
 
-00:03:31.694 --> 00:03:36.663
+00:04:09.059 --> 00:04:14.814
 Training can move these rows so tokens used in similar ways land near each other.
 
-00:03:36.863 --> 00:03:41.131
+00:04:15.014 --> 00:04:20.360
 This is how it can learn semantic geometry: directions that carry meaning.
 
-00:03:41.331 --> 00:03:45.199
+00:04:20.560 --> 00:04:24.888
 An illustrative sketch might place cat near kitten and far from car.
 
-00:03:45.399 --> 00:03:50.008
+00:04:25.088 --> 00:04:30.673
 Because the table is learned, it embeds each token by how that token is used.
 
-00:03:50.208 --> 00:03:55.309
+00:04:30.873 --> 00:04:36.540
 The vector is a point in one thousand twenty-four dimensions, far too many to picture at once.
 
-00:03:55.509 --> 00:03:59.440
+00:04:36.740 --> 00:04:40.619
 Two dimensions stand in for the rest whenever the screen shows a sketch.
 
-00:03:59.640 --> 00:04:03.291
+00:04:40.819 --> 00:04:45.792
 From this point on the model sees only vectors, never characters.
 
-00:04:03.491 --> 00:04:07.709
+00:04:45.992 --> 00:04:50.178
 From here, each token carries its vector through all sixteen blocks.
 
-00:04:07.909 --> 00:04:10.463
+00:04:50.378 --> 00:04:54.090
 That carried vector is called the residual stream.
 
-00:04:10.663 --> 00:04:15.875
+00:04:54.290 --> 00:05:01.038
 Inside a block, attention and SwiGLU each read a normalized copy of the stream.
 
-00:04:16.075 --> 00:04:19.163
+00:05:01.238 --> 00:05:05.392
 Each writes its result back onto the stream by simple addition.
 
-00:04:19.363 --> 00:04:22.804
+00:05:05.592 --> 00:05:10.074
 This pre-norm shape is the structure of every decoder block.
 
-00:04:23.004 --> 00:04:27.548
+00:05:10.274 --> 00:05:15.545
 A last RMSNorm at the output cleans that same stream before scoring.
 
-00:04:27.748 --> 00:04:32.707
+00:05:15.745 --> 00:05:21.008
 A separate, untied table of the same kind runs at the output, as you will see.
 
-00:04:33.399 --> 00:04:36.978
+00:05:21.700 --> 00:05:26.054
 A single vector knows its own meaning and nothing about its neighbors.
 
-00:04:37.178 --> 00:04:40.855
+00:05:26.254 --> 00:05:30.264
 The next problem is context: how a token learns what surrounds it.
 
-00:04:41.055 --> 00:04:46.622
+00:05:30.464 --> 00:05:37.140
 Self-attention solves this in one layer, by letting every token look back at the tokens before it.
 
-00:04:46.822 --> 00:04:52.095
+00:05:37.340 --> 00:05:43.097
 Each vector is projected three times: into a query, a key, and a value.
 
-00:04:52.295 --> 00:04:54.117
+00:05:43.297 --> 00:05:45.447
 The query is what a token asks for.
 
-00:04:54.317 --> 00:04:56.353
+00:05:45.647 --> 00:05:48.593
 The key is what a token offers for matching.
 
-00:04:56.553 --> 00:04:59.900
+00:05:48.793 --> 00:05:53.925
 The value is the information a token hands over once it is chosen.
 
-00:05:00.100 --> 00:05:04.333
+00:05:54.125 --> 00:05:59.224
 All three projections are learned matrices, multiplied into the stream.
 
-00:05:04.533 --> 00:05:07.949
+00:05:59.424 --> 00:06:03.134
 A query takes a dot product with every key in the sequence.
 
-00:05:08.149 --> 00:05:11.966
+00:06:03.334 --> 00:06:07.948
 A large dot product means similar direction, long length, or both.
 
-00:05:12.166 --> 00:05:15.145
+00:06:08.148 --> 00:06:11.452
 Each dot product fills one cell of the score matrix.
 
-00:05:15.345 --> 00:05:18.148
+00:06:11.652 --> 00:06:15.037
 Those scores are divided by the square root of the key dimension.
 
-00:05:18.348 --> 00:05:22.595
+00:06:15.237 --> 00:06:19.789
 Without scaling, scores grow with the dimension and the softmax saturates.
 
-00:05:22.795 --> 00:05:27.246
+00:06:19.989 --> 00:06:24.625
 Scaling controls that growth and keeps the softmax away from saturation.
 
-00:05:27.446 --> 00:05:30.318
+00:06:24.825 --> 00:06:28.680
 The matrix on screen is the map of who will listen to whom.
 
-00:05:31.066 --> 00:05:34.269
+00:06:29.400 --> 00:06:32.912
 Scores are still raw numbers; they need to become weights.
 
-00:05:34.469 --> 00:05:37.347
+00:06:33.112 --> 00:06:36.571
 A causal mask hides the future from every query.
 
-00:05:37.547 --> 00:05:42.075
+00:06:36.771 --> 00:06:41.610
 A token may attend to itself and to earlier tokens, never later ones.
 
-00:05:42.275 --> 00:05:46.235
+00:06:41.810 --> 00:06:46.647
 Training never allows a token to read the answer it is being asked to predict.
 
-00:05:46.435 --> 00:05:50.429
+00:06:46.847 --> 00:06:52.035
 Masked scores are pushed to negative infinity before the softmax runs.
 
-00:05:50.629 --> 00:05:55.147
+00:06:52.235 --> 00:06:57.221
 Softmax turns the remaining scores into positive weights that sum to one.
 
-00:05:55.347 --> 00:05:57.338
+00:06:57.421 --> 00:07:00.454
 Look at the row for the word sat on screen.
 
-00:05:57.538 --> 00:06:00.851
+00:07:00.654 --> 00:07:03.957
 It places zero point eight six of its weight on cat.
 
-00:06:01.051 --> 00:06:03.024
+00:07:04.157 --> 00:07:06.559
 The masked future cell holds zero.
 
-00:06:03.224 --> 00:06:06.447
+00:07:06.759 --> 00:07:11.278
 The weights then blend the value vectors into a single output.
 
-00:06:06.647 --> 00:06:10.987
+00:07:11.478 --> 00:07:16.342
 The output is a weighted average of past values, so it stays near their neighborhood.
 
-00:06:11.187 --> 00:06:14.678
+00:07:16.542 --> 00:07:20.472
 Each token leaves attention carrying a summary of its own past.
 
-00:06:14.878 --> 00:06:18.988
+00:07:20.672 --> 00:07:25.322
 This whole computation runs eight times in parallel, one per head.
 
-00:06:19.188 --> 00:06:24.221
+00:07:25.522 --> 00:07:31.570
 Query projections are per head, but keys and values are shared by pairs of heads.
 
-00:06:24.421 --> 00:06:28.579
+00:07:31.770 --> 00:07:36.829
 The eight outputs are concatenated and multiplied by one output matrix.
 
-00:06:28.779 --> 00:06:31.708
+00:07:37.029 --> 00:07:40.204
 The result is written back into the residual stream.
 
-00:06:32.466 --> 00:06:38.044
+00:07:40.933 --> 00:07:47.789
 Attention as written cannot see word order: shuffle the tokens and the outputs shuffle to match.
 
-00:06:38.244 --> 00:06:44.074
+00:07:47.989 --> 00:07:53.878
 The scores only see vectors, and the vectors so far carry meaning without position.
 
-00:06:44.274 --> 00:06:47.103
+00:07:54.078 --> 00:07:58.139
 So the next piece adds position without touching the meaning.
 
-00:06:47.303 --> 00:06:52.299
+00:07:58.339 --> 00:08:03.462
 Rotary embeddings fix this by rotating query and key vectors according to position.
 
-00:06:52.499 --> 00:06:56.898
+00:08:03.662 --> 00:08:08.967
 Each vector is split into pairs of dimensions, sixty-four pairs per head.
 
-00:06:57.098 --> 00:07:01.482
+00:08:09.167 --> 00:08:14.223
 Each pair is read as a point in two dimensions, or as a complex number.
 
-00:07:01.682 --> 00:07:06.456
+00:08:14.423 --> 00:08:20.746
 Position m rotates every pair by an angle of m times a base frequency.
 
-00:07:06.656 --> 00:07:10.135
+00:08:20.946 --> 00:08:25.003
 The rotation matrix on screen is the pair version of that turn.
 
-00:07:10.335 --> 00:07:12.416
+00:08:25.203 --> 00:08:27.231
 Different pairs turn at different speeds.
 
-00:07:12.616 --> 00:07:17.135
+00:08:27.431 --> 00:08:33.113
 Fast pairs pin down nearby structure; slow pairs mark long-range position.
 
-00:07:17.335 --> 00:07:21.745
+00:08:33.313 --> 00:08:37.926
 The fastest pair shown completes a full turn in about six point three tokens.
 
-00:07:21.945 --> 00:07:28.012
+00:08:38.126 --> 00:08:44.540
 When a rotated query meets a rotated key, their rotations combine into one relative turn.
 
-00:07:28.212 --> 00:07:31.772
+00:08:44.740 --> 00:08:49.004
 So the positional part of their dot product depends on the distance between them.
 
-00:07:31.972 --> 00:07:37.635
+00:08:49.204 --> 00:08:54.925
 Content still shapes the score; position adds only how far apart the two tokens sit.
 
-00:07:37.835 --> 00:07:43.948
+00:08:55.125 --> 00:09:01.660
 With theta at five hundred thousand, the slowest pairs stay smooth across two thousand forty-eight tokens.
 
-00:07:44.148 --> 00:07:48.781
+00:09:01.860 --> 00:09:06.460
 Theta sets the slowest wavelength; a larger theta pushes it further.
 
-00:07:49.533 --> 00:07:52.851
+00:09:07.166 --> 00:09:10.990
 One Lite detail lands between projection and rotation.
 
-00:07:53.051 --> 00:07:57.624
+00:09:11.190 --> 00:09:15.650
 Queries and keys each pass through RMSNorm before RoPE is applied.
 
-00:07:57.824 --> 00:08:02.687
+00:09:15.850 --> 00:09:21.170
 This controls the scale of each query and key, so the logits stay well behaved.
 
-00:08:02.887 --> 00:08:06.564
+00:09:21.370 --> 00:09:25.729
 The norm runs per head, on each query and key vector on its own.
 
-00:08:06.764 --> 00:08:11.905
+00:09:25.929 --> 00:09:32.699
 Each layer has one shared gain of one hundred twenty-eight numbers for queries, and one for keys.
 
-00:08:12.105 --> 00:08:16.064
+00:09:32.899 --> 00:09:38.197
 The point of the step is training stability, at a tiny parameter cost.
 
-00:08:16.264 --> 00:08:20.298
+00:09:38.397 --> 00:09:43.741
 LLaMA 3 itself has no QK-norm; the step is a Lite addition.
 
-00:08:21.033 --> 00:08:24.279
+00:09:44.466 --> 00:09:48.248
 Attention during training sees the whole sentence at once.
 
-00:08:24.479 --> 00:08:29.846
+00:09:48.448 --> 00:09:53.202
 Generation is different: the model writes one token, then the next, then the next.
 
-00:08:30.046 --> 00:08:33.127
+00:09:53.402 --> 00:09:56.587
 Each new token still has to see everything before it.
 
-00:08:33.327 --> 00:08:38.298
+00:09:56.787 --> 00:10:03.074
 Recomputing every past key and value at every step would waste work.
 
-00:08:38.498 --> 00:08:42.449
+00:10:03.274 --> 00:10:08.248
 An inference-time optimization can store those vectors in a KV cache.
 
-00:08:42.649 --> 00:08:46.450
+00:10:08.448 --> 00:10:12.621
 Each layer stores two vectors per token for every key-value head.
 
-00:08:46.650 --> 00:08:54.175
+00:10:12.821 --> 00:10:21.018
 With sixteen layers and four key-value heads, one token costs sixteen thousand three hundred eighty-four stored numbers.
 
-00:08:54.375 --> 00:08:56.997
+00:10:21.218 --> 00:10:24.744
 That count assumes one hundred twenty-eight numbers per head.
 
-00:08:57.197 --> 00:09:02.526
+00:10:24.944 --> 00:10:31.433
 At two thousand forty-eight tokens of context, the cache passes thirty-three million numbers.
 
-00:09:02.726 --> 00:09:05.714
+00:10:31.633 --> 00:10:35.087
 The cache is a growing memory cost at inference time.
 
-00:09:05.914 --> 00:09:10.981
+00:10:35.287 --> 00:10:40.545
 LLaMA-3-Lite runs eight query heads and four key-value heads.
 
-00:09:11.181 --> 00:09:14.086
+00:10:40.745 --> 00:10:44.623
 Each key-value head is shared by two query heads.
 
-00:09:14.286 --> 00:09:16.344
+00:10:44.823 --> 00:10:48.269
 This layout is grouped-query attention.
 
-00:09:16.544 --> 00:09:21.512
+00:10:48.469 --> 00:10:54.175
 Four key-value heads halve the cache against eight, while the math of attention stays the same.
 
-00:09:21.712 --> 00:09:27.174
+00:10:54.375 --> 00:11:00.573
 The attention operation is unchanged, though a smaller key-value set can still change model quality.
 
-00:09:27.899 --> 00:09:31.956
+00:11:01.266 --> 00:11:05.721
 Two sublayers sit in every block; attention is the first.
 
-00:09:32.156 --> 00:09:35.908
+00:11:05.921 --> 00:11:11.092
 The second is a feed-forward network applied to each token on its own.
 
-00:09:36.108 --> 00:09:40.977
+00:11:11.292 --> 00:11:17.218
 Attention mixes tokens; the feed-forward works on each vector in isolation.
 
-00:09:41.177 --> 00:09:46.899
+00:11:17.418 --> 00:11:24.228
 It widens the vector from one thousand twenty-four to four thousand ninety-six, then compresses it back.
 
-00:09:47.099 --> 00:09:51.318
+00:11:24.428 --> 00:11:29.163
 The wide middle gives the block room to transform features between the two widths.
 
-00:09:51.518 --> 00:09:58.053
+00:11:29.363 --> 00:11:36.734
 Count the parameters and the feed-forward dominates: over twelve million per block against about three million for attention.
 
-00:09:58.253 --> 00:10:00.939
+00:11:36.934 --> 00:11:39.890
 LLaMA gates this expansion with SwiGLU.
 
-00:10:01.139 --> 00:10:05.417
+00:11:40.090 --> 00:11:45.890
 The wide layer splits into two parallel paths: a gate path and an up path.
 
-00:10:05.617 --> 00:10:07.761
+00:11:46.090 --> 00:11:48.787
 Both paths start from the same input vector.
 
-00:10:07.961 --> 00:10:12.552
+00:11:48.987 --> 00:11:55.116
 The gate path passes through the SiLU activation, which is x times its own sigmoid.
 
-00:10:12.752 --> 00:10:18.822
+00:11:55.316 --> 00:12:02.178
 Near zero, SiLU passes about half the input; large positive inputs pass nearly unchanged.
 
-00:10:19.022 --> 00:10:21.759
+00:12:02.378 --> 00:12:05.985
 Element by element, the gate path scales the up path.
 
-00:10:21.959 --> 00:10:25.918
+00:12:06.185 --> 00:12:10.434
 The gate can shrink a feature, pass it unchanged, or amplify it.
 
-00:10:26.118 --> 00:10:28.832
+00:12:10.634 --> 00:12:13.642
 Only the product of the two paths flows onward.
 
-00:10:29.032 --> 00:10:33.888
+00:12:13.842 --> 00:12:19.288
 Multiplicative gating lets one path decide how much of the other to keep.
 
-00:10:34.088 --> 00:10:37.658
+00:12:19.488 --> 00:12:24.037
 A final matrix projects the result back into the residual stream.
 
-00:10:38.433 --> 00:10:42.608
+00:12:24.833 --> 00:12:29.046
 After sixteen blocks, one last RMSNorm settles the stream.
 
-00:10:42.808 --> 00:10:48.699
+00:12:29.246 --> 00:12:37.456
 A separate, untied matrix scores all one hundred twenty-eight thousand two hundred fifty-six candidates.
 
-00:10:48.899 --> 00:10:54.249
+00:12:37.656 --> 00:12:43.894
 Each score, called a logit, is one dot product between the final vector and one candidate row.
 
-00:10:54.449 --> 00:11:01.054
+00:12:44.094 --> 00:12:52.882
 This unembedding table is as large as the embedding table: about one hundred thirty-one million parameters in each.
 
-00:11:01.254 --> 00:11:04.429
+00:12:53.082 --> 00:12:56.959
 Together, the two tables hold just over half of the model.
 
-00:11:04.629 --> 00:11:07.623
+00:12:57.159 --> 00:13:01.146
 Large logits mean the candidate fits the context well.
 
-00:11:07.823 --> 00:11:12.473
+00:13:01.346 --> 00:13:06.465
 A softmax turns the logits into probabilities over the whole vocabulary.
 
-00:11:12.673 --> 00:11:17.039
+00:13:06.665 --> 00:13:11.700
 Sampling picks one token, and that token is appended to the context.
 
-00:11:17.239 --> 00:11:19.682
+00:13:11.900 --> 00:13:15.547
 The full network then runs again for the next one.
 
-00:11:19.882 --> 00:11:24.040
+00:13:15.747 --> 00:13:19.961
 One forward pass per generated token; that is the generation loop.
 
-00:11:24.240 --> 00:11:30.253
+00:13:20.161 --> 00:13:26.563
 A KV cache would keep past keys and values, so each new pass computes only the newest token.
 
-00:11:30.453 --> 00:11:35.880
+00:13:26.763 --> 00:13:33.214
 Without one, every step re-reads the whole sequence; this code does exactly that.
 
-00:11:36.080 --> 00:11:40.324
+00:13:33.414 --> 00:13:38.517
 What began as one function on a table of numbers now writes a paragraph.
 
-00:11:41.133 --> 00:11:44.713
+00:13:39.233 --> 00:13:43.576
 Walk the whole path once more, from text to a sampled token.
 
-00:11:44.913 --> 00:11:48.812
+00:13:43.776 --> 00:13:48.591
 The tokenizer cuts the sentence into six pieces with integer IDs.
 
-00:11:49.012 --> 00:11:54.187
+00:13:48.791 --> 00:13:54.839
 The embedding table turns each ID into a vector of one thousand twenty-four numbers.
 
-00:11:54.387 --> 00:11:57.991
+00:13:55.039 --> 00:13:59.146
 The residual stream carries those vectors through sixteen blocks.
 
-00:11:58.191 --> 00:12:05.590
+00:13:59.346 --> 00:14:08.700
 In each block, RMSNorm controls scale, attention mixes context, and the gated feed-forward rewrites features.
 
-00:12:05.790 --> 00:12:09.547
+00:14:08.900 --> 00:14:13.572
 Rotary embeddings keep the order of the tokens visible through all of it.
 
-00:12:09.747 --> 00:12:14.956
+00:14:13.772 --> 00:14:21.048
 Grouped-query attention keeps the cache affordable; QK-norm keeps the logits stable.
 
-00:12:15.156 --> 00:12:19.468
+00:14:21.248 --> 00:14:25.664
 The unembedding table scores every candidate, and sampling takes one.
 
-00:12:19.668 --> 00:12:24.631
+00:14:25.864 --> 00:14:33.082
 About five hundred fifteen million parameters, and one function from tokens to probabilities.
