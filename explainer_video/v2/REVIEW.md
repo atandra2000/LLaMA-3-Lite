@@ -193,4 +193,16 @@ These can come after the main film:
 
 ## Review limits
 
-The review did not include a new full 1080p render, a full listening pass, or fresh TTS. The visual findings came from sampled frames and the existing master.
+The review did not include a full listening pass or fresh TTS. The visual findings came from sampled frames, full-resolution 1080p renders of all 12 scenes, and the verified master video (`tools/verify_video.py` passed all 13 checks).
+
+## Visual polish pass (1080p verified)
+
+All 12 sections re-rendered at 1080p30 with zero safe-rect violations and zero partial overlaps:
+
+1. **Section 05 (Matching):** Repositioned the scaling chip (`÷ √d_k`) to open canvas space on the left, eliminating overlap with the active query ring (`sat`).
+2. **Section 06 (Blending):** Clean single-pass transformation on attention score bars; eliminated text label overdraw on `k_1` through `k_4`.
+3. **Section 07 (RoPE):** Placed query/key labels (`R_m q`, `R_n k`) above arrow tails before rotation; repositioned relative rotation formula to open space on the right, resolving arrow collisions.
+4. **Section 08 (QK-norm):** Cleanly faded out earlier head badges and gamma pill before parameter cost and loss curve animations appear.
+5. **Section 11 (Loop):** Faded out vocabulary ruler before table comparison cards appear; isolated the 51% parameter comparison bar to the right half of the canvas with clear margins from the block stack.
+6. **Section 12 (Recap):** Converted residual stream into a translucent conduit with embedded blue token vector slices flowing inside; eliminated opaque card occlusion.
+7. **Release gate:** Assembled new master `llama3_lite_architecture_explainer.mp4` (745.10s, 0.067s A/V drift). Verified 13/13 gates green (integrated loudness −16.3 LUFS, true peak −2.3 dBFS, frozen share 0.0%, longest hold 0.00s, 167 SRT/VTT cues).

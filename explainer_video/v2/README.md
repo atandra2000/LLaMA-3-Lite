@@ -20,17 +20,20 @@ fluid entrances, glow pulses and data-flow flashes. Defined in
 Voiceover script: **`VOICEOVER_SCRIPT.md`** — generated from `narration.yaml` by
 `tools/build_script_doc.py`; never edit it by hand.
 
-## Content (9 chapters, architecture only — no data/training)
+## Content (12 sections, architecture only — no data/training)
 
 1. The model as a function (tokens → next-token probabilities)
-2. Tokens become vectors (tokenizer, embedding lookup, meaning space)
-3. The residual stream (read → transform → add back)
-4. RMSNorm (root-mean-square math, vs LayerNorm, ε = 1e-5)
-5. Self-attention (Q/K/V, scaled dot-product, causal mask, softmax, 8 heads)
-6. Rotary positions — RoPE (pair rotations, frequency ladder, relative-distance property, θ = 500 000)
-7. Grouped-query attention & QK-norm (8 Q : 4 KV, KV-cache halving)
-8. SwiGLU feed-forward (gate/up split, SiLU plot, d_ff 4096)
-9. Unembedding & autoregression (final norm, logits, softmax, sampling loop, recap)
+2. Why next-token prediction (cross-entropy, z-loss, loss as surprise, no labels)
+3. Text becomes IDs (tokenizer, byte-pair merges, vocab 128,256)
+4. IDs become vectors (embedding matrix, meaning space, residual stream, pre-norm block)
+5. Queries, keys and scores (q/k/v projections, score matrix, ÷√d_k)
+6. Mask, softmax and heads (causal mask, weights, head blend, concat → W_O)
+7. Rotary positions — RoPE (pair rotations, frequency ladder, relative-distance property)
+8. A Lite detail: QK-norm (per-head RMSNorm on q and k, the Lite caveat)
+9. Grouped-query attention and the KV cache (8 Q : 4 KV, cache halving)
+10. The gated feed-forward (gate/up split, SiLU plot, d_ff 4096)
+11. Unembedding and autoregression (final norm, logits, softmax, generation loop)
+12. The path end to end (end-to-end recap, end card)
 
 ## Where the numbers come from
 
@@ -63,7 +66,7 @@ facts.json                               generated: every number on screen
 narration.yaml                           generated-from source: spoken script + cue ids
 VOICEOVER_SCRIPT.md                      generated: script + cue map
 generate_audio.py        → audio/        Edge-TTS narration (text from narration.yaml)
-render_scenes.py         → media/…/1080p30/  9 Manim scenes
+render_scenes.py         → media/…/1080p30/  12 Manim scenes
 build_full_video.py                      concat + audio sync + chapters → final MP4
 assets/fonts/                            bundled Inter + Barlow Semi Condensed (OFL)
 tools/                                   build_facts, check_facts, build_script_doc, lint_script

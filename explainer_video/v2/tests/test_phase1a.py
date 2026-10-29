@@ -63,9 +63,12 @@ def test_token_chips_and_embedding_dims_come_from_facts():
     items = FACTS["tokens"]["items"]
     assert [item["id"] for item in items] == [791, 8415, 7731, 389, 279, 5634]
     # Matrix dims and the unembedding row are formatted from facts, not typed.
-    assert "RR^({VOCAB} times {D_MODEL})" in RENDER
     assert "{D_MODEL:,} → {VOCAB_LABEL}" in RENDER
     assert "W_U   {D_MODEL:,} → {VOCAB_LABEL}" in RENDER
+
+
+def test_embedding_matrix_label_comes_from_facts():
+    assert "RR^({VOCAB} times {D_MODEL})" in RENDER
 
 
 def test_gqa_and_cache_counts_come_from_facts():

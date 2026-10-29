@@ -68,6 +68,8 @@ def test_check_layout_flag_reaches_the_scene():
 
 
 # ------------------------------------------------------- T1.7 §4 ------------
+@pytest.mark.skip(reason="R5 re-cue: the RMSNorm unit-scale sketch left the "
+                         "locked script; safe_violations now guards every caption")
 def test_section4_geometry_caption_stays_in_frame():
     assert rs.GEO_SIZE <= 1.6
     assert "geo.move_to([-5.0, -2.5, 0])" in RENDER
@@ -118,7 +120,8 @@ def test_probability_bars_survive_the_chip():
 
 # ---------------------------------------------------- T1.10 sweep ----------
 def test_blocks_pill_is_off_the_band_edge():
-    assert "x16.move_to([5.5, 1.25, 0])" in RENDER
+    """The × blocks pill must sit clear of the residual rail it counts."""
+    assert "x16.move_to([3.90, 2.35, 0])" in RENDER
 
 
 def test_ffn_card_is_above_the_safe_floor():

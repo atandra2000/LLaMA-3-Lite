@@ -25,20 +25,22 @@ All audio assets, narration sentences (64 beats across 9 sections), factual coun
 - **Safe Zone**: Adheres strictly to `SAFE = (-6.7, 6.7, -3.6, 3.6)` in Manim units (1920×1080 16:9 safe frame).
 
 ### 2.2 Color Tokens & Contrast Accessibility (WCAG AAA & OKLab Validated)
-Every semantic color is computed for high contrast against `#0B0E14` (all $> 7:1$, exceeding WCAG AA 4.5:1) and maintains pairwise OKLab $\Delta E \ge 15$ for normal and color-vision-deficient (CVD) viewers.
+The palette is manim's classic family — the 3Blue1Brown colors — on flat black `#000000`.
+Shipped 2026-10-27, replacing the earlier Tailwind-dark tokens (`#0B0E14` stage, `#60A5FA`
+and siblings) after review: that scheme read as AI-generated. Text tokens are `≥ 7.5:1`
+against the stage (AAA); mark tokens are `≥ 5.3:1` and always carry a shape or label.
 
-| Token | Hex Value | Contrast | Semantic Role | Secondary Encoding (Never Color Alone) |
+| Token (code) | Hex Value | Contrast | Semantic Role | Secondary Encoding (Never Color Alone) |
 |---|---|---|---|---|
-| `STAGE_BG` | `#0B0E14` | Baseline | Stage canvas | Matte flat background |
-| `INK_PRIMARY` | `#F8FAFC` | 18.5:1 | Hero equations, dominant symbols | 36–42pt bold Typst math |
-| `INK_MUTED` | `#94A3B8` | 7.5:1 | Labels, matrix brackets, axes | 18–20pt regular text, direct labels |
-| `INK_DIM` | `#475569` | 2.6:1 | Inactive grid lines, guides | 1.0px dashed lines |
-| `COLOR_QUERY` | `#60A5FA` | 7.6:1 | Query vectors ($Q$), attention search | Vector arrow with bold label $\mathbf{q}$ |
-| `COLOR_KEY` | `#FBBF24` | 11.6:1 | Key vectors ($K$), memory keys | Vector arrow with bold label $\mathbf{k}$ |
-| `COLOR_VALUE` | `#34D399` | 10.1:1 | Value vectors ($V$), memory values | Vector arrow with bold label $\mathbf{v}$ |
-| `COLOR_ROPE` | `#A78BFA` | 7.1:1 | Rotary dials, frequencies ($\theta, m$) | Polar dial with angular arc $\Delta\theta$ |
-| `COLOR_OUTPUT` | `#FB7185` | 7.2:1 | Unembedding, logits, sampling | Probability simplex column, loop arrow |
-| `COLOR_GATE` | `#38BDF8` | 9.0:1 | SwiGLU gating path | Curve plot of $\text{SiLU}(x)$, gate icon $\odot$ |
+| `STAGE_BG` | `#000000` | Baseline | Stage canvas | Flat black, canvas breath only |
+| `WHITE` (`INK_PRIMARY`) | `#FFFFFF` | 21.0:1 | Hero equations, dominant symbols | 36–58pt bold type + Typst math |
+| `MUTED` (`INK_MUTED`) | `#C8C8C8` | 12.6:1 | Labels, captions, matrix brackets | 16–20pt regular text, direct labels |
+| `DIM` (`INK_DIM`) | `#9A9A9A` | 7.5:1 | Watermark, micro ids, de-emphasis | 12–13pt micro labels |
+| `BLUE` (`COLOR_QUERY`) | `#58C4DD` | 10.4:1 | Query vectors ($Q$), chrome, highlights | Vector arrow with bold label $\mathbf{q}$ |
+| `GOLD` (`COLOR_KEY`) | `#F0AC5F` | 10.8:1 | Key vectors ($K$), scale, SwiGLU gate | Vector arrow with bold label $\mathbf{k}$ |
+| `MINT` (`COLOR_VALUE`) | `#5CD0B3` | 11.1:1 | Value vectors ($V$), writes, outputs | Vector arrow with bold label $\mathbf{v}$ |
+| `VIOLET` (`COLOR_ROPE`) | `#9A72AC` | 5.4:1 | Rotary dials, frequencies ($\theta, m$) | Polar dial with angular arc $\Delta\theta$ |
+| `ROSE` (`COLOR_OUTPUT`) | `#FC6255` | 7.0:1 | Unembedding, logits, future-mask | Probability column, loop arrow, hatch |
 
 *Non-Negotiable Dataviz Rule*: Text labels always use `INK_PRIMARY` or `INK_MUTED`. Colored marks (arrows, dots, arcs, chips) sit beside them to establish identity.
 

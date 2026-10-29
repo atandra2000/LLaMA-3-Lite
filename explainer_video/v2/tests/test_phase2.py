@@ -35,7 +35,6 @@ def test_no_beat_api_remains():
     assert "self.beat(" not in RENDER
 
 
-@pytest.mark.skip(reason="script v2 rewrite: scene re-cue pending (12 sections, 167 cues)")
 def test_every_sentence_has_exactly_one_cue():
     """T2.2: the cue map covers the narration, one cue per spoken line."""
     ids = [s["id"] for sec in NARRATION["sections"] for s in sec["sentences"]]
@@ -109,10 +108,12 @@ def test_sync_end_fills_the_remainder():
 
 # ---------------------------------------------------------- T2.3 motion -----
 def test_ambient_pulse_always_runs():
-    """R1/R3: the background breathes, so no wait is a dead frame."""
+    """R1/R3: the canvas breath must move real pixels, so no wait is a dead
+    frame. A 0.0001-opacity pulse is invisible to the viewer and to
+    freezedetect — the shipped cut held a still 4.4 s."""
     assert "def breathe" in RENDER
-    assert "_base_op" in RENDER
     assert "self._ambient.add_updater(breathe)" in RENDER
+    assert "self._breath.set_fill" in RENDER
 
 
 def test_clause_playhead_moves_with_the_scene():
