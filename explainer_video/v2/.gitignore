@@ -1,6 +1,0 @@
-audio/_old/
-audio/voice_sample.m4a
-# Regenerable TTS intermediates: 167 clips, 89 MB, rebuilt by generate_audio.py.
-# The committed deliverable is audio/sec*.wav + audio/timings.json.
-audio/sentences/
-audio/_jobs.json

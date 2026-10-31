@@ -46,5 +46,3 @@ docs_html/
 # Agent session/tooling state (autoharness queues, session files)
 .claude/
 
-# Manim transient build and partial movie media directories
-explainer_video/**/media/
